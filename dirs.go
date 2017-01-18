@@ -39,10 +39,10 @@ func init() {
 }
 
 func initDirs() error {
-	stderr.Printf("initializing root directory %s\n", rootPath)
 	if _, err := os.Stat(rootPath); !os.IsNotExist(err) {
 		return err
 	}
+	stderr.Printf("initializing root directory %s\n", rootPath)
 
 	// Create source file and thumbnail directories
 	const dirMode = os.ModeDir | 0700

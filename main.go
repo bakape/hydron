@@ -37,6 +37,10 @@ func main() {
 	if err := initDirs(); err != nil {
 		panic(err)
 	}
+	if err := openDB(); err != nil {
+		panic(err)
+	}
+	defer db.Close()
 
 	var err error
 	switch mode {

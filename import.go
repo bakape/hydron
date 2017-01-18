@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/md5"
+	"crypto/sha1"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"time"
 )
 
 type fileType uint8
@@ -52,8 +54,12 @@ func importPaths(paths []string) (err error) {
 	}
 
 	// Parallelize across all cores and report progress in real time
+	type response struct {
+		path string
+		err  error
+	}
 	src := make(chan string)
-	res := make(chan error)
+	res := make(chan response)
 	go func() {
 		for _, f := range files {
 			src <- f
@@ -65,31 +71,34 @@ func importPaths(paths []string) (err error) {
 	for i := 0; i < n; i++ {
 		go func() {
 			for f := range src {
-				res <- importFile(f)
+				res <- response{
+					path: f,
+					err:  importFile(f),
+				}
 			}
 		}()
 	}
 
 	total := len(files)
 	done := 0
-	defer stderr.Print("\n")
 	for range files {
-		switch err := <-res; err {
+		switch r := <-res; r.err {
 		case errUnsupportedFile:
 			total--
 		case nil:
 			done++
 		default:
-			stderr.Print("\n")
-			return err
+			total--
+			stderr.Printf("\n%s: %s\n", r.err, r.path)
 		}
 		fmt.Fprintf(
 			os.Stderr,
 			"\rimporting and thumbnailing: %d / %d - %.2f%%",
 			done, total,
-			float32(done)/float32(total),
+			float32(done)/float32(total)*100,
 		)
 	}
+	stderr.Print("\n")
 
 	return nil
 }
@@ -115,7 +124,11 @@ func importFile(path string) (err error) {
 		return
 	}
 	hash := md5.Sum(buf)
-	id := hex.EncodeToString(hash[:])
+
+	// Check, if not already in the database
+	if isImp, err := isImported(hash); err != nil || isImp {
+		return err
+	}
 
 	var fn func([]byte) ([]byte, bool, error)
 	switch typ {
@@ -128,23 +141,40 @@ func importFile(path string) (err error) {
 	}
 	thumb, isPNG, err := fn(buf)
 	if err != nil {
-		// Silence failed thumbnailing. Perhaps we need better handling?
-		err = errUnsupportedFile
 		return
 	}
 
-	err = ioutil.WriteFile(sourcePath(id, typ), buf, 0600)
-	if err != nil {
-		return
-	}
+	errCh := make(chan error)
+	sha1Ch := make(chan [20]byte)
+	id := hex.EncodeToString(hash[:])
+	go func() {
+		errCh <- ioutil.WriteFile(sourcePath(id, typ), buf, 0600)
+	}()
+	go func() {
+		sha1Ch <- sha1.Sum(buf)
+	}()
 	err = ioutil.WriteFile(thumbPath(id, isPNG), thumb, 0600)
 	if err != nil {
 		return
 	}
+	if err = <-errCh; err != nil {
+		return err
+	}
 
-	// TODO: DB stuff
-
-	return
+	// Write to database
+	kv := keyValue{
+		MD5:    hash,
+		record: make(record, 31),
+	}
+	kv.SetImportTime(uint64(time.Now().Unix()))
+	kv.SetType(typ)
+	if isPNG {
+		kv.SetThumbType(PNG)
+	} else {
+		kv.SetThumbType(JPEG)
+	}
+	kv.SetSHA1(<-sha1Ch)
+	return writeRecord(kv)
 }
 
 func detectFileType(r io.ReadSeeker) (fileType, error) {
