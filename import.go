@@ -30,7 +30,7 @@ var (
 )
 
 // Recursively import list of files and/or directories
-func importPaths(paths []string) (err error) {
+func importPaths(paths []string, del bool) (err error) {
 	files, err := traverse(paths)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func importPaths(paths []string) (err error) {
 			for f := range src {
 				res <- response{
 					path: f,
-					err:  importFile(f),
+					err:  importFile(f, del),
 				}
 			}
 		}()
@@ -86,7 +86,7 @@ func importPaths(paths []string) (err error) {
 	return nil
 }
 
-func importFile(path string) (err error) {
+func importFile(path string, del bool) (err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return
@@ -100,8 +100,13 @@ func importFile(path string) (err error) {
 	hash := sha1.Sum(buf)
 
 	// Check, if not already in the database
-	if is, err := isImported(hash); err != nil || is {
+	if is, err := isImported(hash); err != nil {
 		return err
+	} else if is {
+		if del {
+			return os.Remove(path)
+		}
+		return nil
 	}
 
 	src, thumb, err := thumbnailer.ProcessBuffer(buf, thumbnailerOpts)
@@ -150,7 +155,14 @@ func importFile(path string) (err error) {
 		}
 	}
 
-	return writeRecord(kv)
+	err = writeRecord(kv)
+	if err != nil {
+		return
+	}
+	if del {
+		return os.Remove(path)
+	}
+	return nil
 }
 
 func detectFileType(r io.ReadSeeker) (fileType, error) {
