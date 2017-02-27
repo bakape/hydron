@@ -10,10 +10,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
-
-	"path/filepath"
 
 	"github.com/bakape/thumbnailer"
 )
@@ -51,7 +50,8 @@ func importPaths(paths []string) (err error) {
 		close(src)
 	}()
 
-	n := runtime.NumCPU() + 1
+	// Importing is mostly I/O-bound. Let's squeeze out some more.
+	n := runtime.NumCPU() * 2
 	for i := 0; i < n; i++ {
 		go func() {
 			for f := range src {

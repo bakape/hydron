@@ -18,8 +18,9 @@ func init() {
 	} else {
 		rootPath = filepath.Join(os.Getenv("HOME"), ".hydron")
 	}
-	imageRoot = filepath.Join(rootPath, "images")
-	thumbRoot = filepath.Join(rootPath, "thumbs")
+	sep := string(filepath.Separator)
+	imageRoot = concatStrings(rootPath, sep, "images", sep)
+	thumbRoot = concatStrings(rootPath, sep, "thumbs", sep)
 }
 
 func initDirs() error {
