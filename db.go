@@ -11,6 +11,19 @@ import (
 // Boolean flags for a record
 const (
 	fetchedTags = 1 << iota
+	pngThumbnail
+)
+
+// Byte offsets withing a record
+const (
+	offsetBools     = 1
+	offsetImportIme = offsetBools + 8*iota
+	offsetSize
+	offsetWidth
+	offsetHeight
+	offsetLength
+	offsetMD5
+	offsetTags = offsetMD5 + 16
 )
 
 var (
@@ -43,19 +56,21 @@ func openDB() (err error) {
 }
 
 type keyValue struct {
-	MD5 [16]byte
+	SHA1 [20]byte
 	record
 }
 
 /*
-Record of a stored image in the DB. Serialized to binary in the following
-format:
+Record of a stored file in the DB. Serialized to binary in the following format:
 
 byte - file type of source image
-byte - file type of thumbnail
 byte - boolean flags
 uint64 - import Unix time
-[20]byte - SHA1 hash
+uint64 - source image size in bytes
+uint64 - source image width
+uint64 - source image height
+uint64 - source image stream length, if a any
+[16]byte - MD5 hash
 string... - space-delimited list of tags
 */
 type record []byte
@@ -68,7 +83,7 @@ func (r record) Clone() record {
 	return clone
 }
 
-func (r record) GetType() fileType {
+func (r record) Type() fileType {
 	return fileType(r[0])
 }
 
@@ -76,52 +91,65 @@ func (r record) SetType(t fileType) {
 	r[0] = byte(t)
 }
 
-func (r record) GetThumbType() fileType {
-	return fileType(r[1])
+func (r record) ThumbIsPNG() bool {
+	return r[offsetBools]&pngThumbnail != 0
 }
 
-func (r record) SetThumbType(t fileType) {
-	r[1] = byte(t)
+func (r record) SetPNGThumb() {
+	r[offsetBools] |= pngThumbnail
 }
 
 func (r record) SetFetchedTags() {
-	r[2] |= fetchedTags
+	r[offsetBools] |= fetchedTags
 }
 
-func (r record) GetFetchedTags() bool {
-	return r[2]&fetchedTags != 0
+func (r record) HaveFetchedTags() bool {
+	return r[offsetBools]&fetchedTags != 0
 }
 
-func (r record) GetImportTime() uint64 {
-	b := []byte(r[3:11])
-	return binary.LittleEndian.Uint64(b)
+func (r record) getUint64(offset int) uint64 {
+	return binary.LittleEndian.Uint64(r[offset:])
 }
 
-func (r record) SetImportTime(t uint64) {
-	b := []byte(r[3:])
-	binary.LittleEndian.PutUint64(b, t)
+func (r record) setUint64(offset int, val uint64) {
+	binary.LittleEndian.PutUint64(r[offset:], val)
 }
 
-func (r record) GetSHA1() (SHA1 [20]byte) {
-	copy(SHA1[:], []byte(r[11:]))
+func (r record) ImportTime() uint64 {
+	return r.getUint64(offsetImportIme)
+}
+
+func (r record) Size() uint64 {
+	return r.getUint64(offsetSize)
+}
+
+func (r record) SetStats(importTime, size, width, height, length uint64) {
+	r.setUint64(offsetImportIme, importTime)
+	r.setUint64(offsetSize, size)
+	r.setUint64(offsetWidth, width)
+	r.setUint64(offsetHeight, height)
+	r.setUint64(offsetLength, length)
+}
+
+func (r record) MD5() (MD5 [16]byte) {
+	copy(MD5[:], r[offsetMD5:])
 	return
 }
 
-func (r record) SetSHA1(SHA1 [20]byte) {
-	copy([]byte(r[11:]), SHA1[:])
+func (r record) SetMD5(MD5 [16]byte) {
+	copy(r[offsetMD5:], MD5[:])
 }
 
-func (r record) GetTags() [][]byte {
-	return bytes.Split([]byte(r[31:]), []byte{' '})
+func (r record) Tags() [][]byte {
+	return bytes.Split(r[offsetTags:], []byte{' '})
 }
 
 func (r *record) SetTags(t [][]byte) {
-	b := bytes.Join(t, []byte{' '})
-	*r = append((*r)[:31], record(b)...)
+	*r = append((*r)[:offsetTags], bytes.Join(t, []byte{' '})...)
 }
 
 // Returns if an image is already imported
-func isImported(id [16]byte) (bool, error) {
+func isImported(id [20]byte) (bool, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return false, err
@@ -131,6 +159,6 @@ func isImported(id [16]byte) (bool, error) {
 
 func writeRecord(kv keyValue) error {
 	return db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte("images")).Put(kv.MD5[:], []byte(kv.record))
+		return tx.Bucket([]byte("images")).Put(kv.SHA1[:], []byte(kv.record))
 	})
 }

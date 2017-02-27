@@ -9,33 +9,17 @@ import (
 
 const hexStr = "0123456789abcdef"
 
-var (
-	// maps internal file types to their canonical file extensions
-	extensions = map[fileType]string{
-		JPEG: "jpg",
-		PNG:  "png",
-		GIF:  "gif",
-		MP4:  "mp4",
-		WEBM: "webm",
-		OGG:  "ogg",
-		PDF:  "pdf",
-	}
-
-	rootPath, imageRoot, thumbRoot string
-)
+var rootPath, imageRoot, thumbRoot string
 
 // Determine root dirs
 func init() {
-	var key string
 	if runtime.GOOS == "windows" {
-		key = "HOMEPATH"
+		rootPath = filepath.Join(os.Getenv("APPDATA"), "hydron")
 	} else {
-		key = "HOME"
+		rootPath = filepath.Join(os.Getenv("HOME"), ".hydron")
 	}
-	rootPath = filepath.Join(os.Getenv(key), ".hydron")
-	sep := string(os.PathSeparator)
-	imageRoot = rootPath + sep + "images" + sep
-	thumbRoot = rootPath + sep + "thumbs" + sep
+	imageRoot = filepath.Join(rootPath, "images")
+	thumbRoot = filepath.Join(rootPath, "thumbs")
 }
 
 func initDirs() error {
@@ -69,22 +53,21 @@ func initDirs() error {
 func traverse(paths []string) (files []string, err error) {
 	i := 0
 	defer stderr.Print("\n")
+
+	visit := func(path string, info os.FileInfo, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case !info.IsDir():
+			files = append(files, path)
+			i++
+			fmt.Fprintf(os.Stderr, "\rgathering files: %d", i)
+		}
+		return nil
+	}
+
 	for _, p := range paths {
-		err = filepath.Walk(p, func(
-			path string,
-			info os.FileInfo,
-			err error,
-		) error {
-			switch {
-			case err != nil:
-				return err
-			case !info.IsDir():
-				files = append(files, path)
-				i++
-				fmt.Fprintf(os.Stderr, "\rgathering files: %d", i)
-			}
-			return nil
-		})
+		err = filepath.Walk(p, visit)
 		if err != nil {
 			return
 		}
