@@ -50,8 +50,7 @@ func importPaths(paths []string) (err error) {
 		close(src)
 	}()
 
-	// Importing is mostly I/O-bound. Let's squeeze out some more.
-	n := runtime.NumCPU() * 2
+	n := runtime.NumCPU() + 1
 	for i := 0; i < n; i++ {
 		go func() {
 			for f := range src {
