@@ -30,7 +30,7 @@ var (
 )
 
 // Recursively import list of files and/or directories
-func importPaths(paths []string, del bool) (err error) {
+func importPaths(paths []string, del bool, tags string) (err error) {
 	files, err := traverse(paths)
 	if err != nil {
 		return err
@@ -51,12 +51,16 @@ func importPaths(paths []string, del bool) (err error) {
 	}()
 
 	n := runtime.NumCPU() + 1
+	var decodedTags [][]byte
+	if tags != "" {
+		decodedTags = splitTagString(tags)
+	}
 	for i := 0; i < n; i++ {
 		go func() {
 			for f := range src {
 				res <- response{
 					path: f,
-					err:  importFile(f, del),
+					err:  importFile(f, del, decodedTags),
 				}
 			}
 		}()
@@ -83,7 +87,7 @@ func importPaths(paths []string, del bool) (err error) {
 	return nil
 }
 
-func importFile(path string, del bool) (err error) {
+func importFile(path string, del bool, tags [][]byte) (err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return
@@ -158,7 +162,7 @@ func importFile(path string, del bool) (err error) {
 		}
 	}
 
-	err = writeRecord(kv, nil)
+	err = writeRecord(kv, tags)
 	if err != nil {
 		return
 	}

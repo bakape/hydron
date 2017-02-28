@@ -56,7 +56,7 @@ func decodeTaggedList(list []byte) [][20]byte {
 	for i := 0; i < l; i++ {
 		var file [20]byte
 		for j := 0; j < 20; j++ {
-			file[j] = file[i*20+j]
+			file[j] = list[i*20+j]
 		}
 		files[i] = file
 	}
@@ -114,7 +114,9 @@ func mergeTagSets(a, b [][]byte) [][]byte {
 
 	merged := make([][]byte, 0, len(tags))
 	for tag := range tags {
-		merged = append(merged, []byte(tag))
+		if len(tag) != 0 {
+			merged = append(merged, []byte(tag))
+		}
 	}
 	return merged
 }

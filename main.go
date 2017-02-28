@@ -33,6 +33,11 @@ var (
 		false,
 		"delete imported files",
 	)
+	addTagsToImported = modeFlags["import"].String(
+		"t",
+		"",
+		"add tags to all imported files",
+	)
 )
 
 func main() {
@@ -59,7 +64,7 @@ func main() {
 	var err error
 	switch mode {
 	case "import":
-		err = importPaths(fl.Args(), *deleteImported)
+		err = importPaths(fl.Args(), *deleteImported, *addTagsToImported)
 	case "fetch_tags":
 		err = fetchAllTags()
 	case "print":
