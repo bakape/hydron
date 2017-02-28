@@ -3,10 +3,16 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"math/rand"
+	"time"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 // Returns file paths that match all tags and print to console
-func searchPathsByTags(tags string) (err error) {
+func searchPathsByTags(tags string, random bool) (err error) {
 	matched := searchByTags(splitTagString(tags))
 	types := make([]fileType, len(matched))
 
@@ -25,8 +31,15 @@ func searchPathsByTags(tags string) (err error) {
 	}
 
 	// Convert to paths
-	for i, id := range matched {
-		fmt.Println(sourcePath(hex.EncodeToString(id[:]), types[i]))
+	print := func(i int) {
+		fmt.Println(sourcePath(hex.EncodeToString(matched[i][:]), types[i]))
+	}
+	if random {
+		print(rand.Intn(len(matched)))
+	} else {
+		for i := range matched {
+			print(i)
+		}
 	}
 
 	return nil

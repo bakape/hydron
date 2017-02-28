@@ -50,6 +50,11 @@ var (
 		false,
 		"fetch tags from gelbooru.com for imported files",
 	)
+	returnRandom = modeFlags["search"].Bool(
+		"r",
+		false,
+		"return only one random matched file",
+	)
 )
 
 func main() {
@@ -87,7 +92,7 @@ func main() {
 	case "print":
 		err = printDB()
 	case "search":
-		err = searchPathsByTags(strings.Join(fl.Args(), " "))
+		err = searchPathsByTags(strings.Join(fl.Args(), " "), *returnRandom)
 	default:
 		printHelp()
 	}
