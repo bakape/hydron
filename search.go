@@ -13,10 +13,14 @@ func init() {
 
 // Returns file paths that match all tags and print to console
 func searchPathsByTags(tags string, random bool) (err error) {
+	if tags == "" {
+		return printAllPaths(random)
+	}
+
 	matched := searchByTags(splitTagString(tags))
 	types := make([]fileType, len(matched))
 
-	// Retrieve file types of all tags
+	// Retrieve file types of all matches
 	tx, err := db.Begin(false)
 	if err != nil {
 		return
@@ -32,7 +36,7 @@ func searchPathsByTags(tags string, random bool) (err error) {
 
 	// Convert to paths
 	print := func(i int) {
-		fmt.Println(sourcePath(hex.EncodeToString(matched[i][:]), types[i]))
+		printPath(matched[i][:], types[i])
 	}
 	if random {
 		print(rand.Intn(len(matched)))
@@ -42,5 +46,36 @@ func searchPathsByTags(tags string, random bool) (err error) {
 		}
 	}
 
-	return nil
+	return
+}
+
+func printPath(id []byte, typ fileType) {
+	fmt.Println(sourcePath(hex.EncodeToString(id), typ))
+}
+
+// Print paths to all files
+func printAllPaths(random bool) (err error) {
+	ids := make([][]byte, 0, 512)
+	types := make([]fileType, 0, 512)
+
+	err = iterateRecords(func(k []byte, r record) {
+		ids = append(ids, k)
+		types = append(types, r.Type())
+	})
+	if err != nil {
+		return
+	}
+
+	print := func(i int) {
+		printPath(ids[i], types[i])
+	}
+	if random {
+		print(rand.Intn(len(ids)))
+	} else {
+		for i := range ids {
+			print(i)
+		}
+	}
+
+	return
 }
