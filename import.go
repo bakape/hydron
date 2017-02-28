@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"runtime"
 	"time"
 
@@ -152,12 +151,10 @@ func importFile(path string, del bool, tags [][]byte) (
 	errCh := make(chan error)
 	id := hex.EncodeToString(hash[:])
 	go func() {
-		path := filepath.FromSlash(sourcePath(id, typ))
-		errCh <- writeFile(path, buf)
+		errCh <- writeFile(sourcePath(id, typ), buf)
 	}()
 	go func() {
-		path := filepath.FromSlash(thumbPath(id, thumb.IsPNG))
-		errCh <- writeFile(path, thumb.Data)
+		errCh <- writeFile(thumbPath(id, thumb.IsPNG), thumb.Data)
 	}()
 
 	// Create database key-value pair

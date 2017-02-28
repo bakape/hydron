@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"os"
+	"strings"
 )
 
 var (
 	modeFlags = map[string]*flag.FlagSet{
 		"import":     flag.NewFlagSet("import", flag.PanicOnError),
+		"search":     flag.NewFlagSet("search", flag.PanicOnError),
 		"fetch_tags": flag.NewFlagSet("fetch_tags", flag.PanicOnError),
 		"print":      flag.NewFlagSet("print", flag.PanicOnError),
 	}
@@ -16,6 +18,11 @@ var (
 			"import",
 			"PATHS...",
 			"recursively imports all file and directory paths",
+		},
+		{
+			"search",
+			"TAGS..",
+			"return paths to files that match a set of tags",
 		},
 		{
 			"fetch_tags",
@@ -79,6 +86,8 @@ func main() {
 		err = fetchAllTags()
 	case "print":
 		err = printDB()
+	case "search":
+		err = searchPathsByTags(strings.Join(fl.Args(), " "))
 	default:
 		printHelp()
 	}

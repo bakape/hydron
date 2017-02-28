@@ -87,12 +87,18 @@ func splitTagString(s string) [][]byte {
 	return tags
 }
 
+// Convert any externally-input tags to the internal format
 func normalizeTag(t []byte) []byte {
-	// Replace spaces and NULL with underscores
 	for i, b := range t {
 		switch b {
+		// Replace spaces and NULL with underscores
 		case ' ', '\x00':
 			t[i] = '_'
+		default:
+			// Lowercase letters
+			if 'A' <= b && b <= 'Z' {
+				t[i] += 'a' - 'A'
+			}
 		}
 	}
 
@@ -104,6 +110,7 @@ func normalizeTag(t []byte) []byte {
 	return t
 }
 
+// Merge two sets of tags
 func mergeTagSets(a, b [][]byte) [][]byte {
 	tags := make(map[string]struct{}, len(a)+len(b))
 	for _, set := range [...][][]byte{a, b} {
@@ -119,4 +126,43 @@ func mergeTagSets(a, b [][]byte) [][]byte {
 		}
 	}
 	return merged
+}
+
+// Find files that match all tags
+func searchByTags(tags [][]byte) [][20]byte {
+	if len(tags) == 0 {
+		return nil
+	}
+	tagMu.RLock()
+	defer tagMu.RUnlock()
+
+	first := tagIndex[string(tags[0])]
+	if first == nil {
+		return nil
+	}
+
+	// Copy map. Original must not be modified.
+	matched := make(map[[20]byte]bool, len(first))
+	for f := range first {
+		matched[f] = true
+	}
+
+	// Delete non-intersecting matches
+	for i := 1; i < len(tags); i++ {
+		files := tagIndex[string(tags[i])]
+		if files == nil {
+			return nil
+		}
+		for f := range matched {
+			if !files[f] {
+				delete(matched, f)
+			}
+		}
+	}
+
+	arr := make([][20]byte, 0, len(matched))
+	for f := range matched {
+		arr = append(arr, f)
+	}
+	return arr
 }

@@ -77,7 +77,8 @@ func traverse(paths []string) (files []string, err error) {
 }
 
 func sourcePath(id string, typ fileType) string {
-	return concatStrings(imageRoot, id[:2], "/", id, ".", extensions[typ])
+	name := concatStrings(id, ".", extensions[typ])
+	return filepath.Join(imageRoot, id[:2], name)
 }
 
 func thumbPath(id string, isPNG bool) string {
@@ -87,7 +88,7 @@ func thumbPath(id string, isPNG bool) string {
 	} else {
 		ext = "jpg"
 	}
-	return concatStrings(thumbRoot, id[:2], "/", id, ".", ext)
+	return filepath.Join(thumbRoot, id[:2], concatStrings(id, ".", ext))
 }
 
 func concatStrings(s ...string) string {
