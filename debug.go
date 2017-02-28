@@ -34,7 +34,7 @@ func printDB() error {
 		}
 		rr.bools[0] = boolToUint8(r.HaveFetchedTags())
 		rr.bools[1] = boolToUint8(r.ThumbIsPNG())
-		fmt.Printf("> %s: %s\n", hex.EncodeToString(k), rr)
+		fmt.Printf("> %s: %v\n", hex.EncodeToString(k), rr)
 	})
 }
 

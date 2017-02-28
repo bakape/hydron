@@ -26,12 +26,7 @@ const (
 	offsetTags = offsetMD5 + 16
 )
 
-var (
-	db *bolt.DB
-
-	// In memory cache of tags to all applicable images
-	tagIndex = make(map[string][][16]byte, 64)
-)
+var db *bolt.DB
 
 func openDB() (err error) {
 	db, err = bolt.Open(filepath.Join(rootPath, "db.db"), 0600, nil)
@@ -52,6 +47,15 @@ func openDB() (err error) {
 			return
 		}
 	}
+
+	// Load all tags into memory
+	c := tx.Bucket([]byte("tags")).Cursor()
+	for tag, files := c.First(); tag != nil; tag, files = c.Next() {
+		for _, f := range decodeTaggedList(files) {
+			indexTagNoMu(tag, f)
+		}
+	}
+
 	return tx.Commit()
 }
 
@@ -174,10 +178,46 @@ func isImported(id [20]byte) (bool, error) {
 	return tx.Bucket([]byte("images")).Get(id[:]) != nil, tx.Rollback()
 }
 
-func writeRecord(kv keyValue) error {
-	return db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte("images")).Put(kv.SHA1[:], []byte(kv.record))
-	})
+// Write a record to the database. Optionally specify new tags to write, which
+// must be re-indexed.
+func writeRecord(kv keyValue, tags [][]byte) (err error) {
+	var modifiedTags [][]byte
+	if tags != nil {
+		// Update in-memory tag index
+		old := kv.record.Tags()
+		modifiedTags = mergeTagSets(old, tags)
+
+		tagMu.Lock()
+		defer tagMu.Unlock()
+		unindexFileNoMu(kv.SHA1, old)
+		for _, t := range tags {
+			indexTagNoMu(t, kv.SHA1)
+		}
+		kv.SetTags(tags)
+	}
+
+	tx, err := db.Begin(true)
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+
+	// Write changed tags to the database
+	buc := tx.Bucket([]byte("tags"))
+	for _, t := range modifiedTags {
+		err = buc.Put(t, encodeTaggedList(tagIndex[string(t)]))
+		if err != nil {
+			return
+		}
+	}
+
+	// Write changed record
+	err = tx.Bucket([]byte("images")).Put(kv.SHA1[:], []byte(kv.record))
+	if err != nil {
+		return
+	}
+
+	return tx.Commit()
 }
 
 // Extract a copy of the underlying SHA1 key from a BoltDB key

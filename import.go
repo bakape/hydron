@@ -158,7 +158,7 @@ func importFile(path string, del bool) (err error) {
 		}
 	}
 
-	err = writeRecord(kv)
+	err = writeRecord(kv, nil)
 	if err != nil {
 		return
 	}

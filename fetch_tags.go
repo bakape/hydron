@@ -125,12 +125,12 @@ func fetchAllTags() (err error) {
 	for k, v := range files {
 		switch r := <-res; r.err {
 		case nil:
-			v.MergeTags(r.tags)
 			v.SetFetchedTags()
-			err = writeRecord(keyValue{
+			kv := keyValue{
 				SHA1:   k,
 				record: v,
-			})
+			}
+			err = writeRecord(kv, mergeTagSets(v.Tags(), r.tags))
 			if err != nil {
 				return
 			}
