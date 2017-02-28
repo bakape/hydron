@@ -103,3 +103,28 @@ func concatStrings(s ...string) string {
 
 	return string(b)
 }
+
+// Write a file to disk. If a file already exists, because of an interrupted
+// write or something, overwrite it.
+func writeFile(path string, buf []byte) (err error) {
+	const flags = os.O_WRONLY | os.O_CREATE | os.O_EXCL
+	f, err := os.OpenFile(path, flags, 0660)
+	switch {
+	case err == nil:
+	case os.IsExist(err):
+		err = os.Remove(path)
+		if err != nil {
+			return
+		}
+		f, err = os.OpenFile(path, flags, 0660)
+		if err != nil {
+			return
+		}
+	default:
+		return
+	}
+	defer f.Close()
+
+	_, err = f.Write(buf)
+	return
+}

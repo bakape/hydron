@@ -122,7 +122,7 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 	id := hex.EncodeToString(hash[:])
 	go func() {
 		path := filepath.FromSlash(sourcePath(id, typ))
-		errCh <- ioutil.WriteFile(path, buf, 0600)
+		errCh <- writeFile(path, buf)
 	}()
 	go func() {
 		// Some files may not have thumbnails. Simply skip and leave the burden
@@ -132,7 +132,7 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 			return
 		}
 		path := filepath.FromSlash(thumbPath(id, thumb.IsPNG))
-		errCh <- ioutil.WriteFile(path, thumb.Data, 0600)
+		errCh <- writeFile(path, thumb.Data)
 	}()
 
 	// Create database key-value pair
