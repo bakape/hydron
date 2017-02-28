@@ -95,10 +95,10 @@ func gelbooruURL(md5 [16]byte) string {
 
 // Attempt to fetch tags for all files that have not yet had their tags synced
 // with gelbooru.com
-func fetchAllTags() (err error) {
+func fetchAllTags() error {
 	// Get list of candidate files
 	files := make(map[[20]byte]record, 64)
-	err = iterateRecords(func(k []byte, r record) {
+	err := iterateRecords(func(k []byte, r record) {
 		switch r.Type() {
 		case jpeg, png, gif, webm:
 			if !r.HaveFetchedTags() {
@@ -106,7 +106,15 @@ func fetchAllTags() (err error) {
 			}
 		}
 	})
+	if err != nil {
+		return err
+	}
 
+	return fetchFileTags(files)
+}
+
+// Fetch tags for listed files
+func fetchFileTags(files map[[20]byte]record) error {
 	res := make(chan tagFetchResponse)
 	go func() {
 		for _, f := range files {
@@ -130,9 +138,9 @@ func fetchAllTags() (err error) {
 				SHA1:   k,
 				record: v,
 			}
-			err = writeRecord(kv, mergeTagSets(v.Tags(), r.tags))
+			err := writeRecord(kv, mergeTagSets(v.Tags(), r.tags))
 			if err != nil {
-				return
+				return err
 			}
 			p.done++
 		case errNoMatch:
@@ -142,5 +150,5 @@ func fetchAllTags() (err error) {
 		p.print()
 	}
 
-	return
+	return nil
 }

@@ -20,7 +20,7 @@ var (
 		{
 			"fetch_tags",
 			"",
-			"attempt to fetch tags for imported images and webm from gelbooru.com",
+			"fetch tags for imported images and webm from gelbooru.com",
 		},
 		{
 			"print",
@@ -37,6 +37,11 @@ var (
 		"t",
 		"",
 		"add tags to all imported files",
+	)
+	fetchTagsForImports = modeFlags["import"].Bool(
+		"F",
+		false,
+		"fetch tags from gelbooru.com for imported files",
 	)
 )
 
@@ -64,7 +69,12 @@ func main() {
 	var err error
 	switch mode {
 	case "import":
-		err = importPaths(fl.Args(), *deleteImported, *addTagsToImported)
+		err = importPaths(
+			fl.Args(),
+			*deleteImported,
+			*fetchTagsForImports,
+			*addTagsToImported,
+		)
 	case "fetch_tags":
 		err = fetchAllTags()
 	case "print":

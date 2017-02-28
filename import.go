@@ -17,6 +17,7 @@ import (
 
 var (
 	errUnsupportedFile = errors.New("usuported file type")
+	errImported        = errors.New("file already imported")
 
 	thumbnailerOpts = thumbnailer.Options{
 		JPEGQuality: 90,
@@ -28,14 +29,15 @@ var (
 )
 
 // Recursively import list of files and/or directories
-func importPaths(paths []string, del bool, tags string) (err error) {
+func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 	files, err := traverse(paths)
 	if err != nil {
-		return err
+		return
 	}
 
 	// Parallelize across all cores and report progress in real time
 	type response struct {
+		keyValue
 		path string
 		err  error
 	}
@@ -56,9 +58,11 @@ func importPaths(paths []string, del bool, tags string) (err error) {
 	for i := 0; i < n; i++ {
 		go func() {
 			for f := range src {
+				kv, err := importFile(f, del, decodedTags)
 				res <- response{
-					path: f,
-					err:  importFile(f, del, decodedTags),
+					keyValue: kv,
+					path:     f,
+					err:      err,
 				}
 			}
 		}()
@@ -68,12 +72,23 @@ func importPaths(paths []string, del bool, tags string) (err error) {
 		total:  len(files),
 		header: "importing and thumbnailing",
 	}
-	defer p.close()
+	var toFetch map[[20]byte]record
+	if fetchTags {
+		toFetch = make(map[[20]byte]record, len(files))
+	}
 	for range files {
 		switch r := <-res; r.err {
 		case errUnsupportedFile:
 			p.total--
+		case errImported:
+			p.done++
 		case nil:
+			if fetchTags {
+				switch r.Type() {
+				case jpeg, png, gif, webm:
+					toFetch[r.SHA1] = r.record
+				}
+			}
 			p.done++
 		default:
 			p.total--
@@ -81,11 +96,19 @@ func importPaths(paths []string, del bool, tags string) (err error) {
 		}
 		p.print()
 	}
+	p.close()
+
+	// Fetch tags of any newly imported files
+	if len(toFetch) != 0 {
+		return fetchFileTags(toFetch)
+	}
 
 	return nil
 }
 
-func importFile(path string, del bool, tags [][]byte) (err error) {
+func importFile(path string, del bool, tags [][]byte) (
+	kv keyValue, err error,
+) {
 	f, err := os.Open(path)
 	if err != nil {
 		return
@@ -99,26 +122,30 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 	hash := sha1.Sum(buf)
 
 	// Check, if not already in the database
-	if is, err := isImported(hash); err != nil {
-		return err
-	} else if is {
+	isImported, err := isImported(hash)
+	if err != nil {
+		return
+	} else if isImported {
 		if del {
-			return os.Remove(path)
+			err = os.Remove(path)
+			return
 		}
-		return nil
+		err = errImported
+		return
 	}
 
 	src, thumb, err := thumbnailer.ProcessBuffer(buf, thumbnailerOpts)
 	switch err {
 	case nil:
 	case thumbnailer.ErrNoCoverArt, thumbnailer.ErrNoStreams:
-		return errUnsupportedFile
+		err = errUnsupportedFile
+		return
 	default:
 		_, ok := err.(thumbnailer.UnsupportedMIMEError)
 		if ok {
-			return errUnsupportedFile
+			err = errUnsupportedFile
 		}
-		return err
+		return
 	}
 
 	typ := mimeTypes[src.Mime]
@@ -134,7 +161,7 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 	}()
 
 	// Create database key-value pair
-	kv := keyValue{
+	kv = keyValue{
 		SHA1:   hash,
 		record: make(record, offsetTags),
 	}
@@ -153,8 +180,9 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 
 	// Receive any disk write errors
 	for i := 0; i < 2; i++ {
-		if err := <-errCh; err != nil {
-			return err
+		err = <-errCh
+		if err != nil {
+			return
 		}
 	}
 
@@ -163,7 +191,7 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 		return
 	}
 	if del {
-		return os.Remove(path)
+		err = os.Remove(path)
 	}
-	return nil
+	return
 }
