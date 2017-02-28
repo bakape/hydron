@@ -2,19 +2,24 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 )
 
 var (
-	stderr    = log.New(os.Stderr, "", 0)
 	modeFlags = map[string]*flag.FlagSet{
-		"import": flag.NewFlagSet("import", flag.PanicOnError),
+		"import":     flag.NewFlagSet("import", flag.PanicOnError),
+		"fetch_tags": flag.NewFlagSet("fetch_tags", flag.PanicOnError),
 	}
-	modeTooltips = map[string][2]string{
-		"import": {
+	modeTooltips = [][3]string{
+		{
+			"import",
 			"PATHS...",
 			"recursively imports all file and directory paths",
+		},
+		{
+			"fetch_tags",
+			"",
+			"attempt to fetch tags for imported images and webm from gelbooru.com",
 		},
 	}
 	deleteImported = modeFlags["import"].Bool(
@@ -49,6 +54,10 @@ func main() {
 	switch mode {
 	case "import":
 		err = importPaths(fl.Args(), *deleteImported)
+	case "fetch_tags":
+		err = fetchAllTags()
+	default:
+		printHelp()
 	}
 	if err != nil {
 		stderr.Println(err)
@@ -58,10 +67,9 @@ func main() {
 
 func printHelp() {
 	stderr.Println("Usage: hydron COMMAND [FLAGS...] ARGS...")
-	for _, c := range []string{"import"} {
-		tt := modeTooltips[c]
-		stderr.Printf("\nhydron %s %s\n  %s\n", c, tt[0], tt[1])
-		modeFlags[c].PrintDefaults()
+	for _, tt := range modeTooltips {
+		stderr.Printf("\nhydron %s %s\n  %s\n", tt[0], tt[1], tt[2])
+		modeFlags[tt[0]].PrintDefaults()
 	}
 	os.Exit(1)
 }

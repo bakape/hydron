@@ -148,6 +148,11 @@ func (r *record) SetTags(t [][]byte) {
 	*r = append((*r)[:offsetTags], bytes.Join(t, []byte{' '})...)
 }
 
+// Merge a set of tags with the existing ones in the record
+func (r *record) MergeTags(t [][]byte) {
+	r.SetTags(mergeTagSets(r.Tags(), t))
+}
+
 // Returns if an image is already imported
 func isImported(id [20]byte) (bool, error) {
 	tx, err := db.Begin(false)
@@ -161,4 +166,12 @@ func writeRecord(kv keyValue) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte("images")).Put(kv.SHA1[:], []byte(kv.record))
 	})
+}
+
+// Extract a copy of the underlying SHA1 key from a BoltDB key
+func extractKey(k []byte) (sha1 [20]byte) {
+	for i := range sha1 {
+		sha1[i] = k[i]
+	}
+	return
 }

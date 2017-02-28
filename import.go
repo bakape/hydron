@@ -62,26 +62,23 @@ func importPaths(paths []string, del bool) (err error) {
 		}()
 	}
 
-	total := len(files)
-	done := 0
+	p := progressLogger{
+		total:  len(files),
+		header: "importing and thumbnailing",
+	}
+	defer p.close()
 	for range files {
 		switch r := <-res; r.err {
 		case errUnsupportedFile:
-			total--
+			p.total--
 		case nil:
-			done++
+			p.done++
 		default:
-			total--
-			stderr.Printf("\n%s: %s\n", r.err, r.path)
+			p.total--
+			p.printError(fmt.Errorf("%s: %s", r.err, r.path))
 		}
-		fmt.Fprintf(
-			os.Stderr,
-			"\rimporting and thumbnailing: %d / %d - %.2f%%",
-			done, total,
-			float32(done)/float32(total)*100,
-		)
+		p.print()
 	}
-	stderr.Print("\n")
 
 	return nil
 }
@@ -126,6 +123,12 @@ func importFile(path string, del bool) (err error) {
 		errCh <- ioutil.WriteFile(path, buf, 0600)
 	}()
 	go func() {
+		// Some files may not have thumbnails. Simply skip and leave the burden
+		// of handling missing thumbnails for later code.
+		if thumb.Data == nil {
+			errCh <- nil
+			return
+		}
 		path := filepath.FromSlash(thumbPath(id, thumb.IsPNG))
 		errCh <- ioutil.WriteFile(path, thumb.Data, 0600)
 	}()
