@@ -109,9 +109,13 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 	}
 
 	src, thumb, err := thumbnailer.ProcessBuffer(buf, thumbnailerOpts)
-	if err != nil {
+	switch err {
+	case nil:
+	case thumbnailer.ErrNoCoverArt, thumbnailer.ErrNoStreams:
+		return errUnsupportedFile
+	default:
 		_, ok := err.(thumbnailer.UnsupportedMIMEError)
-		if ok || err == thumbnailer.ErrNoCoverArt {
+		if ok {
 			return errUnsupportedFile
 		}
 		return err
@@ -125,12 +129,6 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 		errCh <- writeFile(path, buf)
 	}()
 	go func() {
-		// Some files may not have thumbnails. Simply skip and leave the burden
-		// of handling missing thumbnails for later code.
-		if thumb.Data == nil {
-			errCh <- nil
-			return
-		}
 		path := filepath.FromSlash(thumbPath(id, thumb.IsPNG))
 		errCh <- writeFile(path, thumb.Data)
 	}()
