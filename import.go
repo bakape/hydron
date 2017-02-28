@@ -6,9 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -170,17 +168,4 @@ func importFile(path string, del bool, tags [][]byte) (err error) {
 		return os.Remove(path)
 	}
 	return nil
-}
-
-func detectFileType(r io.ReadSeeker) (fileType, error) {
-	buf := make([]byte, 512)
-	read, err := r.Read(buf)
-	if err != nil {
-		return 0, err
-	}
-	t, ok := mimeTypes[http.DetectContentType(buf[:read])]
-	if !ok {
-		return 0, errUnsupportedFile
-	}
-	return t, nil
 }
