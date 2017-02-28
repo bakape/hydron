@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -73,15 +72,15 @@ func fetchFromGelbooru(md5 [16]byte) (tags [][]byte, err error) {
 		return
 	}
 
-	tags = bytes.Split([]byte(d.Tags), []byte{' '})
+	tags = splitTagString(d.Tags)
 	if d.Rating != "" {
-		new := make([][]byte, len(tags)+1)
-		copy(new, tags)
-		new[len(tags)] = []byte{'r', 'a', 't', 'i', 'n', 'g', ':', d.Rating[0]}
-		tags = new
-	}
-	for i := range tags {
-		normalizeTag(&tags[i])
+		r := d.Rating[0]
+		if r != ' ' && r != '\x00' {
+			new := make([][]byte, len(tags)+1)
+			copy(new, tags)
+			new[len(tags)] = []byte{'r', 'a', 't', 'i', 'n', 'g', ':', r}
+			tags = new
+		}
 	}
 
 	return
