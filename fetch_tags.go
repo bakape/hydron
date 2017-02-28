@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/boltdb/bolt"
 )
 
 var (
@@ -101,20 +99,13 @@ func gelbooruURL(md5 [16]byte) string {
 func fetchAllTags() (err error) {
 	// Get list of candidate files
 	files := make(map[[20]byte]record, 64)
-	err = db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket([]byte("images")).Cursor()
-
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			r := record(v)
-			switch r.Type() {
-			case jpeg, png, gif, webm:
-				if !r.HaveFetchedTags() {
-					files[extractKey(k)] = r.Clone()
-				}
+	err = iterateRecords(func(k []byte, r record) {
+		switch r.Type() {
+		case jpeg, png, gif, webm:
+			if !r.HaveFetchedTags() {
+				files[extractKey(k)] = r.Clone()
 			}
 		}
-
-		return nil
 	})
 
 	res := make(chan tagFetchResponse)

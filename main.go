@@ -9,6 +9,7 @@ var (
 	modeFlags = map[string]*flag.FlagSet{
 		"import":     flag.NewFlagSet("import", flag.PanicOnError),
 		"fetch_tags": flag.NewFlagSet("fetch_tags", flag.PanicOnError),
+		"print":      flag.NewFlagSet("print", flag.PanicOnError),
 	}
 	modeTooltips = [][3]string{
 		{
@@ -20,6 +21,11 @@ var (
 			"fetch_tags",
 			"",
 			"attempt to fetch tags for imported images and webm from gelbooru.com",
+		},
+		{
+			"print",
+			"",
+			"prints the contents of the database for debuging purposes",
 		},
 	}
 	deleteImported = modeFlags["import"].Bool(
@@ -56,6 +62,8 @@ func main() {
 		err = importPaths(fl.Args(), *deleteImported)
 	case "fetch_tags":
 		err = fetchAllTags()
+	case "print":
+		err = printDB()
 	default:
 		printHelp()
 	}

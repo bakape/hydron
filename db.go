@@ -123,6 +123,18 @@ func (r record) Size() uint64 {
 	return r.getUint64(offsetSize)
 }
 
+func (r record) Width() uint64 {
+	return r.getUint64(offsetWidth)
+}
+
+func (r record) Height() uint64 {
+	return r.getUint64(offsetHeight)
+}
+
+func (r record) Length() uint64 {
+	return r.getUint64(offsetLength)
+}
+
 func (r record) SetStats(importTime, size, width, height, length uint64) {
 	r.setUint64(offsetImportIme, importTime)
 	r.setUint64(offsetSize, size)
@@ -174,4 +186,15 @@ func extractKey(k []byte) (sha1 [20]byte) {
 		sha1[i] = k[i]
 	}
 	return
+}
+
+// Execute a function on all records in the database
+func iterateRecords(fn func(k []byte, r record)) error {
+	return db.View(func(tx *bolt.Tx) error {
+		c := tx.Bucket([]byte("images")).Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			fn(k, record(v))
+		}
+		return nil
+	})
 }
