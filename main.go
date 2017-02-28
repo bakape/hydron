@@ -2,16 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strings"
 )
 
 var (
 	modeFlags = map[string]*flag.FlagSet{
-		"import":     flag.NewFlagSet("import", flag.PanicOnError),
-		"search":     flag.NewFlagSet("search", flag.PanicOnError),
-		"fetch_tags": flag.NewFlagSet("fetch_tags", flag.PanicOnError),
-		"print":      flag.NewFlagSet("print", flag.PanicOnError),
+		"import": flag.NewFlagSet("import", flag.PanicOnError),
+		"search": flag.NewFlagSet("search", flag.PanicOnError),
 	}
 	modeTooltips = [][3]string{
 		{
@@ -21,8 +20,13 @@ var (
 		},
 		{
 			"search",
-			"TAGS..",
+			"TAGS...",
 			"return paths to files that match a set of tags",
+		},
+		{
+			"complete_tag",
+			"PREFIX",
+			"suggest tags that start with the prefix for autocompletion",
 		},
 		{
 			"fetch_tags",
@@ -63,12 +67,11 @@ func main() {
 	}
 	mode := os.Args[1]
 	fl, ok := modeFlags[mode]
-	if !ok {
-		printHelp()
-	}
-	if err := fl.Parse(os.Args[2:]); err != nil {
-		stderr.Println(err)
-		printHelp()
+	if ok {
+		if err := fl.Parse(os.Args[2:]); err != nil {
+			stderr.Println(err)
+			printHelp()
+		}
 	}
 	if err := initDirs(); err != nil {
 		panic(err)
@@ -93,20 +96,31 @@ func main() {
 		err = printDB()
 	case "search":
 		err = searchPathsByTags(strings.Join(fl.Args(), " "), *returnRandom)
+	case "complete_tag":
+		if len(os.Args) < 3 {
+			printHelp()
+		}
+		tags := completeTag(os.Args[2])
+		fmt.Println(strings.Join(tags, " "))
 	default:
 		printHelp()
 	}
 	if err != nil {
 		stderr.Println(err)
 		os.Exit(1)
+	} else {
+		os.Exit(0)
 	}
 }
 
 func printHelp() {
-	stderr.Println("Usage: hydron COMMAND [FLAGS...] ARGS...")
+	stderr.Println("Usage: hydron COMMAND [FLAGS...] [ARGS...]")
 	for _, tt := range modeTooltips {
 		stderr.Printf("\nhydron %s %s\n  %s\n", tt[0], tt[1], tt[2])
-		modeFlags[tt[0]].PrintDefaults()
+		flags := modeFlags[tt[0]]
+		if flags != nil {
+			flags.PrintDefaults()
+		}
 	}
 	os.Exit(1)
 }

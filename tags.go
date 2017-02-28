@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"strings"
 	"sync"
 )
 
@@ -165,4 +166,24 @@ func searchByTags(tags [][]byte) [][20]byte {
 		arr = append(arr, f)
 	}
 	return arr
+}
+
+// Return 10 suggestions for tags by prefix
+func completeTag(prefix string) []string {
+	tagMu.RLock()
+	defer tagMu.RUnlock()
+
+	pre := string(normalizeTag([]byte(prefix)))
+	i := 0
+	tags := make([]string, 0, 10)
+	for tag := range tagIndex {
+		if strings.HasPrefix(tag, pre) {
+			tags = append(tags, tag)
+			i++
+		}
+		if i == 9 {
+			break
+		}
+	}
+	return tags
 }
