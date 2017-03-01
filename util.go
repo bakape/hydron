@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,14 @@ import (
 
 var stderr = log.New(os.Stderr, "", 0)
 
+// User passed an invalid file ID
+type invalidIDError string
+
+func (e invalidIDError) Error() string {
+	return "invalid id: " + string(e)
+}
+
+// Helper for logging progress of an action to the CLI
 type progressLogger struct {
 	done, total int
 	header      string
@@ -29,4 +38,28 @@ func (p progressLogger) printError(err error) {
 
 func (p progressLogger) close() {
 	stderr.Print("\n")
+}
+
+// Extract a copy of the underlying SHA1 key from a BoltDB key
+func extractKey(k []byte) (sha1 [20]byte) {
+	for i := range sha1 {
+		sha1[i] = k[i]
+	}
+	return
+}
+
+// Extract a file's SHA1 id from a string input
+func stringToSHA1(s string) (id [20]byte, err error) {
+	if len(s) != 40 {
+		err = invalidIDError(s)
+		return
+	}
+	buf, err := hex.DecodeString(s)
+	if err != nil {
+		err = invalidIDError(s + " : " + err.Error())
+		return
+	}
+
+	id = extractKey(buf)
+	return
 }

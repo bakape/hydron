@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"path/filepath"
 
 	"github.com/boltdb/bolt"
@@ -26,7 +27,10 @@ const (
 	offsetTags = offsetMD5 + 16
 )
 
-var db *bolt.DB
+var (
+	db                *bolt.DB
+	errRecordNotFound = errors.New("record not found")
+)
 
 func openDB() (err error) {
 	db, err = bolt.Open(filepath.Join(rootPath, "db.db"), 0600, nil)
@@ -227,16 +231,13 @@ func writeRecord(kv keyValue, tags [][]byte) (err error) {
 	defer tx.Rollback()
 
 	// Write changed tags to the database
-	buc := tx.Bucket([]byte("tags"))
-	for _, t := range modifiedTags {
-		err = buc.Put(t, encodeTaggedList(tagIndex[string(t)]))
-		if err != nil {
-			return
-		}
+	err = syncTags(tx, modifiedTags)
+	if err != nil {
+		return
 	}
 
 	// Write changed record
-	err = tx.Bucket([]byte("images")).Put(kv.SHA1[:], []byte(kv.record))
+	err = putRecord(tx, kv.SHA1, kv.record)
 	if err != nil {
 		return
 	}
@@ -244,10 +245,18 @@ func writeRecord(kv keyValue, tags [][]byte) (err error) {
 	return tx.Commit()
 }
 
-// Extract a copy of the underlying SHA1 key from a BoltDB key
-func extractKey(k []byte) (sha1 [20]byte) {
-	for i := range sha1 {
-		sha1[i] = k[i]
+func putRecord(tx *bolt.Tx, id [20]byte, r record) error {
+	return tx.Bucket([]byte("images")).Put(id[:], []byte(r))
+}
+
+// Sync select tags from memory to disk. Requires `tagMu.Lock()`.
+func syncTags(tx *bolt.Tx, tags [][]byte) (err error) {
+	buc := tx.Bucket([]byte("tags"))
+	for _, t := range tags {
+		err = buc.Put(t, encodeTaggedList(tagIndex[string(t)]))
+		if err != nil {
+			return
+		}
 	}
 	return
 }
@@ -261,4 +270,36 @@ func iterateRecords(fn func(k []byte, r record)) error {
 		}
 		return nil
 	})
+}
+
+// Add tags to an existing record
+func addTags(id [20]byte, tags [][]byte) (err error) {
+	tagMu.Lock()
+	defer tagMu.Unlock()
+
+	tx, err := db.Begin(true)
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+
+	r := record(tx.Bucket([]byte("images")).Get(id[:]))
+	if r == nil {
+		return errRecordNotFound
+	}
+	for _, t := range tags {
+		indexTagNoMu(t, id)
+	}
+	r.MergeTags(tags)
+
+	err = putRecord(tx, id, r)
+	if err != nil {
+		return
+	}
+	err = syncTags(tx, tags)
+	if err != nil {
+		return
+	}
+
+	return tx.Commit()
 }

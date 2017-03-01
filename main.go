@@ -38,6 +38,11 @@ var (
 			"Suggest tags that start with PREFIX for autocompletion.",
 		},
 		{
+			"add_tags",
+			"ID TAGS...",
+			"Add TAGS... to file specified by hex-encoded SHA1 hash ID.",
+		},
+		{
 			"fetch_tags",
 			"",
 			"Fetch tags for imported images and webm from gelbooru.com.",
@@ -71,9 +76,7 @@ var (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		printHelp()
-	}
+	assertArgCount(2)
 	mode := os.Args[1]
 	fl, ok := modeFlags[mode]
 	if ok {
@@ -106,11 +109,12 @@ func main() {
 	case "search":
 		err = searchPathsByTags(strings.Join(fl.Args(), " "), *returnRandom)
 	case "complete_tag":
-		if len(os.Args) < 3 {
-			printHelp()
-		}
+		assertArgCount(3)
 		tags := completeTag(os.Args[2])
 		fmt.Println(strings.Join(tags, " "))
+	case "add_tags":
+		assertArgCount(4)
+		err = addTagsCLI(os.Args[2], os.Args[3:])
 	default:
 		printHelp()
 	}
@@ -119,6 +123,12 @@ func main() {
 		os.Exit(1)
 	} else {
 		os.Exit(0)
+	}
+}
+
+func assertArgCount(i int) {
+	if len(os.Args) < i {
+		printHelp()
 	}
 }
 

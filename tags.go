@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"sync"
 )
@@ -213,4 +214,13 @@ func completeTag(prefix string) []string {
 		}
 	}
 	return tags
+}
+
+// Add tags to the target file from the CLI
+func addTagsCLI(id string, tags []string) error {
+	sha1, err := stringToSHA1(os.Args[2])
+	if err != nil {
+		return err
+	}
+	return addTags(sha1, splitTagString(strings.Join(tags, " ")))
 }
