@@ -11,6 +11,7 @@ var (
 	modeFlags = map[string]*flag.FlagSet{
 		"import": flag.NewFlagSet("import", flag.PanicOnError),
 		"search": flag.NewFlagSet("search", flag.PanicOnError),
+		"serve":  flag.NewFlagSet("serve", flag.PanicOnError),
 	}
 	modeTooltips = [][3]string{
 		{
@@ -53,6 +54,12 @@ var (
 			"Fetch tags for imported images and webm from gelbooru.com.",
 		},
 		{
+			"serve",
+			"",
+			`Launch hydron in server mode, exposing files and commands through
+  a HTTP/JSON API until terminated.`,
+		},
+		{
 			"print",
 			"",
 			"Print the contents of the database for debuging purposes.",
@@ -77,6 +84,11 @@ var (
 		"r",
 		false,
 		"return only one random matched file",
+	)
+	address = modeFlags["serve"].String(
+		"a",
+		":8000",
+		"address to listen on for requests",
 	)
 )
 
@@ -123,6 +135,8 @@ func main() {
 	case "remove_tags":
 		assertArgCount(4)
 		err = removeTagsCLI(os.Args[2], os.Args[3:])
+	case "serve":
+		err = startServer(*address)
 	default:
 		printHelp()
 	}
