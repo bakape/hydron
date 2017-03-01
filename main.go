@@ -16,27 +16,36 @@ var (
 		{
 			"import",
 			"PATHS...",
-			"recursively imports all file and directory paths",
+			"Recursively import all file and directory PATHS.",
 		},
 		{
 			"search",
 			"TAGS...",
-			"return paths to files that match a set of tags",
+			"Return paths to files that match the set of TAGS." + `
+  TAGS can include prefixed system tags for searching by image metadata:
+    size, width, height, length, tag_count,
+  followed by one of these comparison operators:
+    >, <, =
+  and a positive number.
+  Examples:
+    hydron search 'system:width>1920 system:height>1080'
+    hydron search 'system:tag_count=0
+    hydron search 'red_scarf system:size<10485760'`,
 		},
 		{
 			"complete_tag",
 			"PREFIX",
-			"suggest tags that start with the prefix for autocompletion",
+			"Suggest tags that start with PREFIX for autocompletion.",
 		},
 		{
 			"fetch_tags",
 			"",
-			"fetch tags for imported images and webm from gelbooru.com",
+			"Fetch tags for imported images and webm from gelbooru.com.",
 		},
 		{
 			"print",
 			"",
-			"prints the contents of the database for debuging purposes",
+			"Print the contents of the database for debuging purposes.",
 		},
 	}
 	deleteImported = modeFlags["import"].Bool(
@@ -119,6 +128,7 @@ func printHelp() {
 		stderr.Printf("\nhydron %s %s\n  %s\n", tt[0], tt[1], tt[2])
 		flags := modeFlags[tt[0]]
 		if flags != nil {
+			stderr.Print("\n")
 			flags.PrintDefaults()
 		}
 	}
