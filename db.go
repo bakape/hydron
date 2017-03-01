@@ -189,7 +189,9 @@ func (r record) Tags() [][]byte {
 }
 
 func (r *record) SetTags(t [][]byte) {
-	*r = append((*r)[:offsetTags], bytes.Join(t, []byte{' '})...)
+	// If one of the tags in t and r somehow share some allocated memory,
+	// prepare for infinite memmove. Safer to always replace r with a clone.
+	*r = append(r.Clone()[:offsetTags], bytes.Join(t, []byte{' '})...)
 }
 
 // Merge a set of tags with the existing ones in the record
@@ -283,9 +285,9 @@ func addTags(id [20]byte, tags [][]byte) (err error) {
 	}
 	defer tx.Rollback()
 
-	r := record(tx.Bucket([]byte("images")).Get(id[:]))
-	if r == nil {
-		return errRecordNotFound
+	r, err := getRecord(tx, id)
+	if err != nil {
+		return
 	}
 	for _, t := range tags {
 		indexTagNoMu(t, id)
@@ -302,4 +304,45 @@ func addTags(id [20]byte, tags [][]byte) (err error) {
 	}
 
 	return tx.Commit()
+}
+
+// Retrieve a specific record from the DB
+func getRecord(tx *bolt.Tx, id [20]byte) (r record, err error) {
+	r = record(tx.Bucket([]byte("images")).Get(id[:]))
+	if r == nil {
+		err = errRecordNotFound
+	}
+	return
+}
+
+// Remove tags from an existing record
+func removeTags(id [20]byte, tags [][]byte) (err error) {
+	tagMu.Lock()
+	defer tagMu.Unlock()
+
+	tx, err := db.Begin(true)
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+
+	r, err := getRecord(tx, id)
+	if err != nil {
+		return
+	}
+
+	unindexFileNoMu(id, tags)
+	r.SetTags(subtractTags(r.Tags(), tags))
+	err = syncTags(tx, tags)
+	if err != nil {
+		return
+	}
+
+	err = putRecord(tx, id, r)
+	if err != nil {
+		return
+	}
+
+	err = tx.Commit()
+	return
 }

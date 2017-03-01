@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"sync"
 )
@@ -114,20 +113,41 @@ func normalizeTag(t []byte) []byte {
 
 // Merge two sets of tags
 func mergeTagSets(a, b [][]byte) [][]byte {
-	tags := make(map[string]struct{}, len(a)+len(b))
-	for _, set := range [...][][]byte{a, b} {
-		for _, tag := range set {
-			tags[string(tag)] = struct{}{}
+	set := make(map[string]struct{}, len(a)+len(b))
+	for _, arr := range [...][][]byte{a, b} {
+		for _, tag := range arr {
+			set[string(tag)] = struct{}{}
 		}
 	}
 
-	merged := make([][]byte, 0, len(tags))
-	for tag := range tags {
-		if len(tag) != 0 {
-			merged = append(merged, []byte(tag))
-		}
+	return setToTags(set)
+}
+
+// Convert an array of tags to a set
+func tagsToSet(tags [][]byte) map[string]struct{} {
+	set := make(map[string]struct{}, len(tags))
+	for _, tag := range tags {
+		set[string(tag)] = struct{}{}
 	}
-	return merged
+	return set
+}
+
+// Convert a set of tags to an array
+func setToTags(set map[string]struct{}) [][]byte {
+	tags := make([][]byte, 0, len(set))
+	for tag := range set {
+		tags = append(tags, []byte(tag))
+	}
+	return tags
+}
+
+// Subtact tags in set b from set a
+func subtractTags(a, b [][]byte) [][]byte {
+	set := tagsToSet(a)
+	for _, tag := range b {
+		delete(set, string(tag))
+	}
+	return setToTags(set)
 }
 
 // Find files that match all tags
@@ -218,9 +238,22 @@ func completeTag(prefix string) []string {
 
 // Add tags to the target file from the CLI
 func addTagsCLI(id string, tags []string) error {
-	sha1, err := stringToSHA1(os.Args[2])
+	return modTagsCLI(id, tags, addTags)
+}
+
+func modTagsCLI(
+	id string,
+	tags []string,
+	fn func([20]byte, [][]byte) error,
+) error {
+	sha1, err := stringToSHA1(id)
 	if err != nil {
 		return err
 	}
-	return addTags(sha1, splitTagString(strings.Join(tags, " ")))
+	return fn(sha1, splitTagString(strings.Join(tags, " ")))
+}
+
+// Remove tags from the target file from the CLI
+func removeTagsCLI(id string, tags []string) error {
+	return modTagsCLI(id, tags, removeTags)
 }

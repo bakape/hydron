@@ -40,7 +40,12 @@ var (
 		{
 			"add_tags",
 			"ID TAGS...",
-			"Add TAGS... to file specified by hex-encoded SHA1 hash ID.",
+			"Add TAGS to file specified by hex-encoded SHA1 hash ID.",
+		},
+		{
+			"remove_tags",
+			"ID TAGS...",
+			"Remove TAGS from file specified by hex-encoded SHA1 hash ID.",
 		},
 		{
 			"fetch_tags",
@@ -115,6 +120,9 @@ func main() {
 	case "add_tags":
 		assertArgCount(4)
 		err = addTagsCLI(os.Args[2], os.Args[3:])
+	case "remove_tags":
+		assertArgCount(4)
+		err = removeTagsCLI(os.Args[2], os.Args[3:])
 	default:
 		printHelp()
 	}
