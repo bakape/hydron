@@ -1,4 +1,4 @@
-# thumbnailer
+# hydron
 Media tagger and organizer backend.
 Hydron aims to be a much faster alternative to the
 [Hydrus Network](https://github.com/hydrusnetwork/hydrus) and is currently in
