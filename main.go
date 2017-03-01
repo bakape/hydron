@@ -87,7 +87,7 @@ var (
 	)
 	address = modeFlags["serve"].String(
 		"a",
-		":8000",
+		":8010",
 		"address to listen on for requests",
 	)
 )
