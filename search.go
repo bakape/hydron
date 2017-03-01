@@ -17,7 +17,10 @@ func searchPathsByTags(tags string, random bool) (err error) {
 		return printAllPaths(random)
 	}
 
-	matched := searchByTags(splitTagString(tags))
+	matched, err := searchByTags(splitTagString(tags))
+	if err != nil {
+		return
+	}
 	types := make([]fileType, len(matched))
 
 	// Retrieve file types of all matches

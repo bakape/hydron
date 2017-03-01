@@ -157,7 +157,31 @@ func (r record) SetMD5(MD5 [16]byte) {
 }
 
 func (r record) Tags() [][]byte {
-	return bytes.Split(r[offsetTags:], []byte{' '})
+	raw := r[offsetTags:]
+	if len(raw) == 0 {
+		return nil
+	}
+
+	var (
+		tags     = make([][]byte, 0, 32)
+		i, start int
+		b        byte
+	)
+	for i, b = range raw {
+		switch b {
+		case ' ':
+			if start != i {
+				tags = append(tags, raw[start:i])
+			}
+			start = i + 1
+		}
+	}
+	tags = append(tags, raw[start:i+1])
+
+	if len(tags) == 0 {
+		return nil
+	}
+	return tags
 }
 
 func (r *record) SetTags(t [][]byte) {
