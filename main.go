@@ -22,7 +22,7 @@ var (
 			"search",
 			"TAGS...",
 			"Return paths to files that match the set of TAGS." + `
-  TAGS can include prefixed system tags for searching by image metadata:
+  TAGS can include prefixed system tags for searching by file metadata:
     size, width, height, length, tag_count,
   followed by one of these comparison operators:
     >, <, =
