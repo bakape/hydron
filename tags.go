@@ -74,9 +74,9 @@ func encodeTaggedList(tagged map[[20]byte]bool) []byte {
 	return enc
 }
 
-// Split a space delimited list of tags and normalize each
-func splitTagString(s string) [][]byte {
-	split := bytes.Split([]byte(s), []byte{' '})
+// Split a sep-delimited list of tags and normalize each
+func splitTagString(s string, sep byte) [][]byte {
+	split := bytes.Split([]byte(s), []byte{sep})
 	tags := make([][]byte, 0, len(split))
 	for _, tag := range split {
 		tag = bytes.TrimSpace(tag)
@@ -150,72 +150,6 @@ func subtractTags(a, b [][]byte) [][]byte {
 	return setToTags(set)
 }
 
-// Find files that match all tags
-func searchByTags(tags [][]byte) (arr [][20]byte, err error) {
-	if len(tags) == 0 {
-		return
-	}
-
-	// Separate system tags from regular tags
-	regular := make([][]byte, 0, len(tags))
-	system := make([][]byte, 0, len(tags))
-	for _, t := range tags {
-		if isSystemTag(t) {
-			system = append(system, t)
-		} else {
-			regular = append(regular, t)
-		}
-	}
-
-	tagMu.RLock()
-	defer tagMu.RUnlock()
-
-	var matched map[[20]byte]bool
-
-	if len(regular) != 0 {
-		first := tagIndex[string(regular[0])]
-		if first == nil {
-			return
-		}
-
-		// Copy map. Original must not be modified.
-		matched = make(map[[20]byte]bool, len(first))
-		for f := range first {
-			matched[f] = true
-		}
-
-		// Delete non-intersecting matches
-		for i := 1; i < len(regular); i++ {
-			files := tagIndex[string(regular[i])]
-			if files == nil {
-				return
-			}
-			for f := range matched {
-				if !files[f] {
-					delete(matched, f)
-				}
-			}
-		}
-
-		if len(matched) == 0 {
-			return
-		}
-	}
-
-	if len(system) != 0 {
-		matched, err = searchBySystemTags(matched, system)
-		if err != nil {
-			return
-		}
-	}
-
-	arr = make([][20]byte, 0, len(matched))
-	for f := range matched {
-		arr = append(arr, f)
-	}
-	return
-}
-
 // Return 10 suggestions for tags by prefix
 func completeTag(prefix string) []string {
 	tagMu.RLock()
@@ -250,7 +184,7 @@ func modTagsCLI(
 	if err != nil {
 		return err
 	}
-	return fn(sha1, splitTagString(strings.Join(tags, " ")))
+	return fn(sha1, splitTagString(strings.Join(tags, " "), ' '))
 }
 
 // Remove tags from the target file from the CLI

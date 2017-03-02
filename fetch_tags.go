@@ -72,7 +72,7 @@ func fetchFromGelbooru(md5 [16]byte) (tags [][]byte, err error) {
 		return
 	}
 
-	tags = splitTagString(d.Tags)
+	tags = splitTagString(d.Tags, ' ')
 	if d.Rating != "" {
 		r := d.Rating[0]
 		if r != ' ' && r != '\x00' {
@@ -135,7 +135,7 @@ func fetchFileTags(files map[[20]byte]record) error {
 		case nil:
 			v.SetFetchedTags()
 			kv := keyValue{
-				SHA1:   k,
+				sha1:   k,
 				record: v,
 			}
 			err := writeRecord(kv, mergeTagSets(v.Tags(), r.tags))

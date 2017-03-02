@@ -52,7 +52,7 @@ func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 	n := runtime.NumCPU() + 1
 	var decodedTags [][]byte
 	if tags != "" {
-		decodedTags = splitTagString(tags)
+		decodedTags = splitTagString(tags, ' ')
 	}
 	for i := 0; i < n; i++ {
 		go func() {
@@ -85,7 +85,7 @@ func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 			if fetchTags {
 				switch r.Type() {
 				case jpeg, png, gif, webm:
-					toFetch[r.SHA1] = r.record
+					toFetch[r.sha1] = r.record
 				}
 			}
 			p.done++
@@ -159,7 +159,7 @@ func importFile(path string, del bool, tags [][]byte) (
 
 	// Create database key-value pair
 	kv = keyValue{
-		SHA1:   hash,
+		sha1:   hash,
 		record: make(record, offsetTags),
 	}
 	kv.SetType(typ)

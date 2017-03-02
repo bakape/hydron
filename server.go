@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,43 +11,32 @@ import (
 	"github.com/dimfeld/httptreemux"
 )
 
-var (
-	// Set of headers for serving files
-	imageHeaders = map[string]string{
-		// max-age set to 350 days. Some caches and browsers ignore max-age, if
-		// it is a year or greater, so keep it a little below.
-		"Cache-Control":   "max-age=30240000, public, immutable",
-		"X-Frame-Options": "sameorigin",
-		// Fake E-tag, because all images are immutable
-		"ETag": "0",
-	}
-)
-
 func startServer(addr string) error {
 	stderr.Println("listening on " + addr)
 
 	r := httptreemux.New()
+	r.NotFoundHandler = func(w http.ResponseWriter, _ *http.Request) {
+		send404(w)
+	}
 	r.PanicHandler = func(
 		w http.ResponseWriter,
-		_ *http.Request,
+		r *http.Request,
 		err interface{},
 	) {
-		sendError(w, 500, fmt.Errorf("%s", err))
+		send500(w, r, errors.New(fmt.Sprint(err)))
 	}
 
 	r.GET("/files/*path", serveFiles)
+	r.GET("/search/:tags", serveSearch)
+	r.GET("/search/", func(
+		w http.ResponseWriter,
+		r *http.Request,
+		_ map[string]string,
+	) {
+		serveSearch(w, r, nil)
+	})
 
 	return http.ListenAndServe(addr, r)
-}
-
-// Text-only 404 response
-func send404(w http.ResponseWriter) {
-	http.Error(w, "404 not found", 404)
-}
-
-// Text-only error response
-func sendError(w http.ResponseWriter, code int, err error) {
-	http.Error(w, fmt.Sprintf("%d %s", code, err), code)
 }
 
 // More performant handler for serving file assets. These are immutable, so we
@@ -70,10 +60,57 @@ func serveFiles(w http.ResponseWriter, r *http.Request, p map[string]string) {
 	}
 	defer file.Close()
 
-	head := w.Header()
-	for key, val := range imageHeaders {
-		head.Set(key, val)
-	}
+	setHeaders(w, map[string]string{
+		// max-age set to 350 days. Some caches and browsers ignore max-age, if
+		// it is a year or greater, so keep it a little below.
+		"Cache-Control":   "max-age=30240000, public, immutable",
+		"X-Frame-Options": "sameorigin",
+		// Fake E-tag, because all files are immutable
+		"ETag": "0",
+	})
 
 	http.ServeContent(w, r, p["path"], time.Time{}, file)
+}
+
+// Serve a tag search result as JSON
+func serveSearch(w http.ResponseWriter, r *http.Request, p map[string]string) {
+	if p == nil {
+		serveAllFileJSON(w, r)
+		return
+	}
+
+	matched, err := searchByTags(splitTagString(p["tags"], ','))
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+
+	tx, err := db.Begin(false)
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+
+	jrs := newJSONRecordStreamer(w, r)
+	defer jrs.close()
+	buc := tx.Bucket([]byte("images"))
+	for _, id := range matched {
+		jrs.writeKeyValue(keyValue{
+			sha1:   id,
+			record: record(buc.Get(id[:])),
+		})
+	}
+	jrs.err = tx.Rollback()
+}
+
+// Serve all file data as JSON
+func serveAllFileJSON(w http.ResponseWriter, r *http.Request) {
+	jrs := newJSONRecordStreamer(w, r)
+	defer jrs.close()
+	jrs.err = iterateRecords(func(k []byte, rec record) {
+		jrs.writeKeyValue(keyValue{
+			sha1:   extractKey(k),
+			record: rec,
+		})
+	})
 }
