@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"strings"
+
 	"github.com/dimfeld/httptreemux"
 )
 
@@ -31,7 +33,7 @@ func startServer(addr string) error {
 
 	// JSON
 	r.GET("/search/:tags", serveSearch)
-	r.GET("/search/", func(
+	r.GET("/search/", func( // Dumps everything
 		w http.ResponseWriter,
 		r *http.Request,
 		_ map[string]string,
@@ -40,7 +42,8 @@ func startServer(addr string) error {
 	})
 
 	// Commands
-	r.GET("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
+	r.POST("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
+	r.POST("/remove/:ids", removeFilesHTTP)
 
 	// Uploads
 	r.POST("/import", wrapHandler(importUpload))
@@ -168,5 +171,26 @@ func fetchAllTagsHTTP(w http.ResponseWriter, r *http.Request) {
 	err := fetchAllTags()
 	if err != nil {
 		send500(w, r, err)
+	}
+}
+
+// Remove files from the database by ID
+func removeFilesHTTP(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+) {
+	err := removeFilesCLI(strings.Split(p["ids"], ","))
+	switch err {
+	case nil:
+	case errRecordNotFound:
+		send404(w)
+	default:
+		_, ok := err.(invalidIDError)
+		if ok {
+			sendError(w, 400, err)
+		} else {
+			send500(w, r, err)
+		}
 	}
 }

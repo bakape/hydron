@@ -20,6 +20,11 @@ var (
 			"Recursively import all file and directory PATHS.",
 		},
 		{
+			"remove",
+			"IDs...",
+			"Remove files specified by hex-encoded SHA1 hash IDs.",
+		},
+		{
 			"search",
 			"TAGS...",
 			"Return paths to files that match the set of TAGS." + `
@@ -113,12 +118,16 @@ func main() {
 	var err error
 	switch mode {
 	case "import":
+		assertArgCount(3)
 		err = importPaths(
 			fl.Args(),
 			*deleteImported,
 			*fetchTagsForImports,
 			*addTagsToImported,
 		)
+	case "remove":
+		assertArgCount(3)
+		err = removeFilesCLI(os.Args[2:])
 	case "fetch_tags":
 		err = fetchAllTags()
 	case "print":

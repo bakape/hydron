@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
+	"os"
 	"path/filepath"
 
 	"github.com/boltdb/bolt"
@@ -207,4 +209,65 @@ func removeTags(id [20]byte, tags [][]byte) (err error) {
 
 	err = tx.Commit()
 	return
+}
+
+// Remove a file from the database by ID
+func removeFile(id [20]byte) (err error) {
+	tagMu.Lock()
+	defer tagMu.Unlock()
+
+	tx, err := db.Begin(true)
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+
+	r, err := getRecord(tx, id)
+	if err != nil {
+		return
+	}
+
+	// Remove files
+	idStr := hex.EncodeToString(id[:])
+	paths := [...]string{
+		sourcePath(idStr, r.Type()),
+		thumbPath(idStr, r.ThumbIsPNG()),
+	}
+	for _, p := range paths {
+		err = os.Remove(p)
+		if err != nil {
+			return
+		}
+	}
+
+	// Remove DB record
+	err = tx.Bucket([]byte("images")).Delete(id[:])
+	if err != nil {
+		return
+	}
+
+	// Update tag index
+	tags := r.Tags()
+	unindexFileNoMu(id, tags)
+	err = syncTags(tx, tags)
+	if err != nil {
+		return
+	}
+
+	return tx.Commit()
+}
+
+// Remove files from the database by ID from the CLI
+func removeFilesCLI(ids []string) error {
+	for _, id := range ids {
+		sha1, err := stringToSHA1(id)
+		if err != nil {
+			return err
+		}
+		err = removeFile(sha1)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
