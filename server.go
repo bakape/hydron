@@ -26,7 +26,10 @@ func startServer(addr string) error {
 		send500(w, r, errors.New(fmt.Sprint(err)))
 	}
 
+	// Assets
 	r.GET("/files/*path", serveFiles)
+
+	// JSON
 	r.GET("/search/:tags", serveSearch)
 	r.GET("/search/", func(
 		w http.ResponseWriter,
@@ -35,6 +38,11 @@ func startServer(addr string) error {
 	) {
 		serveSearch(w, r, nil)
 	})
+
+	// Commands
+	r.GET("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
+
+	// Uploads
 	r.POST("/import", wrapHandler(importUpload))
 
 	return http.ListenAndServe(addr, r)
@@ -151,5 +159,14 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			send500(w, r, err)
 		}
+	}
+}
+
+// Attempt to fetch tags for all files that have not yet had their tags synced
+// with gelbooru.com
+func fetchAllTagsHTTP(w http.ResponseWriter, r *http.Request) {
+	err := fetchAllTags()
+	if err != nil {
+		send500(w, r, err)
 	}
 }
