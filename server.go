@@ -35,6 +35,7 @@ func startServer(addr string) error {
 	) {
 		serveSearch(w, r, nil)
 	})
+	r.POST("/import", wrapHandler(importUpload))
 
 	return http.ListenAndServe(addr, r)
 }
@@ -113,4 +114,42 @@ func serveAllFileJSON(w http.ResponseWriter, r *http.Request) {
 			record: rec,
 		})
 	})
+}
+
+// Download and import a file from the client
+func importUpload(w http.ResponseWriter, r *http.Request) {
+	f, _, err := r.FormFile("file")
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	defer f.Close()
+
+	// Assign tags to file
+	var tags [][]byte
+	if s := r.FormValue("tags"); s != "" {
+		tags = splitTagString(s, ',')
+	}
+
+	kv, err := importFile(f, tags)
+	switch err {
+	case nil:
+	case errImported:
+		sendError(w, 409, err)
+		return
+	case errUnsupportedFile:
+		sendError(w, 400, err)
+		return
+	default:
+		send500(w, r, err)
+		return
+	}
+
+	// Fetch tags from boorus
+	if r.FormValue("fetch_tags") != "true" && canFetchTags(kv.record) {
+		err := fetchSingleFileTags(kv)
+		if err != nil {
+			send500(w, r, err)
+		}
+	}
 }

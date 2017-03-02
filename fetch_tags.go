@@ -20,6 +20,7 @@ type tagFetchRequest struct {
 }
 
 type tagFetchResponse struct {
+	md5  [16]byte
 	tags [][]byte
 	err  error
 }
@@ -31,7 +32,11 @@ func init() {
 			for {
 				req := <-fetchTags
 				tags, err := fetchFromGelbooru(req.md5)
-				req.res <- tagFetchResponse{tags, err}
+				req.res <- tagFetchResponse{
+					md5:  req.md5,
+					tags: tags,
+					err:  err,
+				}
 			}
 		}()
 	}
@@ -97,12 +102,12 @@ func gelbooruURL(md5 [16]byte) string {
 // with gelbooru.com
 func fetchAllTags() error {
 	// Get list of candidate files
-	files := make(map[[20]byte]record, 64)
+	files := make(map[[16]byte]keyValue, 64)
 	err := iterateRecords(func(k []byte, r record) {
-		switch r.Type() {
-		case jpeg, png, gif, webm:
-			if !r.HaveFetchedTags() {
-				files[extractKey(k)] = r.Clone()
+		if canFetchTags(r) && !r.HaveFetchedTags() {
+			files[r.MD5()] = keyValue{
+				sha1:   extractKey(k),
+				record: r.Clone(),
 			}
 		}
 	})
@@ -113,13 +118,22 @@ func fetchAllTags() error {
 	return fetchFileTags(files)
 }
 
+// Return, if file is eligible for fetching tags from boorus
+func canFetchTags(r record) bool {
+	switch r.Type() {
+	case jpeg, png, gif, webm:
+		return true
+	}
+	return false
+}
+
 // Fetch tags for listed files
-func fetchFileTags(files map[[20]byte]record) error {
+func fetchFileTags(files map[[16]byte]keyValue) error {
 	res := make(chan tagFetchResponse)
 	go func() {
-		for _, f := range files {
+		for md5 := range files {
 			fetchTags <- tagFetchRequest{
-				md5: f.MD5(),
+				md5: md5,
 				res: res, // Simply fan-in the response
 			}
 		}
@@ -130,15 +144,10 @@ func fetchFileTags(files map[[20]byte]record) error {
 		header: "fetching tags",
 	}
 	defer p.close()
-	for k, v := range files {
+	for range files {
 		switch r := <-res; r.err {
 		case nil:
-			v.SetFetchedTags()
-			kv := keyValue{
-				sha1:   k,
-				record: v,
-			}
-			err := writeRecord(kv, mergeTagSets(v.Tags(), r.tags))
+			err := writeFetchedTags(files[r.md5], r.tags)
 			if err != nil {
 				return err
 			}
@@ -151,4 +160,25 @@ func fetchFileTags(files map[[20]byte]record) error {
 	}
 
 	return nil
+}
+
+func writeFetchedTags(kv keyValue, tags [][]byte) error {
+	kv.SetFetchedTags()
+	return writeRecord(kv, tags)
+}
+
+func fetchSingleFileTags(kv keyValue) (err error) {
+	res := make(chan tagFetchResponse)
+	fetchTags <- tagFetchRequest{
+		md5: kv.MD5(),
+		res: res,
+	}
+	r := <-res
+	switch r.err {
+	case nil:
+		err = writeFetchedTags(kv, r.tags)
+	case errNoMatch:
+		err = nil
+	}
+	return
 }

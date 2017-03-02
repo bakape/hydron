@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	"github.com/dimfeld/httptreemux"
 	"github.com/mailru/easyjson/jwriter"
 )
 
@@ -44,12 +45,8 @@ func (j *jsonRecordStreamer) writeKeyValue(kv keyValue) {
 	j.DumpTo(j.w)
 }
 
-func send400(w http.ResponseWriter, err error) {
-	http.Error(w, fmt.Sprintf("400 %s", err), 400)
-}
-
-func send403(w http.ResponseWriter, err error) {
-	http.Error(w, fmt.Sprintf("403 %s", err), 403)
+func sendError(w http.ResponseWriter, code int, err error) {
+	http.Error(w, fmt.Sprintf("%d %s", code, err), code)
 }
 
 func send404(w http.ResponseWriter) {
@@ -74,4 +71,11 @@ func setJSONHeaders(w http.ResponseWriter) {
 		"Expires":       "Fri, 01 Jan 1990 00:00:00 GMT",
 		"Content-Type":  "application/json",
 	})
+}
+
+// Adapter for http.HandlerFunc -> httptreemux.HandlerFunc
+func wrapHandler(fn http.HandlerFunc) httptreemux.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+		fn(w, r)
+	}
 }

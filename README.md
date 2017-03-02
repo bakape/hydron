@@ -7,7 +7,7 @@ early development.
 Platforms: Linux, OSX, Win64
 
 ##Build dependencies
-* [Go](https://golang.org/doc/install) >=1.8 (for building server)
+* [Go](https://golang.org/doc/install) >=1.8
 * GCC or Clang
 * pkg-config
 * pthread

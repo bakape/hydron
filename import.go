@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"time"
 
+	"io"
+
 	"github.com/bakape/thumbnailer"
 )
 
@@ -56,11 +58,27 @@ func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 	}
 	for i := 0; i < n; i++ {
 		go func() {
-			for f := range src {
-				kv, err := importFile(f, del, decodedTags)
+			for path := range src {
+				f, err := os.Open(path)
+				if err != nil {
+					res <- response{
+						path: path,
+						err:  err,
+					}
+					continue
+				}
+
+				kv, err := importFile(f, decodedTags)
+				f.Close()
+				if del {
+					switch err {
+					case nil, errImported:
+						err = os.Remove(path)
+					}
+				}
 				res <- response{
 					keyValue: kv,
-					path:     f,
+					path:     path,
 					err:      err,
 				}
 			}
@@ -71,9 +89,9 @@ func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 		total:  len(files),
 		header: "importing and thumbnailing",
 	}
-	var toFetch map[[20]byte]record
+	var toFetch map[[16]byte]keyValue
 	if fetchTags {
-		toFetch = make(map[[20]byte]record, len(files))
+		toFetch = make(map[[16]byte]keyValue, len(files))
 	}
 	for range files {
 		switch r := <-res; r.err {
@@ -82,11 +100,8 @@ func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 		case errImported:
 			p.done++
 		case nil:
-			if fetchTags {
-				switch r.Type() {
-				case jpeg, png, gif, webm:
-					toFetch[r.sha1] = r.record
-				}
+			if fetchTags && canFetchTags(r.record) {
+				toFetch[r.record.MD5()] = r.keyValue
 			}
 			p.done++
 		default:
@@ -105,15 +120,26 @@ func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 	return nil
 }
 
-func importFile(path string, del bool, tags [][]byte) (
-	kv keyValue, err error,
-) {
+// Import file from disk path
+func importPath(path string, del bool, tags [][]byte) (kv keyValue, err error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 
+	kv, err = importFile(f, tags)
+	if del {
+		switch err {
+		case nil, errImported:
+			err = os.Remove(path)
+		}
+	}
+	return
+}
+
+// Import any readable file
+func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 	buf, err := ioutil.ReadAll(f)
 	if err != nil {
 		return
@@ -125,10 +151,6 @@ func importFile(path string, del bool, tags [][]byte) (
 	if err != nil {
 		return
 	} else if isImported {
-		if del {
-			err = os.Remove(path)
-			return
-		}
 		err = errImported
 		return
 	}
@@ -184,11 +206,5 @@ func importFile(path string, del bool, tags [][]byte) (
 	}
 
 	err = writeRecord(kv, tags)
-	if err != nil {
-		return
-	}
-	if del {
-		err = os.Remove(path)
-	}
 	return
 }
