@@ -211,7 +211,7 @@ func removeTags(id [20]byte, tags [][]byte) (err error) {
 	return
 }
 
-// Remove a file from the database by ID
+// Remove a file from the database by ID. Non-existant files are ignored.
 func removeFile(id [20]byte) (err error) {
 	tagMu.Lock()
 	defer tagMu.Unlock()
@@ -223,7 +223,11 @@ func removeFile(id [20]byte) (err error) {
 	defer tx.Rollback()
 
 	r, err := getRecord(tx, id)
-	if err != nil {
+	switch err {
+	case nil:
+	case errRecordNotFound:
+		return nil
+	default:
 		return
 	}
 

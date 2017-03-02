@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
-
 	"strings"
+	"time"
 
 	"github.com/dimfeld/httptreemux"
 )
@@ -32,14 +31,10 @@ func startServer(addr string) error {
 	r.GET("/files/*path", serveFiles)
 
 	// JSON
+	r.GET("/get/:ids", getFilesByIDs)
+	r.GET("/get/", wrapHandler(serveAllFileJSON)) // Dumps everything
 	r.GET("/search/:tags", serveSearch)
-	r.GET("/search/", func( // Dumps everything
-		w http.ResponseWriter,
-		r *http.Request,
-		_ map[string]string,
-	) {
-		serveSearch(w, r, nil)
-	})
+	r.GET("/search/", wrapHandler(serveAllFileJSON))
 
 	// Commands
 	r.POST("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
@@ -86,11 +81,6 @@ func serveFiles(w http.ResponseWriter, r *http.Request, p map[string]string) {
 
 // Serve a tag search result as JSON
 func serveSearch(w http.ResponseWriter, r *http.Request, p map[string]string) {
-	if p == nil {
-		serveAllFileJSON(w, r)
-		return
-	}
-
 	matched, err := searchByTags(splitTagString(p["tags"], ','))
 	if err != nil {
 		send500(w, r, err)
@@ -181,16 +171,50 @@ func removeFilesHTTP(
 	p map[string]string,
 ) {
 	err := removeFilesCLI(strings.Split(p["ids"], ","))
-	switch err {
-	case nil:
-	case errRecordNotFound:
-		send404(w)
-	default:
+	if err != nil {
 		_, ok := err.(invalidIDError)
 		if ok {
 			sendError(w, 400, err)
 		} else {
 			send500(w, r, err)
+		}
+	}
+}
+
+// Serve file JSON by ID
+func getFilesByIDs(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+) {
+	split := strings.Split(p["ids"], ",")
+	ids := make([][20]byte, len(split))
+	var err error
+	for i := range split {
+		ids[i], err = stringToSHA1(split[i])
+		if err != nil {
+			sendError(w, 400, err)
+			return
+		}
+	}
+
+	tx, err := db.Begin(false)
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	defer tx.Rollback()
+
+	jsr := newJSONRecordStreamer(w, r)
+	defer jsr.close()
+	buc := tx.Bucket([]byte("images"))
+	for _, id := range ids {
+		r := buc.Get(id[:])
+		if r != nil {
+			jsr.writeKeyValue(keyValue{
+				sha1:   id,
+				record: r,
+			})
 		}
 	}
 }
