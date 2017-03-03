@@ -29,14 +29,18 @@ func startServer(addr string) error {
 	}
 
 	// Assets
-	r.GET("/files/*path", serveFiles)
+	r.GET("/files/:file", serveSourceFiles)
+	r.GET("/thumbs/:file", serveThumbnails)
 
 	// JSON
-	r.GET("/get/:ids", getFilesByIDs)
 	r.GET("/get/", wrapHandler(serveAllFileJSON)) // Dumps everything
-	r.GET("/search/:tags", serveSearch)
+	r.GET("/get/:ids", getFilesByIDs)
 	r.GET("/search/", wrapHandler(serveAllFileJSON))
+	r.GET("/search/:tags", serveSearch)
 	r.GET("/complete_tag/:prefix", completeTagHTTP)
+
+	// Uploads
+	r.POST("/import", wrapHandler(importUpload))
 
 	// Commands
 	r.POST("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
@@ -44,26 +48,46 @@ func startServer(addr string) error {
 	r.POST("/add_tags/:id/:tags", addTagsHTTP)
 	r.POST("/remove_tags/:id/:tags", removeTagsHTTP)
 
-	// Uploads
-	r.POST("/import", wrapHandler(importUpload))
-
 	return http.ListenAndServe(addr, r)
+}
+
+// Serve the source files from the ./images/ directory
+func serveSourceFiles(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+) {
+	serveFiles(w, r, p, imageRoot)
+}
+
+// Serve thumbnail images
+func serveThumbnails(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+) {
+	serveFiles(w, r, p, thumbRoot)
 }
 
 // More performant handler for serving file assets. These are immutable, so we
 // can also set separate caching policies for them.
-func serveFiles(w http.ResponseWriter, r *http.Request, p map[string]string) {
+func serveFiles(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+	root string,
+) {
 	if r.Header.Get("If-None-Match") == "0" {
 		w.WriteHeader(304)
 		return
 	}
 
-	name := p["path"]
+	name := p["file"]
 	if len(name) < 40 {
 		send404(w)
 		return
 	}
-	path := filepath.Clean(filepath.Join(imageRoot, name[:2], name))
+	path := filepath.Join(root, name[:2], name)
 	file, err := os.Open(path)
 	if err != nil {
 		send404(w)
