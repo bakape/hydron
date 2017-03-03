@@ -4,10 +4,8 @@ MXE_ROOT=/usr/lib/mxe/usr
 MXE_TARGET=x86_64-w64-mingw32.static
 
 # Cross-compile from Unix into a Windows_amd64 static binary
-# Needs Go checkout dfbbe06a205e7048a8541c4c97b250c24c40db96 or later. At the
-# moment of writing this change is not released yet. Should probably make it
-# into Go 1.7.1.
-# Depends on:
+# Needs Go >= 1.8.
+# Depends on (on Debian-based distros):
 # 	mxe-x86-64-w64-mingw32.static-gcc
 # 	mxe-x86-64-w64-mingw32.static-libidn
 # 	mxe-x86-64-w64-mingw32.static-ffmpeg
