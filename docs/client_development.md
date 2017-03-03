@@ -4,7 +4,7 @@ applications for Hydron.
 ##Binary path
 
 Windows clients should likely be packaged with a statically compiled Hydron
-binary, downloaded from the release page and resolve the path to it. Linux
+binary, downloaded from the release page, and resolve the path to it. Linux
 clients can simply assume the `hydron` command is inside the system `$PATH`.
 
 ##Startup
@@ -17,17 +17,17 @@ Windows, so the client is free to display an error message after an arbitrary
 amount of time.
 
 ##API
-The server will listen for requests through an HTTP API described bellow.
+The server will listen for requests through a HTTP API described bellow.
 Default port is 8010.
 
 | URL | Method | Parameters | Response Type | Description |
-|--|---|---|---|---|
-| /get/:IDs[?minimal=true] | GET | IDs: a comma-separated list of one or more hex-encoded file SHA1 hashes. If the `minimal=true` query string is passed, the returned records will not include the MD5 or tags fields. This can significantly improve response times. | [Record](#record)[] | Returns records with the target IDs. Unmatched records are ignored.  If :IDs is empty, returns all records in the database. |
-| /search/:tags[?minimal=true] | GET | tags: a comma-separated list of [tags](#tag). If the `minimal=true` query string is passed, the returned records will not include the MD5 or tags fields. This can significantly improve response times. | [Record](#record)[] | Returns records that match all the provided tags.  If  :tags is empty, returns all records in the database. |
-| /complete_tag/:prefix | GET | prefix: string that you would like to autocomplete | string[] | Returns up to the first ten tags that start with :prefix. |
-| /files/:file | GET | :file hex-encoded file SHA1 hash followed by dot and extension | file | Returns the source file specified by :file.**\*** |
-| /thumbs/:file | GET | :file hex-encoded file SHA1 hash followed by dot and extension | file | Returns the thumbnail image specified by :file.**\*** |
-| /import[?fetch_tags=true] | POST | A form with the file to import in the "file" field. If the `fetch_tags=true` query string is passed, Hydron will attempt to fetch tags from gelbooru.com right after importing.  | - | Uploads a file to be imported into the database. |
+|---|---|---|---|---|
+| /get/:IDs?minimal=true | GET | IDs: a comma-separated list of one or more hex-encoded file SHA1 hashes. If the `minimal=true` query string is passed, the returned records will not include the MD5 or tags fields. This can significantly improve response times. | [Record](#record)[] | Return records with the target IDs. Unmatched records are ignored. If :IDs is empty, returns all records in the database. |
+| /search/:tags?minimal=true | GET | tags: a comma-separated list of [tags](#tag). If the `minimal=true` query string is passed, the returned records will not include the MD5 or tags fields. This can significantly improve response times. | [Record](#record)[] | Return records that match all the provided tags. If :tags is empty, returns all records in the database. |
+| /complete_tag/:prefix | GET | prefix: string that you would like to autocomplete | string[] | Return up to the first ten tags that start with :prefix. |
+| /files/:file | GET | :file hex-encoded file SHA1 hash followed by dot and extension | file | Return the source file specified by :file. * |
+| /thumbs/:file | GET | :file hex-encoded file SHA1 hash followed by dot and extension | file | Return the thumbnail image specified by :file. * |
+| /import?fetch_tags=true | POST | A form with the file to import in the "file" field. If the `fetch_tags=true` query string is passed, Hydron will attempt to fetch tags from gelbooru.com right after importing. | - | Uploads a file to be imported into the database. |
 | /fetch_tags | POST | - | - | Instructs Hydron to attempt to fetch tags from gelbooru.com for all eligible files, that have not had their tags fetched yet. |
 | /remove/:IDs | POST | IDs: a comma-separated list of one or more hex-encoded file SHA1 hashes. | - | Remove the files specified by :IDs. |
 | /add_tags/:ID/:tags | POST | ID: hex-encoded SHA1 hash of the file you want to add tags to tags: a comma-separated list of [tags](#tag) | - | Add the specified tags to the specified file |
@@ -35,7 +35,7 @@ Default port is 8010.
 
 ###Files
 
-**\*** If the client launched Hydron itself as a child, there is no need to use
+\* If the client launched Hydron itself as a child, there is no need to use
 HTTP for retrieving file assets. All source images are located on the disk
 by the path
 `$HOME/.hydron/images/<first two letters of hash>/<hash>.<extension>` on POSIX
@@ -95,6 +95,7 @@ These are prefixed with `system:` and followed by
 followed by one of these comparison operators:
 `>`, `<`, `=`
 and a positive number.
+
 Examples:
 `system:width>1920` `system:height>1080` `system:tag_count=0`
 `system:size<10485760`
