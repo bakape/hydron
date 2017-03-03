@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"bytes"
+
 	"github.com/dimfeld/httptreemux"
 )
 
@@ -35,6 +37,7 @@ func startServer(addr string) error {
 	r.GET("/get/", wrapHandler(serveAllFileJSON)) // Dumps everything
 	r.GET("/search/:tags", serveSearch)
 	r.GET("/search/", wrapHandler(serveAllFileJSON))
+	r.GET("/complete_tag/:prefix", completeTagHTTP)
 
 	// Commands
 	r.POST("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
@@ -217,4 +220,27 @@ func getFilesByIDs(
 			})
 		}
 	}
+}
+
+// Complete a tag by prefix from an HTTP request
+func completeTagHTTP(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+) {
+	setJSONHeaders(w)
+
+	var buf bytes.Buffer
+	buf.WriteByte('[')
+	for i, t := range completeTag(p["prefix"]) {
+		if i != 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteByte('"')
+		buf.WriteString(t)
+		buf.WriteByte('"')
+	}
+	buf.WriteByte(']')
+
+	w.Write(buf.Bytes())
 }

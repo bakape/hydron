@@ -95,6 +95,10 @@ func normalizeTag(t []byte) []byte {
 		// Replace spaces and NULL with underscores
 		case ' ', '\x00':
 			t[i] = '_'
+		// Simplifies JSON encoding. Tags should not contain quotation marks
+		// either way.
+		case '"':
+			t[i] = '\''
 		default:
 			// Lowercase letters
 			if 'A' <= b && b <= 'Z' {
@@ -158,12 +162,13 @@ func subtractTags(a, b [][]byte) [][]byte {
 
 // Return 10 suggestions for tags by prefix
 func completeTag(prefix string) []string {
-	tagMu.RLock()
-	defer tagMu.RUnlock()
-
 	pre := string(normalizeTag([]byte(prefix)))
 	i := 0
 	tags := make([]string, 0, 10)
+
+	tagMu.RLock()
+	defer tagMu.RUnlock()
+
 	for tag := range tagIndex {
 		if strings.HasPrefix(tag, pre) {
 			tags = append(tags, tag)
