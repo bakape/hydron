@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"time"
+
 	"github.com/boltdb/bolt"
 )
 
@@ -33,7 +35,9 @@ var (
 )
 
 func openDB() (err error) {
-	db, err = bolt.Open(filepath.Join(rootPath, "db.db"), 0600, nil)
+	db, err = bolt.Open(filepath.Join(rootPath, "db.db"), 0600, &bolt.Options{
+		Timeout: time.Second * 5,
+	})
 	if err != nil {
 		return
 	}
