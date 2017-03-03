@@ -103,9 +103,15 @@ func normalizeTag(t []byte) []byte {
 		}
 	}
 
-	// Trim rating tags. Example: `rating:safe` -> `rating:s`
 	if len(t) > 7 && bytes.HasPrefix(t, []byte("rating:")) {
+		// Trim rating tags. Example: `rating:safe` -> `rating:s`
 		t = t[:8]
+	} else {
+		// All other prefixes are stripped to facilitate faster tag searching.
+		i := bytes.LastIndexByte(t, ':')
+		if i != -1 && !bytes.HasPrefix(t, []byte("system:")) {
+			t = t[i+1:]
+		}
 	}
 
 	return t
