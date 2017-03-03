@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"bytes"
 
 	"github.com/dimfeld/httptreemux"
 )
@@ -42,6 +41,8 @@ func startServer(addr string) error {
 	// Commands
 	r.POST("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
 	r.POST("/remove/:ids", removeFilesHTTP)
+	r.POST("/add_tags/:id/:tags", addTagsHTTP)
+	r.POST("/remove_tags/:id/:tags", removeTagsHTTP)
 
 	// Uploads
 	r.POST("/import", wrapHandler(importUpload))
@@ -243,4 +244,38 @@ func completeTagHTTP(
 	buf.WriteByte(']')
 
 	w.Write(buf.Bytes())
+}
+
+// Add tags to a specific file
+func addTagsHTTP(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+) {
+	modTagsHTTP(w, r, p, addTagsCLI)
+}
+
+func modTagsHTTP(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+	fn func(string, []string) error,
+) {
+	err := fn(p["id"], strings.Split(p["tags"], ","))
+	switch err.(type) {
+	case nil:
+	case invalidIDError:
+		sendError(w, 400, err)
+	default:
+		send500(w, r, err)
+	}
+}
+
+// Remove tags from a specific file
+func removeTagsHTTP(
+	w http.ResponseWriter,
+	r *http.Request,
+	p map[string]string,
+) {
+	modTagsHTTP(w, r, p, removeTagsCLI)
 }
