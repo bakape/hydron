@@ -12,7 +12,7 @@ import (
 // Helper for continuously streaming JSON file data to the client as it is being
 // retrieved and encoded
 type jsonRecordStreamer struct {
-	minimal bool
+	minimal, notFirst bool
 	jwriter.Writer
 	w   http.ResponseWriter
 	r   *http.Request
@@ -41,6 +41,11 @@ func (j *jsonRecordStreamer) close() {
 }
 
 func (j *jsonRecordStreamer) writeKeyValue(kv keyValue) {
+	if !j.notFirst {
+		j.notFirst = true
+	} else {
+		j.RawByte(',')
+	}
 	kv.toJSON(&j.Writer, j.minimal)
 	j.DumpTo(j.w)
 }

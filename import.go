@@ -6,12 +6,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"runtime"
 	"time"
-
-	"io"
 
 	"github.com/bakape/thumbnailer"
 )
