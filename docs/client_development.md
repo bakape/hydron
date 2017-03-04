@@ -4,8 +4,9 @@ applications for Hydron.
 ##Binary path
 
 Windows clients should likely be packaged with a statically compiled Hydron
-binary, downloaded from the release page, and resolve the path to it. Linux
-clients can simply assume the `hydron` command is inside the system `$PATH`.
+binary, downloaded from the release page, and resolve the path to it (which can
+also be inside `%PATH%`, if you package in an installer). Linux clients can
+simply assume the `hydron` command is inside the system `$PATH`.
 
 ##Startup
 
