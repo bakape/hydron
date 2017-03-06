@@ -11,4 +11,4 @@ git tag $version || exit 1
 git push || exit 1
 git push origin $version || exit 1
 make || exit 1
-zip -9 -q hydron-${version}_windows_x86_64.zip hydron.exe
+zip -9 hydron-${version}_windows_x86_64.zip hydron.exe

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-
 	"time"
 
 	"github.com/boltdb/bolt"

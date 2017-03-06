@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -109,7 +110,8 @@ func serveFiles(
 
 // Serve a tag search result as JSON
 func serveSearch(w http.ResponseWriter, r *http.Request, p map[string]string) {
-	matched, err := searchByTags(splitTagString(p["tags"], ','))
+	tags := splitTagString(html.UnescapeString(p["tags"]), ',')
+	matched, err := searchByTags(tags)
 	if err != nil {
 		send500(w, r, err)
 		return
@@ -285,7 +287,8 @@ func modTagsHTTP(
 	p map[string]string,
 	fn func(string, []string) error,
 ) {
-	err := fn(p["id"], strings.Split(p["tags"], ","))
+	tags := strings.Split(html.UnescapeString(p["tags"]), ",")
+	err := fn(p["id"], tags)
 	switch err.(type) {
 	case nil:
 	case invalidIDError:
