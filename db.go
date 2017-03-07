@@ -126,6 +126,9 @@ func putRecord(tx *bolt.Tx, id [20]byte, r record) error {
 func syncTags(tx *bolt.Tx, tags [][]byte) (err error) {
 	buc := tx.Bucket([]byte("tags"))
 	for _, t := range tags {
+		if len(t) == 0 {
+			continue
+		}
 		err = buc.Put(t, encodeTaggedList(tagIndex[string(t)]))
 		if err != nil {
 			err = wrapError(err, "db: syncing tag %s", t)

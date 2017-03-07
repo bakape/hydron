@@ -149,7 +149,9 @@ func tagsToSet(tags [][]byte) map[string]struct{} {
 func setToTags(set map[string]struct{}) [][]byte {
 	tags := make([][]byte, 0, len(set))
 	for tag := range set {
-		tags = append(tags, []byte(tag))
+		if tag != "" {
+			tags = append(tags, []byte(tag))
+		}
 	}
 	return tags
 }
