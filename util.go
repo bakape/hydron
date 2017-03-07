@@ -63,3 +63,8 @@ func stringToSHA1(s string) (id [20]byte, err error) {
 	id = extractKey(buf)
 	return
 }
+
+// Attach a descriptive prefix to an existing error
+func wrapError(err error, format string, args ...interface{}) error {
+	return fmt.Errorf("%s: %s", fmt.Sprintf(format, args...), err)
+}

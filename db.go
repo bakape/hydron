@@ -115,7 +115,11 @@ func writeRecord(kv keyValue, tags [][]byte) (err error) {
 }
 
 func putRecord(tx *bolt.Tx, id [20]byte, r record) error {
-	return tx.Bucket([]byte("images")).Put(id[:], []byte(r))
+	err := tx.Bucket([]byte("images")).Put(id[:], []byte(r))
+	if err != nil {
+		err = wrapError(err, "db: putting record %v", id)
+	}
+	return err
 }
 
 // Sync select tags from memory to disk. Requires `tagMu.Lock()`.
@@ -124,6 +128,7 @@ func syncTags(tx *bolt.Tx, tags [][]byte) (err error) {
 	for _, t := range tags {
 		err = buc.Put(t, encodeTaggedList(tagIndex[string(t)]))
 		if err != nil {
+			err = wrapError(err, "db: syncing tag %s", t)
 			return
 		}
 	}
