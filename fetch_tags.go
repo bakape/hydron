@@ -142,6 +142,11 @@ func fetchFileTags(files map[[16]byte]keyValue) error {
 	p := progressLogger{
 		total:  len(files),
 		header: "fetching tags",
+		finalize: func(p progressLogger) {
+			if p.total != p.done {
+				stderr.Printf("no tags found for %d files", p.total-p.done)
+			}
+		},
 	}
 	defer p.close()
 	for range files {

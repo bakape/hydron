@@ -20,6 +20,7 @@ func (e invalidIDError) Error() string {
 type progressLogger struct {
 	done, total int
 	header      string
+	finalize    func(progressLogger)
 }
 
 func (p progressLogger) print() {
@@ -38,6 +39,9 @@ func (p progressLogger) printError(err error) {
 
 func (p progressLogger) close() {
 	stderr.Print("\n")
+	if p.finalize != nil {
+		p.finalize(p)
+	}
 }
 
 // Extract a copy of the underlying SHA1 key from a BoltDB key
