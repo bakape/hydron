@@ -147,9 +147,11 @@ func fetchFileTags(files map[[16]byte]keyValue) error {
 	for range files {
 		switch r := <-res; r.err {
 		case nil:
-			err := writeFetchedTags(files[r.md5], r.tags)
-			if err != nil {
-				return err
+			if r.tags != nil {
+				err := writeFetchedTags(files[r.md5], r.tags)
+				if err != nil {
+					return err
+				}
 			}
 			p.done++
 		case errNoMatch:

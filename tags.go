@@ -85,6 +85,9 @@ func splitTagString(s string, sep byte) [][]byte {
 		}
 		tags = append(tags, normalizeTag(tag))
 	}
+	if len(tags) == 0 {
+		return nil
+	}
 	return tags
 }
 
