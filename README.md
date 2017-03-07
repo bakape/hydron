@@ -39,7 +39,7 @@ Platforms: Linux, OSX, Win64
 </details>
 
 ###Build dependencies
-* [Go](https://golang.org/doc/install)
+* [Go](https://golang.org/doc/install) >= 1.7
 * GCC or Clang
 * pkg-config
 * pthread
