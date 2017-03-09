@@ -20,10 +20,10 @@ func (e invalidIDError) Error() string {
 type progressLogger struct {
 	done, total int
 	header      string
-	finalize    func(progressLogger)
+	finalize    func(*progressLogger)
 }
 
-func (p progressLogger) print() {
+func (p *progressLogger) print() {
 	fmt.Fprintf(
 		os.Stderr,
 		"\r%s: %d / %d - %.2f%%",
@@ -33,11 +33,11 @@ func (p progressLogger) print() {
 	)
 }
 
-func (p progressLogger) printError(err error) {
+func (p *progressLogger) printError(err error) {
 	stderr.Printf("\n%s\n", err)
 }
 
-func (p progressLogger) close() {
+func (p *progressLogger) close() {
 	stderr.Print("\n")
 	if p.finalize != nil {
 		p.finalize(p)
