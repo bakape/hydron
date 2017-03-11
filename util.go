@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
@@ -18,19 +19,48 @@ func (e invalidIDError) Error() string {
 
 // Helper for logging progress of an action to the CLI
 type progressLogger struct {
+	started     bool
 	done, total int
 	header      string
+	startTime   time.Time
 	finalize    func(*progressLogger)
 }
 
 func (p *progressLogger) print() {
-	fmt.Fprintf(
-		os.Stderr,
-		"\r%s: %d / %d - %.2f%%",
-		p.header,
-		p.done, p.total,
-		float32(p.done)/float32(p.total)*100,
-	)
+	if !p.started {
+		p.startTime = time.Now().Round(time.Second)
+		p.started = true
+	}
+
+	if p.total != 0 {
+		fmt.Fprintf(
+			os.Stderr,
+			// Space at the end is needed to pad for char count fluctuations
+			// with the clock ticking.
+			"\r%s: %d / %d - %.2f%%  %v  ",
+			p.header,
+			p.done, p.total,
+			float32(p.done)/float32(p.total)*100,
+			p.elapsedTime(),
+		)
+	} else {
+		fmt.Fprintf(
+			os.Stderr,
+			"\r%s: %d  %v  ",
+			p.header,
+			p.done,
+			p.elapsedTime(),
+		)
+	}
+}
+
+func (p *progressLogger) advance() {
+	p.done++
+	p.print()
+}
+
+func (p *progressLogger) elapsedTime() time.Duration {
+	return time.Now().Round(time.Second).Sub(p.startTime)
 }
 
 func (p *progressLogger) printError(err error) {

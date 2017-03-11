@@ -139,11 +139,12 @@ func serveSearch(w http.ResponseWriter, r *http.Request, p map[string]string) {
 func serveAllFileJSON(w http.ResponseWriter, r *http.Request) {
 	jrs := newJSONRecordStreamer(w, r)
 	defer jrs.close()
-	jrs.err = iterateRecords(func(k []byte, rec record) {
+	jrs.err = iterateRecords(func(k []byte, rec record) error {
 		jrs.writeKeyValue(keyValue{
 			sha1:   extractKey(k),
 			record: rec,
 		})
+		return nil
 	})
 }
 

@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -194,7 +195,24 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 	if thumb.IsPNG {
 		kv.SetPNGThumb()
 	}
+
+	// Compute hashes concurrently
+	sha256Ch := make(chan [32]byte)
+	go func() {
+		sha256Ch <- sha256.Sum256(buf)
+	}()
 	kv.SetMD5(md5.Sum(buf))
+	kv.sha256 = <-sha256Ch
+
+	// Map tags from Hydrus
+	tx, err := db.Begin(false)
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+	if t := mapHydrusTags(tx, kv.sha256); t != nil {
+		tags = mergeTagSets(tags, t)
+	}
 
 	// Receive any disk write errors
 	for i := 0; i < 2; i++ {

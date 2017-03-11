@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -52,8 +51,10 @@ func initDirs() error {
 
 // Recursively traverse array of files and/or directories
 func traverse(paths []string) (files []string, err error) {
-	i := 0
-	defer stderr.Print("\n")
+	p := progressLogger{
+		header: "gathering files",
+	}
+	defer p.close()
 
 	visit := func(path string, info os.FileInfo, err error) error {
 		switch {
@@ -61,8 +62,8 @@ func traverse(paths []string) (files []string, err error) {
 			return err
 		case !info.IsDir():
 			files = append(files, path)
-			i++
-			fmt.Fprintf(os.Stderr, "\rgathering files: %d", i)
+			p.done++
+			p.print()
 		}
 		return nil
 	}

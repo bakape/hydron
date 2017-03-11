@@ -41,7 +41,7 @@ func searchBySystemTags(matched map[[20]byte]bool, tags [][]byte) (
 		return
 	}
 
-	check := func(k []byte, r record) {
+	check := func(k []byte, r record) error {
 		pass := true
 
 		for _, t := range tests {
@@ -86,6 +86,8 @@ func searchBySystemTags(matched map[[20]byte]bool, tags [][]byte) (
 				rematched[extractKey(k)] = true
 			}
 		}
+
+		return nil
 	}
 
 	// Search entire database

@@ -34,7 +34,7 @@ func printDB() error {
 		return err
 	}
 
-	return iterateRecords(func(k []byte, r record) {
+	return iterateRecords(func(k []byte, r record) error {
 		md5 := r.MD5()
 		tags := r.Tags()
 		rr := readableRecord{
@@ -52,6 +52,7 @@ func printDB() error {
 		rr.bools[0] = boolToUint8(r.HaveFetchedTags())
 		rr.bools[1] = boolToUint8(r.ThumbIsPNG())
 		fmt.Printf("> %s: %v\n", hex.EncodeToString(k), rr)
+		return nil
 	})
 }
 

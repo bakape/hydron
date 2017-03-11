@@ -69,6 +69,11 @@ var (
 			"",
 			"Print the contents of the database for debuging purposes.",
 		},
+		{
+			"sync_to_hydrus",
+			"",
+			"synchronize to the default public Hydrus tag repository",
+		},
 	}
 	deleteImported = modeFlags["import"].Bool(
 		"d",
@@ -146,6 +151,8 @@ func main() {
 		err = removeTagsCLI(os.Args[2], os.Args[3:])
 	case "serve":
 		err = startServer(*address)
+	case "sync_to_hydrus":
+		err = syncToHydrus()
 	default:
 		printHelp()
 	}

@@ -9,7 +9,8 @@ import (
 )
 
 type keyValue struct {
-	sha1 [20]byte
+	sha1   [20]byte
+	sha256 [32]byte
 	record
 }
 

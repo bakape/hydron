@@ -48,11 +48,31 @@ func openDB() (err error) {
 	}
 	defer tx.Rollback()
 
-	for _, b := range [...]string{"tags", "images"} {
+	err = tx.DeleteBucket([]byte("hydrus"))
+	if err != nil {
+		return
+	}
+
+	// Create all buckets
+	for _, b := range [...]string{
+		"tags", "images", "meta", "sha256", "hydrus",
+	} {
 		_, err = tx.CreateBucketIfNotExists([]byte(b))
 		if err != nil {
 			return
 		}
+	}
+	buc := tx.Bucket([]byte("hydrus"))
+	for _, b := range [...]string{"hashes", "tags", "hash->tags"} {
+		_, err = buc.CreateBucketIfNotExists([]byte(b))
+		if err != nil {
+			return
+		}
+	}
+
+	err = checkVersion(tx)
+	if err != nil {
+		return
 	}
 
 	// Load all tags into memory
@@ -78,19 +98,9 @@ func isImported(id [20]byte) (bool, error) {
 // Write a record to the database. Optionally specify new tags to write, which
 // must be re-indexed.
 func writeRecord(kv keyValue, tags [][]byte) (err error) {
-	var modifiedTags [][]byte
 	if tags != nil {
-		// Update in-memory tag index
-		old := kv.record.Tags()
-		modifiedTags = mergeTagSets(old, tags)
-
 		tagMu.Lock()
 		defer tagMu.Unlock()
-		unindexFileNoMu(kv.sha1, old)
-		for _, t := range tags {
-			indexTagNoMu(t, kv.sha1)
-		}
-		kv.SetTags(tags)
 	}
 
 	tx, err := db.Begin(true)
@@ -98,6 +108,30 @@ func writeRecord(kv keyValue, tags [][]byte) (err error) {
 		return
 	}
 	defer tx.Rollback()
+
+	err = writeRecordTx(tx, kv, tags)
+	if err != nil {
+		return
+	}
+
+	return tx.Commit()
+}
+
+// Same as writeRecord, but the caller must pass a write transaction and is
+// responsible for locking tagMu
+func writeRecordTx(tx *bolt.Tx, kv keyValue, tags [][]byte) (err error) {
+	var modifiedTags [][]byte
+	if tags != nil {
+		old := kv.record.Tags()
+		modifiedTags = mergeTagSets(old, tags)
+
+		// Update in-memory tag index
+		unindexFileNoMu(kv.sha1, old)
+		for _, t := range tags {
+			indexTagNoMu(t, kv.sha1)
+		}
+		kv.SetTags(tags)
+	}
 
 	// Write changed tags to the database
 	err = syncTags(tx, modifiedTags)
@@ -111,7 +145,16 @@ func writeRecord(kv keyValue, tags [][]byte) (err error) {
 		return
 	}
 
-	return tx.Commit()
+	// Write sha256 hash, if present
+	if kv.sha256 != [32]byte{} {
+		err = putSHA256(tx, kv.sha1[:], kv.sha256[:])
+	}
+
+	return
+}
+
+func putSHA256(tx *bolt.Tx, sha1 []byte, sha256 []byte) error {
+	return tx.Bucket([]byte("sha256")).Put(sha256, sha1)
 }
 
 func putRecord(tx *bolt.Tx, id [20]byte, r record) error {
@@ -139,14 +182,24 @@ func syncTags(tx *bolt.Tx, tags [][]byte) (err error) {
 }
 
 // Execute a function on all records in the database
-func iterateRecords(fn func(k []byte, r record)) error {
+func iterateRecords(fn func(k []byte, r record) error) error {
 	return db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket([]byte("images")).Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			fn(k, record(v))
-		}
-		return nil
+		return iterateRecordsTx(tx, fn)
 	})
+}
+
+// Like iterateRecords, but takes an already initiated transaction
+func iterateRecordsTx(tx *bolt.Tx, fn func(k []byte, r record) error) (
+	err error,
+) {
+	c := tx.Bucket([]byte("images")).Cursor()
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		err = fn(k, record(v))
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 // Add tags to an existing record
@@ -260,6 +313,10 @@ func removeFile(id [20]byte) (err error) {
 	if err != nil {
 		return
 	}
+
+	// Technically the SHA256 hash leaks in the database, but iterating the
+	// entire bucket to remove it would be expensive.
+	// TODO: Scheduled clean up task?
 
 	// Update tag index
 	tags := r.Tags()

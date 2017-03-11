@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -92,10 +91,8 @@ func fetchFromGelbooru(md5 [16]byte) (tags [][]byte, err error) {
 }
 
 func gelbooruURL(md5 [16]byte) string {
-	return fmt.Sprintf(
-		"http://gelbooru.com/index.php?page=dapi&s=post&q=index&tags=md5:%s&json=1",
-		hex.EncodeToString(md5[:]),
-	)
+	return "http://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1&tags=md5:" +
+		hex.EncodeToString(md5[:])
 }
 
 // Attempt to fetch tags for all files that have not yet had their tags synced
@@ -103,13 +100,14 @@ func gelbooruURL(md5 [16]byte) string {
 func fetchAllTags() error {
 	// Get list of candidate files
 	files := make(map[[16]byte]keyValue, 64)
-	err := iterateRecords(func(k []byte, r record) {
+	err := iterateRecords(func(k []byte, r record) error {
 		if canFetchTags(r) && !r.HaveFetchedTags() {
 			files[r.MD5()] = keyValue{
 				sha1:   extractKey(k),
 				record: r.Clone(),
 			}
 		}
+		return nil
 	})
 	if err != nil {
 		return err

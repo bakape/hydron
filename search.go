@@ -61,9 +61,10 @@ func printAllPaths(random bool) (err error) {
 	ids := make([][]byte, 0, 512)
 	types := make([]fileType, 0, 512)
 
-	err = iterateRecords(func(k []byte, r record) {
+	err = iterateRecords(func(k []byte, r record) error {
 		ids = append(ids, k)
 		types = append(types, r.Type())
+		return nil
 	})
 	if err != nil {
 		return
