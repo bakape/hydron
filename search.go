@@ -37,6 +37,10 @@ func searchPathsByTags(tags string, random bool) (err error) {
 		return
 	}
 
+	if len(matched) == 0 {
+		return
+	}
+
 	// Convert to paths
 	print := func(i int) {
 		printPath(matched[i][:], types[i])
