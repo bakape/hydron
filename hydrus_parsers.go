@@ -22,6 +22,21 @@ type updateTuple struct {
 	val string
 }
 
+type tagEntry struct {
+	id  uint64
+	tag []byte
+}
+
+type hashEntry struct {
+	id   uint64
+	hash [32]byte
+}
+
+type contentEntry struct {
+	tagID   uint64
+	hashIDs []uint64
+}
+
 // Repository meta information about available updates
 type repoMeta struct {
 	Count  int
@@ -71,21 +86,19 @@ type hydrusUpdate interface {
 	// Parse JSON into structured data
 	Parse([]json.RawMessage) error
 
-	// Commit a parsed update to the database. Returns a slice of SHA256 hashes
-	// of affected files.
-	Commit() ([][32]byte, error)
+	// Commit a parsed update to the database
+	Commit() error
 }
 
 // Update of int -> hash and int -> tag mappings
 type definitionUpdate struct {
-	tags   map[uint64][]byte
-	hashes map[uint64][32]byte
+	// Entries are already ordered, when we get them. Use slices to keep this
+	// ordering.
+	tags   []tagEntry
+	hashes []hashEntry
 }
 
 func (u *definitionUpdate) Parse(arr []json.RawMessage) (err error) {
-	u.tags = make(map[uint64][]byte, 256)
-	u.hashes = make(map[uint64][32]byte, 256)
-
 	data := arr[2]
 	err = json.Unmarshal(data, &arr)
 	if err != nil {
@@ -124,13 +137,17 @@ func (u *definitionUpdate) parseHashes(data []byte) (err error) {
 	if err != nil {
 		return
 	}
-	for _, t := range tuples {
+	u.hashes = make([]hashEntry, len(tuples))
+	for i, t := range tuples {
 		var hash [32]byte
 		_, err = hex.Decode(hash[:], []byte(t.val))
 		if err != nil {
 			return
 		}
-		u.hashes[t.id] = hash
+		u.hashes[i] = hashEntry{
+			id:   t.id,
+			hash: hash,
+		}
 	}
 	return
 }
@@ -140,23 +157,28 @@ func (u *definitionUpdate) parseTags(data []byte) (err error) {
 	if err != nil {
 		return
 	}
-	for _, t := range tuples {
-		u.tags[t.id] = normalizeTag([]byte(t.val))
+	u.tags = make([]tagEntry, len(tuples))
+	for i, t := range tuples {
+		u.tags[i] = tagEntry{
+			id:  t.id,
+			tag: normalizeTag([]byte(t.val)),
+		}
 	}
 	return
 }
 
-func (u *definitionUpdate) Commit() (modified [][32]byte, err error) {
+func (u *definitionUpdate) Commit() (err error) {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return
 	}
 	defer tx.Rollback()
 
+	// Hashes are small, constant size and random order. Buffer those.
 	if len(u.hashes) != 0 {
-		buc := tx.Bucket([]byte("hydrus")).Bucket([]byte("hashes"))
-		for id, hash := range u.hashes {
-			err = buc.Put(encodeUint64(id), hash[:])
+		buc := tx.Bucket([]byte("hydrus")).Bucket([]byte("hash->id"))
+		for _, e := range u.hashes {
+			err = buc.Put(e.hash[:], encodeUint64(e.id))
 			if err != nil {
 				return
 			}
@@ -164,25 +186,22 @@ func (u *definitionUpdate) Commit() (modified [][32]byte, err error) {
 	}
 
 	if len(u.tags) != 0 {
-		buc := tx.Bucket([]byte("hydrus")).Bucket([]byte("tags"))
-		for id, tag := range u.tags {
-			err = buc.Put(encodeUint64(id), tag)
+		buc := tx.Bucket([]byte("hydrus")).Bucket([]byte("id->tag"))
+		for _, e := range u.tags {
+			err = buc.Put(encodeUint64(e.id), e.tag)
 			if err != nil {
 				return
 			}
 		}
 	}
 
-	err = tx.Commit()
-	return
+	return tx.Commit()
 }
 
 // Update containing tagID -> hashIDs mappings
-type contentUpdate map[uint64][]uint64
+type contentUpdate []contentEntry
 
 func (u *contentUpdate) Parse(arr []json.RawMessage) (err error) {
-	*u = make(contentUpdate, 256)
-
 	// Ignore tag removal updates, because Hydrus tags don't map one to one with
 	// Hydron tags
 	data := arr[2]
@@ -196,7 +215,8 @@ func (u *contentUpdate) Parse(arr []json.RawMessage) (err error) {
 		return
 	}
 
-	for _, data := range arr {
+	*u = make(contentUpdate, len(arr))
+	for i, data := range arr {
 		var raw []json.RawMessage
 		err = json.Unmarshal(data, &raw)
 		if err != nil {
@@ -206,26 +226,23 @@ func (u *contentUpdate) Parse(arr []json.RawMessage) (err error) {
 			return invalidStructureError(data)
 		}
 
-		var (
-			tag    uint64
-			hashes []uint64
-		)
-		tag, err = parseUint64(raw[0])
+		var entry contentEntry
+		entry.tagID, err = parseUint64(raw[0])
 		if err != nil {
 			return
 		}
-		err = json.Unmarshal(raw[1], &hashes)
+		err = json.Unmarshal(raw[1], &entry.hashIDs)
 		if err != nil {
 			return
 		}
 
-		(*u)[tag] = hashes
+		(*u)[i] = entry
 	}
 
 	return
 }
 
-func (u contentUpdate) Commit() (modified [][32]byte, err error) {
+func (u contentUpdate) Commit() (err error) {
 	tx, err := db.Begin(true)
 	if err != nil {
 		return
@@ -233,46 +250,25 @@ func (u contentUpdate) Commit() (modified [][32]byte, err error) {
 	defer tx.Rollback()
 
 	var (
-		sha256Buc  = tx.Bucket([]byte("sha256"))
-		buc        = tx.Bucket([]byte("hydrus"))
-		mappingBuc = buc.Bucket([]byte("hash->tags"))
-		hashBuc    = buc.Bucket([]byte("hashes"))
-		buf        [8]byte
+		buc = tx.Bucket([]byte("hydrus")).Bucket([]byte("hash:tag"))
+		buf [8]byte
 	)
-	modified = make([][32]byte, 0, 16)
-
-	// These relations come from an external source and we have no guarantees
-	// about their integrity. If either key is nil, simply skip it.
-	for tagID, hashIDs := range u {
-		for _, id := range hashIDs {
-			encodeUint64To(&buf, id)
-			hash := hashBuc.Get(buf[:])
-			if hash == nil {
-				continue
-			}
-
-			encodeUint64To(&buf, tagID)
-			tags := append(mappingBuc.Get(hash), buf[:]...)
-			err = mappingBuc.Put(hash, tags)
+	for _, e := range u {
+		binary.LittleEndian.PutUint64(buf[:], e.tagID)
+		for _, id := range e.hashIDs {
+			// hash:tag pairs only have keys and are later looked up by prefix
+			// search
+			key := make([]byte, 16)
+			binary.LittleEndian.PutUint64(key, id)
+			copy(key[8:], buf[:])
+			err = buc.Put(key, nil)
 			if err != nil {
 				return
-			}
-
-			if sha256Buc.Get(hash) != nil {
-				modified = append(modified, extractSHA256(hash))
 			}
 		}
 	}
 
-	err = tx.Commit()
-	return
-}
-
-func extractSHA256(buf []byte) (hash [32]byte) {
-	for i := range hash {
-		hash[i] = buf[i]
-	}
-	return
+	return tx.Commit()
 }
 
 // Unpack a tuple with a type annotation member
@@ -330,11 +326,6 @@ func encodeUint64(i uint64) []byte {
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, i)
 	return buf
-}
-
-// Same as encodeUint64, but writes to target buffer without allocations
-func encodeUint64To(dest *[8]byte, i uint64) {
-	binary.LittleEndian.PutUint64((*dest)[:], i)
 }
 
 // Traverse a nested clusterfuck of tuples, until we you reach the part we need.

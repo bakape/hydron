@@ -53,7 +53,7 @@ func openDB() (err error) {
 		return
 	}
 
-	// Create all buckets
+	// Create all buckets, if not created
 	for _, b := range [...]string{
 		"tags", "images", "meta", "sha256", "hydrus",
 	} {
@@ -63,7 +63,7 @@ func openDB() (err error) {
 		}
 	}
 	buc := tx.Bucket([]byte("hydrus"))
-	for _, b := range [...]string{"hashes", "tags", "hash->tags"} {
+	for _, b := range [...]string{"id->tag", "hash->id", "hash:tag"} {
 		_, err = buc.CreateBucketIfNotExists([]byte(b))
 		if err != nil {
 			return

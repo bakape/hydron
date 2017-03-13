@@ -210,7 +210,7 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 		return
 	}
 	defer tx.Rollback()
-	if t := mapHydrusTags(tx, kv.sha256); t != nil {
+	if t := mapHydrusTags(tx, kv.sha256[:]); t != nil {
 		tags = mergeTagSets(tags, t)
 	}
 

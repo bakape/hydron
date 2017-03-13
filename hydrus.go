@@ -9,9 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	_ "net/http/pprof"
 	"strconv"
 	"time"
 
@@ -38,12 +36,9 @@ var hydrusClient = http.Client{
 	},
 }
 
-// Synchronise with hydrus tag repository
+// Synchronise with hydrus tag repository. Not safe for concurrent operations
+// on the database
 func syncToHydrus() (err error) {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-
 	session, err := getSession()
 	if err != nil {
 		return
@@ -70,7 +65,7 @@ func syncToHydrus() (err error) {
 		hash string
 	}
 
-	const distBuffer = 30
+	const distBuffer = 100
 	distribute := make(chan request, distBuffer)
 	errCh := make(chan error, 4)
 	closeCh := make(chan struct{})
@@ -116,15 +111,18 @@ func syncToHydrus() (err error) {
 	}
 	defer p.close()
 
-	// File SHA256 hashes, who's tags have been modified
-	modified := make(map[[32]byte]struct{}, 1<<10)
-
 	// Distribute update hashes to process across workers.
 	// Keep the workers no more than distBuffer ahead of the serializer to
 	// conserve memory.
 	for i := 0; i < len(meta.Hashes) && i < distBuffer; i++ {
 		distribute <- request{i, meta.Hashes[i]}
 	}
+
+	// Don't fsync on every transaction for better performance
+	db.NoSync = true
+	defer func() {
+		db.NoSync = false
+	}()
 
 	// Serialize back to retain update ordering
 	for i, ch := range parsed {
@@ -133,30 +131,27 @@ func syncToHydrus() (err error) {
 			return
 		case update := <-ch:
 			// Pass next request to the workers
-			i += distBuffer
-			if i < len(meta.Hashes) {
-				distribute <- request{i, meta.Hashes[i]}
+			j := i + distBuffer
+			if j < len(meta.Hashes) {
+				distribute <- request{j, meta.Hashes[j]}
 			}
 
 			// Commit update to database
-			var mod [][32]byte
-			mod, err = update.Commit()
+			err = update.Commit()
 			if err != nil {
 				return
 			}
-			for _, m := range mod {
-				modified[m] = struct{}{}
-			}
-			p.done++
-			p.print()
-		}
-	}
 
-	// Apply tags to any matching imported images
-	p.close()
-	p = progressLogger{
-		header: "applying tags",
-		total:  len(modified),
+			// Sync to disk every 100 commits
+			if i != 0 && i%100 == 0 {
+				err = db.Sync()
+				if err != nil {
+					return
+				}
+			}
+
+			p.advance()
+		}
 	}
 
 	tagMu.Lock()
@@ -168,37 +163,32 @@ func syncToHydrus() (err error) {
 	}
 	defer tx.Rollback()
 
+	// Apply tags to any matching imported images
+	p.close()
 	sha256Buc := tx.Bucket([]byte("sha256"))
-	imageBuc := tx.Bucket([]byte("images"))
-	for sha256 := range modified {
-		// Not imported?
-		sha1 := sha256Buc.Get(sha256[:])
-		if sha1 == nil {
-			p.advance()
-			continue
+	p = progressLogger{
+		header: "applying tags",
+		total:  sha256Buc.Stats().KeyN,
+	}
+	err = iterateRecordsTx(tx, func(k []byte, r record) error {
+		defer p.advance()
+
+		tags := mapHydrusTags(tx, sha256Buc.Get(k))
+		if tags == nil {
+			return nil
 		}
 
-		// Was deleted or Hydrus inconsistency?
-		img := record(imageBuc.Get(sha1))
-		tags := mapHydrusTags(tx, sha256)
-		if img == nil || tags == nil {
-			p.advance()
-			continue
-		}
-
-		err = writeRecordTx(
+		return writeRecordTx(
 			tx,
 			keyValue{
-				sha1:   extractKey(sha1),
-				record: img,
+				sha1:   extractKey(k),
+				record: r,
 			},
 			tags,
 		)
-		if err != nil {
-			return
-		}
-
-		p.advance()
+	})
+	if err != nil {
+		return
 	}
 
 	// Write new counter to database
@@ -211,27 +201,31 @@ func syncToHydrus() (err error) {
 	}
 
 	err = tx.Commit()
+	if err != nil {
+		return
+	}
+	err = db.Sync() // Sync changes to disk
 	return
 }
 
 // Map hydrus tags from tag IDs associated with the SHA256 hash
-func mapHydrusTags(tx *bolt.Tx, sha256 [32]byte) [][]byte {
+func mapHydrusTags(tx *bolt.Tx, sha256 []byte) (tags [][]byte) {
 	buc := tx.Bucket([]byte("hydrus"))
-	buf := buc.Bucket([]byte("hash->tags")).Get(sha256[:])
-	if buf == nil {
-		return nil
+	id := buc.Bucket([]byte("hash->id")).Get(sha256)
+	if id == nil {
+		return
 	}
 
-	l := len(buf) / 8
-	tagBuc := buc.Bucket([]byte("tags"))
-	tags := make([][]byte, 0, l)
-	for i := 0; i < l; i++ {
-		tag := tagBuc.Get(buf[i*8 : (i+1)*8])
+	tags = make([][]byte, 0, 16)
+	c := buc.Bucket([]byte("hash:tag")).Cursor()
+	buc = buc.Bucket([]byte("id->tag"))
+	for k, _ := c.Seek(id); k != nil && bytes.HasPrefix(k, id); k, _ = c.Next() {
+		tag := buc.Get(k[8:])
 		if tag != nil {
 			tags = append(tags, tag)
 		}
 	}
-	return tags
+	return
 }
 
 // Get list of updated files
