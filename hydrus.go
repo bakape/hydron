@@ -65,7 +65,7 @@ func syncToHydrus() (err error) {
 		hash string
 	}
 
-	const distBuffer = 100
+	const distBuffer = 30
 	distribute := make(chan request, distBuffer)
 	errCh := make(chan error, 4)
 	closeCh := make(chan struct{})
