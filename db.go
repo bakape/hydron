@@ -48,11 +48,6 @@ func openDB() (err error) {
 	}
 	defer tx.Rollback()
 
-	err = tx.DeleteBucket([]byte("hydrus"))
-	if err != nil {
-		return
-	}
-
 	// Create all buckets, if not created
 	for _, b := range [...]string{
 		"tags", "images", "meta", "sha256", "hydrus",
