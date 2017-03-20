@@ -6,7 +6,7 @@ early development.
 
 Platforms: Linux, OSX, Win64
 
-##Installation
+## Installation
 
 <details>
 	<summary>Windows</summary>
@@ -38,7 +38,7 @@ Platforms: Linux, OSX, Win64
 	</ol>
 </details>
 
-###Build dependencies
+### Build dependencies
 * [Go](https://golang.org/doc/install) >= 1.7
 * GCC or Clang
 * pkg-config
@@ -46,6 +46,6 @@ Platforms: Linux, OSX, Win64
 * ffmpeg >= 3.0 libraries (libavcodec, libavutil, libavformat)
 * GraphicsMagick
 
-##Updating
+## Updating
 * On Windows download the new binary and replace the old one.
 * On Linux / OS X simply run `go get -u github.com/bakape/hydron`
