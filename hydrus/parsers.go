@@ -1,12 +1,16 @@
-package main
+package hydrus
 
 import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"runtime/debug"
 	"strconv"
+
+	"github.com/bakape/hydron/common"
+	"github.com/boltdb/bolt"
 )
 
 func invalidStructureError(data []byte) error {
@@ -27,23 +31,64 @@ type tagEntry struct {
 	tag []byte
 }
 
-type hashEntry struct {
-	id   uint64
-	hash [32]byte
+// Committer commits a buffer to one of the two external sorters
+type Committer interface {
+	Commit(hashes, hashTags io.Writer) error
 }
 
-type contentEntry struct {
-	tagID   uint64
-	hashIDs []uint64
+type definitionCommitter struct {
+	tags   []tagEntry
+	hashes []byte
 }
 
-// Repository meta information about available updates
-type repoMeta struct {
+func (c definitionCommitter) Commit(hashes, _ io.Writer) (err error) {
+	if len(c.tags) != 0 {
+		var tx *bolt.Tx
+		tx, err = common.DB.Begin(true)
+		if err != nil {
+			return
+		}
+		defer tx.Rollback()
+
+		buc := tx.Bucket([]byte("hydrus")).Bucket([]byte("id->tag"))
+		for _, e := range c.tags {
+			err = buc.Put(EncodeUint64(e.id), e.tag)
+			if err != nil {
+				return
+			}
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return
+		}
+	}
+
+	if len(c.hashes) != 0 {
+		_, err = hashes.Write(c.hashes)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+type hashTagCommitter []byte
+
+func (c hashTagCommitter) Commit(_, hashTags io.Writer) error {
+	_, err := hashTags.Write(c)
+	return err
+}
+
+// RepoMeta contains repository meta information about available updates
+type RepoMeta struct {
 	Count  int
 	Hashes []string
 }
 
-func (r *repoMeta) UnMarshalJSON(data []byte) (err error) {
+// UnmarshalJSON implements json.Unmarshaler
+func (r *RepoMeta) UnmarshalJSON(data []byte) (err error) {
 	// Decode this nested tuple clusterfuck
 	var arr []json.RawMessage
 	data, arr, err = traverseTuples(data, 2, 1, 0, 1, 2, 0)
@@ -81,31 +126,19 @@ func (r *repoMeta) UnMarshalJSON(data []byte) (err error) {
 	return
 }
 
-// Abstracts hydrus definition and content update types
-type hydrusUpdate interface {
-	// Parse JSON into structured data
-	Parse([]json.RawMessage) error
-
-	// Commit a parsed update to the database
-	Commit() error
-}
-
-// Update of int -> hash and int -> tag mappings
-type definitionUpdate struct {
-	// Entries are already ordered, when we get them. Use slices to keep this
-	// ordering.
-	tags   []tagEntry
-	hashes []hashEntry
-}
-
-func (u *definitionUpdate) Parse(arr []json.RawMessage) (err error) {
+// ParseDefinitionUpdate parses and commits update of int -> hash
+// and int -> tag mappings
+func parseDefinitionUpdate(arr []json.RawMessage) (
+	com definitionCommitter, err error,
+) {
 	data := arr[2]
 	err = json.Unmarshal(data, &arr)
 	if err != nil {
 		return
 	}
 	if len(arr) < 1 {
-		return invalidStructureError(data)
+		err = invalidStructureError(data)
+		return
 	}
 
 	// Both hash and tag updates are optional. Need to discern payload type.
@@ -117,12 +150,11 @@ func (u *definitionUpdate) Parse(arr []json.RawMessage) (err error) {
 		}
 		switch typ {
 		case 0:
-			err = u.parseHashes(data)
+			com.hashes, err = parseHashUpdate(data)
 		case 1:
-			err = u.parseTags(data)
+			com.tags, err = parseTagUpdate(data)
 		default:
 			err = fmt.Errorf("unknown tuple type: %d", typ)
-			return
 		}
 		if err != nil {
 			return
@@ -132,76 +164,42 @@ func (u *definitionUpdate) Parse(arr []json.RawMessage) (err error) {
 	return
 }
 
-func (u *definitionUpdate) parseHashes(data []byte) (err error) {
+func parseHashUpdate(data []byte) (update []byte, err error) {
 	tuples, err := unpackTupleArray(data)
 	if err != nil {
 		return
 	}
-	u.hashes = make([]hashEntry, len(tuples))
+	update = make([]byte, len(tuples)*40)
 	for i, t := range tuples {
-		var hash [32]byte
-		_, err = hex.Decode(hash[:], []byte(t.val))
+		_, err = hex.Decode(update[i*40:], []byte(t.val))
 		if err != nil {
 			return
 		}
-		u.hashes[i] = hashEntry{
-			id:   t.id,
-			hash: hash,
-		}
+		binary.LittleEndian.PutUint64(update[i*40+32:], t.id)
 	}
 	return
 }
 
-func (u *definitionUpdate) parseTags(data []byte) (err error) {
+func parseTagUpdate(data []byte) (tags []tagEntry, err error) {
 	tuples, err := unpackTupleArray(data)
 	if err != nil {
 		return
 	}
-	u.tags = make([]tagEntry, len(tuples))
+	tags = make([]tagEntry, len(tuples))
 	for i, t := range tuples {
-		u.tags[i] = tagEntry{
+		tags[i] = tagEntry{
 			id:  t.id,
-			tag: normalizeTag([]byte(t.val)),
+			tag: common.NormalizeTag([]byte(t.val)),
 		}
 	}
 	return
 }
 
-func (u *definitionUpdate) Commit() (err error) {
-	tx, err := db.Begin(true)
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	// Hashes are small, constant size and random order. Buffer those.
-	if len(u.hashes) != 0 {
-		buc := tx.Bucket([]byte("hydrus")).Bucket([]byte("hash->id"))
-		for _, e := range u.hashes {
-			err = buc.Put(e.hash[:], encodeUint64(e.id))
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	if len(u.tags) != 0 {
-		buc := tx.Bucket([]byte("hydrus")).Bucket([]byte("id->tag"))
-		for _, e := range u.tags {
-			err = buc.Put(encodeUint64(e.id), e.tag)
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	return tx.Commit()
-}
-
-// Update containing tagID -> hashIDs mappings
-type contentUpdate []contentEntry
-
-func (u *contentUpdate) Parse(arr []json.RawMessage) (err error) {
+// ParseContentUpdate parses and commits update containing
+// tagID -> hashIDs mappings
+func parseContentUpdate(arr []json.RawMessage) (
+	com hashTagCommitter, err error,
+) {
 	// Ignore tag removal updates, because Hydrus tags don't map one to one with
 	// Hydron tags
 	data := arr[2]
@@ -215,60 +213,44 @@ func (u *contentUpdate) Parse(arr []json.RawMessage) (err error) {
 		return
 	}
 
-	*u = make(contentUpdate, len(arr))
-	for i, data := range arr {
+	var (
+		tagID   uint64
+		hashIDs []uint64
+		buf     [16]byte
+	)
+
+	com = make(hashTagCommitter, 0, 1<<10)
+	for _, data := range arr {
 		var raw []json.RawMessage
 		err = json.Unmarshal(data, &raw)
 		if err != nil {
 			return
 		}
 		if len(raw) < 2 {
-			return invalidStructureError(data)
-		}
-
-		var entry contentEntry
-		entry.tagID, err = parseUint64(raw[0])
-		if err != nil {
-			return
-		}
-		err = json.Unmarshal(raw[1], &entry.hashIDs)
-		if err != nil {
+			err = invalidStructureError(data)
 			return
 		}
 
-		(*u)[i] = entry
+		tagID, err = parseUint64(raw[0])
+		if err != nil {
+			return
+		}
+		err = json.Unmarshal(raw[1], &hashIDs)
+		if err != nil {
+			return
+		}
+
+		// Encode to binary
+		binary.LittleEndian.PutUint64(buf[8:], tagID)
+		for _, id := range hashIDs {
+			// hash:tag pairs only have keys and are later looked up by prefix
+			// search
+			binary.LittleEndian.PutUint64(buf[:], id)
+			com = append(com, buf[:]...)
+		}
 	}
 
 	return
-}
-
-func (u contentUpdate) Commit() (err error) {
-	tx, err := db.Begin(true)
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	var (
-		buc = tx.Bucket([]byte("hydrus")).Bucket([]byte("hash:tag"))
-		buf [8]byte
-	)
-	for _, e := range u {
-		binary.LittleEndian.PutUint64(buf[:], e.tagID)
-		for _, id := range e.hashIDs {
-			// hash:tag pairs only have keys and are later looked up by prefix
-			// search
-			key := make([]byte, 16)
-			binary.LittleEndian.PutUint64(key, id)
-			copy(key[8:], buf[:])
-			err = buc.Put(key, nil)
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	return tx.Commit()
 }
 
 // Unpack a tuple with a type annotation member
@@ -321,8 +303,8 @@ func unpackTupleArray(data []byte) (tuples []updateTuple, err error) {
 	return
 }
 
-// Encode uint64 to little endian binary buffer
-func encodeUint64(i uint64) []byte {
+// EncodeUint64 encodes uint64 to little endian binary buffer
+func EncodeUint64(i uint64) []byte {
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, i)
 	return buf

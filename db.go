@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/bakape/hydron/common"
 	"github.com/boltdb/bolt"
 )
 
@@ -40,6 +41,7 @@ func openDB() (err error) {
 	if err != nil {
 		return
 	}
+	common.DB = db
 
 	// Init all buckets, if not created
 	tx, err := db.Begin(true)

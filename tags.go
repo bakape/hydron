@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strings"
 	"sync"
+
+	"github.com/bakape/hydron/common"
 )
 
 // Tags indexes are kept in memory and dumped into the database on update
@@ -11,6 +13,10 @@ var (
 	tagIndex = make(map[string]map[[20]byte]bool, 512)
 	tagMu    sync.RWMutex
 )
+
+func init() {
+	common.NormalizeTag = normalizeTag
+}
 
 // Add a tag->file relation to the index
 func indexTag(tag []byte, file [20]byte) {

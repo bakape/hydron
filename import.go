@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/bakape/hydron/hydrus"
 	"github.com/bakape/thumbnailer"
 )
 
@@ -210,7 +211,7 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 		return
 	}
 	defer tx.Rollback()
-	if t := mapHydrusTags(tx, kv.sha256[:]); t != nil {
+	if t := hydrus.MapTags(tx, kv.sha256[:]); t != nil {
 		tags = mergeTagSets(tags, t)
 	}
 

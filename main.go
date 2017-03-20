@@ -72,7 +72,7 @@ var (
 		{
 			"sync_to_hydrus",
 			"",
-			"synchronize to the default public Hydrus tag repository",
+			"Synchronize to the default public Hydrus tag repository. This can take a lot of time on the first synchronization.",
 		},
 	}
 	deleteImported = modeFlags["import"].Bool(
