@@ -72,7 +72,7 @@ func importPaths(paths []string, del, fetchTags bool, tags string) (err error) {
 				if del {
 					switch err {
 					case nil, errImported:
-						err = os.Remove(path)
+						os.Remove(path)
 					}
 				}
 				res <- response{
@@ -131,7 +131,7 @@ func importPath(path string, del bool, tags [][]byte) (kv keyValue, err error) {
 	if del {
 		switch err {
 		case nil, errImported:
-			err = os.Remove(path)
+			os.Remove(path)
 		}
 	}
 	return
@@ -161,8 +161,7 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 		err = errUnsupportedFile
 		return
 	default:
-		_, ok := err.(thumbnailer.UnsupportedMIMEError)
-		if ok {
+		if _, ok := err.(thumbnailer.UnsupportedMIMEError); ok {
 			err = errUnsupportedFile
 		}
 		return
