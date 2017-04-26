@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
+	"github.com/bakape/hydron/core"
 	"github.com/dimfeld/httptreemux"
 	"github.com/mailru/easyjson/jwriter"
 )
@@ -40,13 +41,13 @@ func (j *jsonRecordStreamer) close() {
 	j.w.Write([]byte{']'})
 }
 
-func (j *jsonRecordStreamer) writeKeyValue(kv keyValue) {
+func (j *jsonRecordStreamer) writeKeyValue(kv core.KeyValue) {
 	if !j.notFirst {
 		j.notFirst = true
 	} else {
 		j.RawByte(',')
 	}
-	kv.toJSON(&j.Writer, j.minimal)
+	kv.ToJSON(&j.Writer, j.minimal)
 	j.DumpTo(j.w)
 }
 

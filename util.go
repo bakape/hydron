@@ -5,22 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/bakape/hydron/core"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
-
-// User passed an invalid file ID
-type invalidIDError string
-
-func (e invalidIDError) Error() string {
-	return "invalid id: " + string(e)
-}
 
 // Helper for logging progress of an action to the CLI
 type progressLogger struct {
 	done, total int
 	header      string
-	finalize    func(*progressLogger)
 }
 
 func (p *progressLogger) print() {
@@ -33,42 +27,35 @@ func (p *progressLogger) print() {
 	)
 }
 
-func (p *progressLogger) printError(err error) {
+func (p *progressLogger) Done() {
+	p.done++
+	p.print()
+}
+
+func (p *progressLogger) Err(err error) {
 	stderr.Printf("\n%s\n", err)
 }
 
-func (p *progressLogger) close() {
+func (p *progressLogger) Close() {
 	stderr.Print("\n")
-	if p.finalize != nil {
-		p.finalize(p)
-	}
 }
 
-// Extract a copy of the underlying SHA1 key from a BoltDB key
-func extractKey(k []byte) (sha1 [20]byte) {
-	for i := range sha1 {
-		sha1[i] = k[i]
-	}
-	return
+func (p *progressLogger) SetTotal(n int) {
+	p.total = n
 }
 
 // Extract a file's SHA1 id from a string input
 func stringToSHA1(s string) (id [20]byte, err error) {
 	if len(s) != 40 {
-		err = invalidIDError(s)
+		err = core.InvalidIDError(s)
 		return
 	}
 	buf, err := hex.DecodeString(s)
 	if err != nil {
-		err = invalidIDError(s + " : " + err.Error())
+		err = core.InvalidIDError(s + " : " + err.Error())
 		return
 	}
 
-	id = extractKey(buf)
+	id = core.ExtractKey(buf)
 	return
-}
-
-// Attach a descriptive prefix to an existing error
-func wrapError(err error, format string, args ...interface{}) error {
-	return fmt.Errorf("%s: %s", fmt.Sprintf(format, args...), err)
 }

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bakape/hydron/core"
 	"github.com/dimfeld/httptreemux"
 )
 
@@ -58,7 +59,7 @@ func serveSourceFiles(
 	r *http.Request,
 	p map[string]string,
 ) {
-	serveFiles(w, r, p, imageRoot)
+	serveFiles(w, r, p, core.ImageRoot)
 }
 
 // Serve thumbnail images
@@ -67,7 +68,7 @@ func serveThumbnails(
 	r *http.Request,
 	p map[string]string,
 ) {
-	serveFiles(w, r, p, thumbRoot)
+	serveFiles(w, r, p, core.ThumbRoot)
 }
 
 // More performant handler for serving file assets. These are immutable, so we
@@ -110,39 +111,39 @@ func serveFiles(
 
 // Serve a tag search result as JSON
 func serveSearch(w http.ResponseWriter, r *http.Request, p map[string]string) {
-	tags := splitTagString(html.UnescapeString(p["tags"]), ',')
-	matched, err := searchByTags(tags)
+	tags := core.SplitTagString(html.UnescapeString(p["tags"]), ',')
+	matched, err := core.SearchByTags(tags)
 	if err != nil {
 		send500(w, r, err)
 		return
 	}
+	serveJSONByID(w, r, matched)
+}
 
-	tx, err := db.Begin(false)
-	if err != nil {
-		send500(w, r, err)
-		return
-	}
-
+// Retrieve records from the database and serve as JSON
+func serveJSONByID(
+	w http.ResponseWriter,
+	r *http.Request,
+	ids map[[20]byte]bool,
+) {
 	jrs := newJSONRecordStreamer(w, r)
 	defer jrs.close()
-	buc := tx.Bucket([]byte("images"))
-	for _, id := range matched {
-		jrs.writeKeyValue(keyValue{
-			sha1:   id,
-			record: record(buc.Get(id[:])),
+	jrs.err = core.MapRecords(ids, func(id [20]byte, r core.Record) {
+		jrs.writeKeyValue(core.KeyValue{
+			SHA1:   id,
+			Record: r,
 		})
-	}
-	jrs.err = tx.Rollback()
+	})
 }
 
 // Serve all file data as JSON
 func serveAllFileJSON(w http.ResponseWriter, r *http.Request) {
 	jrs := newJSONRecordStreamer(w, r)
 	defer jrs.close()
-	jrs.err = iterateRecords(func(k []byte, rec record) {
-		jrs.writeKeyValue(keyValue{
-			sha1:   extractKey(k),
-			record: rec,
+	jrs.err = core.IterateRecords(func(k []byte, rec core.Record) {
+		jrs.writeKeyValue(core.KeyValue{
+			SHA1:   core.ExtractKey(k),
+			Record: rec,
 		})
 	})
 }
@@ -159,16 +160,16 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 	// Assign tags to file
 	var tags [][]byte
 	if s := r.FormValue("tags"); s != "" {
-		tags = splitTagString(s, ',')
+		tags = core.SplitTagString(s, ',')
 	}
 
-	kv, err := importFile(f, tags)
+	kv, err := core.ImportFile(f, tags)
 	switch err {
 	case nil:
-	case errImported:
+	case core.ErrImported:
 		sendError(w, 409, err)
 		return
-	case errUnsupportedFile:
+	case core.ErrUnsupportedFile:
 		sendError(w, 400, err)
 		return
 	default:
@@ -177,8 +178,8 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch tags from boorus
-	if r.FormValue("fetch_tags") != "true" && canFetchTags(kv.record) {
-		err := fetchSingleFileTags(kv)
+	if r.FormValue("fetch_tags") != "true" && core.CanFetchTags(kv.Record) {
+		err := core.FetchSingleFileTags(kv)
 		if err != nil {
 			send500(w, r, err)
 		}
@@ -200,9 +201,9 @@ func removeFilesHTTP(
 	r *http.Request,
 	p map[string]string,
 ) {
-	err := removeFilesCLI(strings.Split(p["ids"], ","))
+	err := removeFiles(strings.Split(p["ids"], ","))
 	if err != nil {
-		_, ok := err.(invalidIDError)
+		_, ok := err.(core.InvalidIDError)
 		if ok {
 			sendError(w, 400, err)
 		} else {
@@ -218,35 +219,17 @@ func getFilesByIDs(
 	p map[string]string,
 ) {
 	split := strings.Split(p["ids"], ",")
-	ids := make([][20]byte, len(split))
-	var err error
+	ids := make(map[[20]byte]bool, len(split))
 	for i := range split {
-		ids[i], err = stringToSHA1(split[i])
+		id, err := stringToSHA1(split[i])
 		if err != nil {
 			sendError(w, 400, err)
 			return
 		}
+		ids[id] = true
 	}
 
-	tx, err := db.Begin(false)
-	if err != nil {
-		send500(w, r, err)
-		return
-	}
-	defer tx.Rollback()
-
-	jsr := newJSONRecordStreamer(w, r)
-	defer jsr.close()
-	buc := tx.Bucket([]byte("images"))
-	for _, id := range ids {
-		r := buc.Get(id[:])
-		if r != nil {
-			jsr.writeKeyValue(keyValue{
-				sha1:   id,
-				record: r,
-			})
-		}
-	}
+	serveJSONByID(w, r, ids)
 }
 
 // Complete a tag by prefix from an HTTP request
@@ -259,7 +242,7 @@ func completeTagHTTP(
 
 	var buf bytes.Buffer
 	buf.WriteByte('[')
-	for i, t := range completeTag(p["prefix"]) {
+	for i, t := range core.CompleteTag(p["prefix"]) {
 		if i != 0 {
 			buf.WriteByte(',')
 		}
@@ -278,7 +261,7 @@ func addTagsHTTP(
 	r *http.Request,
 	p map[string]string,
 ) {
-	modTagsHTTP(w, r, p, addTagsCLI)
+	modTagsHTTP(w, r, p, addTags)
 }
 
 func modTagsHTTP(
@@ -291,7 +274,7 @@ func modTagsHTTP(
 	err := fn(p["id"], tags)
 	switch err.(type) {
 	case nil:
-	case invalidIDError:
+	case core.InvalidIDError:
 		sendError(w, 400, err)
 	default:
 		send500(w, r, err)
@@ -304,5 +287,5 @@ func removeTagsHTTP(
 	r *http.Request,
 	p map[string]string,
 ) {
-	modTagsHTTP(w, r, p, removeTagsCLI)
+	modTagsHTTP(w, r, p, removeTags)
 }

@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/hex"
@@ -13,6 +13,12 @@ var (
 	fetchTags  = make(chan tagFetchRequest)
 	errNoMatch = errors.New("no match found")
 )
+
+// FetchLogger provides callbacks for displaying tag fetching progress
+type FetchLogger interface {
+	Logger
+	NoMatch()
+}
 
 type tagFetchRequest struct {
 	md5 [16]byte
@@ -77,7 +83,7 @@ func fetchFromGelbooru(md5 [16]byte) (tags [][]byte, err error) {
 		return
 	}
 
-	tags = splitTagString(d.Tags, ' ')
+	tags = SplitTagString(d.Tags, ' ')
 	if d.Rating != "" {
 		r := d.Rating[0]
 		if r != ' ' && r != '\x00' {
@@ -98,16 +104,16 @@ func gelbooruURL(md5 [16]byte) string {
 	)
 }
 
-// Attempt to fetch tags for all files that have not yet had their tags synced
-// with gelbooru.com
-func fetchAllTags() error {
+// FetchAllTags attempts to fetch tags for all files that have not yet had their
+// tags synced with gelbooru.com
+func FetchAllTags(logger FetchLogger) error {
 	// Get list of candidate files
-	files := make(map[[16]byte]keyValue, 64)
-	err := iterateRecords(func(k []byte, r record) {
-		if canFetchTags(r) && !r.HaveFetchedTags() {
-			files[r.MD5()] = keyValue{
-				sha1:   extractKey(k),
-				record: r.Clone(),
+	files := make(map[[16]byte]KeyValue, 64)
+	err := IterateRecords(func(k []byte, r Record) {
+		if CanFetchTags(r) && !r.HaveFetchedTags() {
+			files[r.MD5()] = KeyValue{
+				SHA1:   ExtractKey(k),
+				Record: r.Clone(),
 			}
 		}
 	})
@@ -115,20 +121,20 @@ func fetchAllTags() error {
 		return err
 	}
 
-	return fetchFileTags(files)
+	return FetchTags(files, logger)
 }
 
 // Return, if file is eligible for fetching tags from boorus
-func canFetchTags(r record) bool {
+func CanFetchTags(r Record) bool {
 	switch r.Type() {
-	case jpeg, png, gif, webm:
+	case JPEG, PNG, GIF, WEBM:
 		return true
 	}
 	return false
 }
 
-// Fetch tags for listed files
-func fetchFileTags(files map[[16]byte]keyValue) error {
+//  FetchTags fetches tags for each of files
+func FetchTags(files map[[16]byte]KeyValue, l FetchLogger) error {
 	res := make(chan tagFetchResponse)
 	go func() {
 		for md5 := range files {
@@ -139,17 +145,8 @@ func fetchFileTags(files map[[16]byte]keyValue) error {
 		}
 	}()
 
-	fetched := 0
-	p := progressLogger{
-		total:  len(files),
-		header: "fetching tags",
-		finalize: func(p *progressLogger) {
-			if p.total != fetched {
-				stderr.Printf("no tags found for %d files", p.total-fetched)
-			}
-		},
-	}
-	defer p.close()
+	l.SetTotal(len(files))
+	defer l.Close()
 	for range files {
 		switch r := <-res; r.err {
 		case nil:
@@ -158,25 +155,24 @@ func fetchFileTags(files map[[16]byte]keyValue) error {
 					return err
 				}
 			}
-			fetched++
-			p.done++
+			l.Done()
 		case errNoMatch:
-			p.done++
+			l.NoMatch()
 		default:
-			p.printError(r.err)
+			l.Err(r.err)
 		}
-		p.print()
 	}
 
 	return nil
 }
 
-func writeFetchedTags(kv keyValue, tags [][]byte) error {
-	kv.SetFetchedTags()
+func writeFetchedTags(kv KeyValue, tags [][]byte) error {
+	kv.setFetchedTags()
 	return writeRecord(kv, tags)
 }
 
-func fetchSingleFileTags(kv keyValue) (err error) {
+// Fetch tags of a single file
+func FetchSingleFileTags(kv KeyValue) (err error) {
 	res := make(chan tagFetchResponse)
 	fetchTags <- tagFetchRequest{
 		md5: kv.MD5(),

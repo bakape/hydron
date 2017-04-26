@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/bakape/hydron/core"
 )
 
 var (
@@ -107,13 +109,10 @@ func main() {
 			printHelp()
 		}
 	}
-	if err := initDirs(); err != nil {
+	if err := core.Init(); err != nil {
 		panic(err)
 	}
-	if err := openDB(); err != nil {
-		panic(err)
-	}
-	defer db.Close()
+	defer core.ShutDown()
 
 	var err error
 	switch mode {
@@ -127,7 +126,7 @@ func main() {
 		)
 	case "remove":
 		assertArgCount(3)
-		err = removeFilesCLI(os.Args[2:])
+		err = removeFiles(os.Args[2:])
 	case "fetch_tags":
 		err = fetchAllTags()
 	case "print":
@@ -136,14 +135,14 @@ func main() {
 		err = searchPathsByTags(strings.Join(fl.Args(), " "), *returnRandom)
 	case "complete_tag":
 		assertArgCount(3)
-		tags := completeTag(os.Args[2])
+		tags := core.CompleteTag(os.Args[2])
 		fmt.Println(strings.Join(tags, " "))
 	case "add_tags":
 		assertArgCount(4)
-		err = addTagsCLI(os.Args[2], os.Args[3:])
+		err = addTags(os.Args[2], os.Args[3:])
 	case "remove_tags":
 		assertArgCount(4)
-		err = removeTagsCLI(os.Args[2], os.Args[3:])
+		err = removeTags(os.Args[2], os.Args[3:])
 	case "serve":
 		err = startServer(*address)
 	default:

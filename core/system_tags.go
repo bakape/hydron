@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bytes"
@@ -41,11 +41,11 @@ func searchBySystemTags(matched map[[20]byte]bool, tags [][]byte) (
 		return
 	}
 
-	check := func(k []byte, r record) {
+	check := func(k []byte, r Record) {
 		pass := true
 
 		for _, t := range tests {
-			// Extract value from record
+			// Extract values from Record
 			var val uint64
 			switch t.typ {
 			case sizeValue:
@@ -78,12 +78,12 @@ func searchBySystemTags(matched map[[20]byte]bool, tags [][]byte) (
 			// If matched is not nil, remove not passing values from an
 			// existing set
 			if matched != nil {
-				delete(rematched, extractKey(k))
+				delete(rematched, ExtractKey(k))
 			}
 		} else {
 			// If matched is nil, add passed values to a fresh new set
 			if matched == nil {
-				rematched[extractKey(k)] = true
+				rematched[ExtractKey(k)] = true
 			}
 		}
 	}
@@ -91,7 +91,7 @@ func searchBySystemTags(matched map[[20]byte]bool, tags [][]byte) (
 	// Search entire database
 	if matched == nil {
 		rematched = make(map[[20]byte]bool, 128)
-		err = iterateRecords(check)
+		err = IterateRecords(check)
 		return
 	}
 
@@ -104,7 +104,7 @@ func searchBySystemTags(matched map[[20]byte]bool, tags [][]byte) (
 
 	buc := tx.Bucket([]byte("images"))
 	for id := range matched {
-		check(id[:], record(buc.Get(id[:])))
+		check(id[:], Record(buc.Get(id[:])))
 	}
 	err = tx.Rollback()
 

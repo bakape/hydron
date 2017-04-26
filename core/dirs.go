@@ -1,7 +1,6 @@
-package main
+package core
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -9,7 +8,8 @@ import (
 
 const hexStr = "0123456789abcdef"
 
-var rootPath, imageRoot, thumbRoot string
+// Root directory path
+var rootPath, ImageRoot, ThumbRoot string
 
 // Determine root dirs
 func init() {
@@ -19,19 +19,18 @@ func init() {
 		rootPath = filepath.Join(os.Getenv("HOME"), ".hydron")
 	}
 	sep := string(filepath.Separator)
-	imageRoot = concatStrings(rootPath, sep, "images", sep)
-	thumbRoot = concatStrings(rootPath, sep, "thumbs", sep)
+	ImageRoot = concatStrings(rootPath, sep, "images", sep)
+	ThumbRoot = concatStrings(rootPath, sep, "thumbs", sep)
 }
 
 func initDirs() error {
 	if _, err := os.Stat(rootPath); !os.IsNotExist(err) {
 		return err
 	}
-	stderr.Printf("initializing root directory %s\n", rootPath)
 
 	// Create source file and thumbnail directories
 	const dirMode = os.ModeDir | 0700
-	for _, dir := range [...]string{imageRoot, thumbRoot} {
+	for _, dir := range [...]string{ImageRoot, ThumbRoot} {
 		err := os.MkdirAll(dir, dirMode)
 		if err != nil {
 			return err
@@ -50,10 +49,9 @@ func initDirs() error {
 	return nil
 }
 
-// Recursively traverse array of files and/or directories
+// traverse recursively traverses an array of file and/or directory paths
 func traverse(paths []string) (files []string, err error) {
-	i := 0
-	defer stderr.Print("\n")
+	files = make([]string, 0, 64)
 
 	visit := func(path string, info os.FileInfo, err error) error {
 		switch {
@@ -61,8 +59,6 @@ func traverse(paths []string) (files []string, err error) {
 			return err
 		case !info.IsDir():
 			files = append(files, path)
-			i++
-			fmt.Fprintf(os.Stderr, "\rgathering files: %d", i)
 		}
 		return nil
 	}
@@ -76,19 +72,21 @@ func traverse(paths []string) (files []string, err error) {
 	return
 }
 
-func sourcePath(id string, typ fileType) string {
-	name := concatStrings(id, ".", extensions[typ])
-	return filepath.Join(imageRoot, id[:2], name)
+// Returns the path to the source file
+func SourcePath(id string, typ FileType) string {
+	name := concatStrings(id, ".", Extensions[typ])
+	return filepath.Join(ImageRoot, id[:2], name)
 }
 
-func thumbPath(id string, isPNG bool) string {
+// Returns the path to the thumbnail
+func ThumbPath(id string, isPNG bool) string {
 	var ext string
 	if isPNG {
 		ext = "png"
 	} else {
 		ext = "jpg"
 	}
-	return filepath.Join(thumbRoot, id[:2], concatStrings(id, ".", ext))
+	return filepath.Join(ThumbRoot, id[:2], concatStrings(id, ".", ext))
 }
 
 func concatStrings(s ...string) string {

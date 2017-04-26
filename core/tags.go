@@ -1,7 +1,8 @@
-package main
+package core
 
 import (
 	"bytes"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -72,23 +73,6 @@ func encodeTaggedList(tagged map[[20]byte]bool) []byte {
 		enc = append(enc, file[:]...)
 	}
 	return enc
-}
-
-// Split a sep-delimited list of tags and normalize each
-func splitTagString(s string, sep byte) [][]byte {
-	split := bytes.Split([]byte(s), []byte{sep})
-	tags := make([][]byte, 0, len(split))
-	for _, tag := range split {
-		tag = bytes.TrimSpace(tag)
-		if len(tag) == 0 {
-			continue
-		}
-		tags = append(tags, normalizeTag(tag))
-	}
-	if len(tags) == 0 {
-		return nil
-	}
-	return tags
 }
 
 // Convert any externally-input tags to the internal format
@@ -165,15 +149,15 @@ func subtractTags(a, b [][]byte) [][]byte {
 	return setToTags(set)
 }
 
-// Return 10 suggestions for tags by prefix
-func completeTag(prefix string) []string {
-	pre := string(normalizeTag([]byte(prefix)))
-	i := 0
-	tags := make([]string, 0, 10)
+// Return up to 10 random suggestions for tags by prefix
+func CompleteTag(prefix string) []string {
+	var (
+		pre  = string(normalizeTag([]byte(prefix)))
+		i    = 0
+		tags = make([]string, 0, 10)
+	)
 
 	tagMu.RLock()
-	defer tagMu.RUnlock()
-
 	for tag := range tagIndex {
 		if strings.HasPrefix(tag, pre) {
 			tags = append(tags, tag)
@@ -183,27 +167,25 @@ func completeTag(prefix string) []string {
 			break
 		}
 	}
+	tagMu.RUnlock()
+
+	sort.Strings(tags)
 	return tags
 }
 
-// Add tags to the target file from the CLI
-func addTagsCLI(id string, tags []string) error {
-	return modTagsCLI(id, tags, addTags)
-}
-
-func modTagsCLI(
-	id string,
-	tags []string,
-	fn func([20]byte, [][]byte) error,
-) error {
-	sha1, err := stringToSHA1(id)
-	if err != nil {
-		return err
+// Split a sep-delimited list of tags and normalize each
+func SplitTagString(s string, sep byte) [][]byte {
+	split := bytes.Split([]byte(s), []byte{sep})
+	tags := make([][]byte, 0, len(split))
+	for _, tag := range split {
+		tag = bytes.TrimSpace(tag)
+		if len(tag) == 0 {
+			continue
+		}
+		tags = append(tags, normalizeTag(tag))
 	}
-	return fn(sha1, splitTagString(strings.Join(tags, " "), ' '))
-}
-
-// Remove tags from the target file from the CLI
-func removeTagsCLI(id string, tags []string) error {
-	return modTagsCLI(id, tags, removeTags)
+	if len(tags) == 0 {
+		return nil
+	}
+	return tags
 }

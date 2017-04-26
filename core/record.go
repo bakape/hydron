@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 	"github.com/mailru/easyjson/jwriter"
 )
 
-// Boolean flags for a record
+// Boolean flags for a Record
 const (
 	fetchedTags = 1 << iota
 	pngThumbnail
 	noThumb
 )
 
-// Byte offsets withing a record
+// Byte offsets withing a Record
 const (
 	offsetBools     = 1
 	offsetImportIme = offsetBools + 8*iota
@@ -27,22 +27,22 @@ const (
 	offsetTags = offsetMD5 + 16
 )
 
-type keyValue struct {
-	sha1 [20]byte
-	record
+type KeyValue struct {
+	SHA1 [20]byte
+	Record
 }
 
 // Marshals to JSON. Minimal flag sets, if only the most crucial data should be
 // printed.
-func (r keyValue) toJSON(w *jwriter.Writer, minimal bool) {
+func (r KeyValue) ToJSON(w *jwriter.Writer, minimal bool) {
 	var arr [40]byte
 	buf := arr[:]
-	hex.Encode(buf, r.sha1[:])
+	hex.Encode(buf, r.SHA1[:])
 	w.RawString(`{"SHA1":"`)
 	w.Raw(buf, nil)
 
 	w.RawString(`","type":"`)
-	w.RawString(extensions[r.Type()])
+	w.RawString(Extensions[r.Type()])
 	w.RawString(`","thumbIsPNG":`)
 	w.Bool(r.ThumbIsPNG())
 	w.RawString(`","noThumb":`)
@@ -95,77 +95,77 @@ uint64 - source image stream length, if a any
 [16]byte - MD5 hash
 string... - space-delimited list of tags
 */
-type record []byte
+type Record []byte
 
-// Clones the current record. Needed, when you need to store it after the DB
+// Clones the current Record. Needed, when you need to store it after the DB
 // transaction closes.
-func (r record) Clone() record {
-	clone := make(record, len(r))
+func (r Record) Clone() Record {
+	clone := make(Record, len(r))
 	copy(clone, r)
 	return clone
 }
 
-func (r record) Type() fileType {
-	return fileType(r[0])
+func (r Record) Type() FileType {
+	return FileType(r[0])
 }
 
-func (r record) SetType(t fileType) {
+func (r Record) setType(t FileType) {
 	r[0] = byte(t)
 }
 
-func (r record) ThumbIsPNG() bool {
+func (r Record) ThumbIsPNG() bool {
 	return r[offsetBools]&pngThumbnail != 0
 }
 
-func (r record) SetPNGThumb() {
+func (r Record) setPNGThumb() {
 	r[offsetBools] |= pngThumbnail
 }
 
-func (r record) SetFetchedTags() {
+func (r Record) setFetchedTags() {
 	r[offsetBools] |= fetchedTags
 }
 
-func (r record) HaveFetchedTags() bool {
+func (r Record) HaveFetchedTags() bool {
 	return r[offsetBools]&fetchedTags != 0
 }
 
-func (r record) SetNoThumb() {
+func (r Record) setNoThumb() {
 	r[offsetBools] |= noThumb
 }
 
-func (r record) HasThumb() bool {
+func (r Record) HasThumb() bool {
 	return r[offsetBools]&noThumb == 0
 }
 
-func (r record) getUint64(offset int) uint64 {
+func (r Record) getUint64(offset int) uint64 {
 	return binary.LittleEndian.Uint64(r[offset:])
 }
 
-func (r record) setUint64(offset int, val uint64) {
+func (r Record) setUint64(offset int, val uint64) {
 	binary.LittleEndian.PutUint64(r[offset:], val)
 }
 
-func (r record) ImportTime() uint64 {
+func (r Record) ImportTime() uint64 {
 	return r.getUint64(offsetImportIme)
 }
 
-func (r record) Size() uint64 {
+func (r Record) Size() uint64 {
 	return r.getUint64(offsetSize)
 }
 
-func (r record) Width() uint64 {
+func (r Record) Width() uint64 {
 	return r.getUint64(offsetWidth)
 }
 
-func (r record) Height() uint64 {
+func (r Record) Height() uint64 {
 	return r.getUint64(offsetHeight)
 }
 
-func (r record) Length() uint64 {
+func (r Record) Length() uint64 {
 	return r.getUint64(offsetLength)
 }
 
-func (r record) SetStats(importTime, size, width, height, length uint64) {
+func (r Record) setStats(importTime, size, width, height, length uint64) {
 	r.setUint64(offsetImportIme, importTime)
 	r.setUint64(offsetSize, size)
 	r.setUint64(offsetWidth, width)
@@ -173,16 +173,16 @@ func (r record) SetStats(importTime, size, width, height, length uint64) {
 	r.setUint64(offsetLength, length)
 }
 
-func (r record) MD5() (MD5 [16]byte) {
+func (r Record) MD5() (MD5 [16]byte) {
 	copy(MD5[:], r[offsetMD5:])
 	return
 }
 
-func (r record) SetMD5(MD5 [16]byte) {
+func (r Record) setMD5(MD5 [16]byte) {
 	copy(r[offsetMD5:], MD5[:])
 }
 
-func (r record) Tags() [][]byte {
+func (r Record) Tags() [][]byte {
 	raw := r[offsetTags:]
 	if len(raw) == 0 {
 		return nil
@@ -210,13 +210,8 @@ func (r record) Tags() [][]byte {
 	return tags
 }
 
-func (r *record) SetTags(t [][]byte) {
+func (r *Record) setTags(t [][]byte) {
 	// If one of the tags in t and r somehow share some allocated memory,
 	// prepare for infinite memmove. Safer to always replace r with a clone.
 	*r = append(r.Clone()[:offsetTags], bytes.Join(t, []byte{' '})...)
-}
-
-// Merge a set of tags with the existing ones in the record
-func (r *record) MergeTags(t [][]byte) {
-	r.SetTags(mergeTagSets(r.Tags(), t))
 }

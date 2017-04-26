@@ -4,12 +4,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
-	"time"
-)
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
+	"github.com/bakape/hydron/core"
+)
 
 // Returns file paths that match all tags and print to console
 func searchPathsByTags(tags string, random bool) (err error) {
@@ -17,55 +14,41 @@ func searchPathsByTags(tags string, random bool) (err error) {
 		return printAllPaths(random)
 	}
 
-	matched, err := searchByTags(splitTagString(tags, ' '))
-	if err != nil {
+	matched, err := core.SearchByTags(core.SplitTagString(tags, ' '))
+	if err != nil || len(matched) == 0 {
 		return
 	}
-	types := make([]fileType, len(matched))
+	types := make(map[[20]byte]core.FileType, len(matched))
 
 	// Retrieve file types of all matches
-	tx, err := db.Begin(false)
+	err = core.MapRecords(matched, func(id [20]byte, r core.Record) {
+		types[id] = r.Type()
+	})
 	if err != nil {
-		return
-	}
-	buc := tx.Bucket([]byte("images"))
-	for i, id := range matched {
-		types[i] = record(buc.Get(id[:])).Type()
-	}
-	err = tx.Rollback()
-	if err != nil {
-		return
-	}
-
-	if len(matched) == 0 {
 		return
 	}
 
 	// Convert to paths
-	print := func(i int) {
-		printPath(matched[i][:], types[i])
-	}
-	if random {
-		print(rand.Intn(len(matched)))
-	} else {
-		for i := range matched {
-			print(i)
+	for id := range matched {
+		printPath(id[:], types[id])
+		if random {
+			return
 		}
 	}
 
 	return
 }
 
-func printPath(id []byte, typ fileType) {
-	fmt.Println(sourcePath(hex.EncodeToString(id), typ))
+func printPath(id []byte, typ core.FileType) {
+	fmt.Println(core.SourcePath(hex.EncodeToString(id), typ))
 }
 
 // Print paths to all files
 func printAllPaths(random bool) (err error) {
-	ids := make([][]byte, 0, 512)
-	types := make([]fileType, 0, 512)
+	ids := make([][]byte, 0, 1<<10)
+	types := make([]core.FileType, 0, 1<<10)
 
-	err = iterateRecords(func(k []byte, r record) {
+	err = core.IterateRecords(func(k []byte, r core.Record) {
 		ids = append(ids, k)
 		types = append(types, r.Type())
 	})
@@ -84,71 +67,5 @@ func printAllPaths(random bool) (err error) {
 		}
 	}
 
-	return
-}
-
-// Find files that match all tags
-func searchByTags(tags [][]byte) (arr [][20]byte, err error) {
-	if len(tags) == 0 {
-		return
-	}
-
-	// Separate system tags from regular tags
-	regular := make([][]byte, 0, len(tags))
-	system := make([][]byte, 0, len(tags))
-	for _, t := range tags {
-		if isSystemTag(t) {
-			system = append(system, t)
-		} else {
-			regular = append(regular, t)
-		}
-	}
-
-	tagMu.RLock()
-	defer tagMu.RUnlock()
-
-	var matched map[[20]byte]bool
-
-	if len(regular) != 0 {
-		first := tagIndex[string(regular[0])]
-		if first == nil {
-			return
-		}
-
-		// Copy map. Original must not be modified.
-		matched = make(map[[20]byte]bool, len(first))
-		for f := range first {
-			matched[f] = true
-		}
-
-		// Delete non-intersecting matches
-		for i := 1; i < len(regular); i++ {
-			files := tagIndex[string(regular[i])]
-			if files == nil {
-				return
-			}
-			for f := range matched {
-				if !files[f] {
-					delete(matched, f)
-				}
-			}
-		}
-
-		if len(matched) == 0 {
-			return
-		}
-	}
-
-	if len(system) != 0 {
-		matched, err = searchBySystemTags(matched, system)
-		if err != nil {
-			return
-		}
-	}
-
-	arr = make([][20]byte, 0, len(matched))
-	for f := range matched {
-		arr = append(arr, f)
-	}
 	return
 }
