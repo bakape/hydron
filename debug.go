@@ -49,15 +49,15 @@ func printDB() error {
 		for i := range tags {
 			rr.tags[i] = string(tags[i])
 		}
-		rr.bools[0] = boolToUint8(r.HaveFetchedTags())
-		rr.bools[1] = boolToUint8(r.ThumbIsPNG())
+		for i, fn := range [...]func() bool{
+			r.HaveFetchedTags, r.ThumbIsPNG, r.HasThumb,
+		} {
+			b := uint8(0)
+			if fn() {
+				b = 1
+			}
+			rr.bools[i] = b
+		}
 		fmt.Printf("> %s: %v\n", hex.EncodeToString(k), rr)
 	})
-}
-
-func boolToUint8(b bool) uint8 {
-	if b {
-		return 1
-	}
-	return 0
 }

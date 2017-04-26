@@ -8,6 +8,25 @@ import (
 	"github.com/mailru/easyjson/jwriter"
 )
 
+// Boolean flags for a record
+const (
+	fetchedTags = 1 << iota
+	pngThumbnail
+	noThumb
+)
+
+// Byte offsets withing a record
+const (
+	offsetBools     = 1
+	offsetImportIme = offsetBools + 8*iota
+	offsetSize
+	offsetWidth
+	offsetHeight
+	offsetLength
+	offsetMD5
+	offsetTags = offsetMD5 + 16
+)
+
 type keyValue struct {
 	sha1 [20]byte
 	record
@@ -26,6 +45,8 @@ func (r keyValue) toJSON(w *jwriter.Writer, minimal bool) {
 	w.RawString(extensions[r.Type()])
 	w.RawString(`","thumbIsPNG":`)
 	w.Bool(r.ThumbIsPNG())
+	w.RawString(`","noThumb":`)
+	w.Bool(!r.HasThumb())
 
 	w.RawString(`,"importTime":`)
 	w.Uint64(r.ImportTime())
@@ -106,6 +127,14 @@ func (r record) SetFetchedTags() {
 
 func (r record) HaveFetchedTags() bool {
 	return r[offsetBools]&fetchedTags != 0
+}
+
+func (r record) SetNoThumb() {
+	r[offsetBools] |= noThumb
+}
+
+func (r record) HasThumb() bool {
+	return r[offsetBools]&noThumb == 0
 }
 
 func (r record) getUint64(offset int) uint64 {

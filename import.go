@@ -154,10 +154,13 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 		return
 	}
 
+	var noImage bool
 	src, thumb, err := thumbnailer.ProcessBuffer(buf, thumbnailerOpts)
 	switch err {
 	case nil:
-	case thumbnailer.ErrNoCoverArt, thumbnailer.ErrNoStreams:
+	case thumbnailer.ErrNoCoverArt:
+		noImage = true
+	case thumbnailer.ErrNoStreams:
 		err = errUnsupportedFile
 		return
 	default:
@@ -174,15 +177,20 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 		}
 	}
 
-	typ := mimeTypes[src.Mime]
-	errCh := make(chan error)
-	id := hex.EncodeToString(hash[:])
-	go func() {
-		errCh <- writeFile(sourcePath(id, typ), buf)
-	}()
-	go func() {
-		errCh <- writeFile(thumbPath(id, thumb.IsPNG), thumb.Data)
-	}()
+	var (
+		typ   = mimeTypes[src.Mime]
+		errCh chan error
+	)
+	if !noImage {
+		errCh = make(chan error)
+		id := hex.EncodeToString(hash[:])
+		go func() {
+			errCh <- writeFile(sourcePath(id, typ), buf)
+		}()
+		go func() {
+			errCh <- writeFile(thumbPath(id, thumb.IsPNG), thumb.Data)
+		}()
+	}
 
 	// Create database key-value pair
 	kv = keyValue{
@@ -203,11 +211,15 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 	kv.SetMD5(md5.Sum(buf))
 
 	// Receive any disk write errors
-	for i := 0; i < 2; i++ {
-		err = <-errCh
-		if err != nil {
-			return
+	if !noImage {
+		for i := 0; i < 2; i++ {
+			err = <-errCh
+			if err != nil {
+				return
+			}
 		}
+	} else {
+		kv.SetNoThumb()
 	}
 
 	err = writeRecord(kv, tags)

@@ -10,24 +10,6 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// Boolean flags for a record
-const (
-	fetchedTags = 1 << iota
-	pngThumbnail
-)
-
-// Byte offsets withing a record
-const (
-	offsetBools     = 1
-	offsetImportIme = offsetBools + 8*iota
-	offsetSize
-	offsetWidth
-	offsetHeight
-	offsetLength
-	offsetMD5
-	offsetTags = offsetMD5 + 16
-)
-
 var (
 	db                *bolt.DB
 	errRecordNotFound = errors.New("record not found")
@@ -243,12 +225,18 @@ func removeFile(id [20]byte) (err error) {
 	}
 
 	// Remove files
-	idStr := hex.EncodeToString(id[:])
-	paths := [...]string{
-		sourcePath(idStr, r.Type()),
-		thumbPath(idStr, r.ThumbIsPNG()),
+	var (
+		idStr = hex.EncodeToString(id[:])
+		paths [2]string
+	)
+	paths[0] = sourcePath(idStr, r.Type())
+	if r.HasThumb() {
+		paths[1] = thumbPath(idStr, r.ThumbIsPNG())
 	}
 	for _, p := range paths {
+		if p == "" {
+			continue
+		}
 		err = os.Remove(p)
 		if err != nil {
 			return

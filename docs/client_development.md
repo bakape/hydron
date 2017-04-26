@@ -65,6 +65,7 @@ Contains information about a single file stored in the database.
 | SHA1 | string | Hex-encoded SHA1 hash of the source file. Used as the image ID throughout Hydron. |
 | type | string | File type of the source image (jpg, png, mkv, ...). |
 | thumbIsPNG | bool | Specifies, if the thumbnail of the file is a PNG image. If false, the thumbnail is a JPEG image.  |
+| noThumb | bool | Specifies, if the record has no thumbnail. This will only be set for audio files without cover art and such. |
 | importTime | uint | Unix timestamp of the time the file was imported into Hydron. |
 | size | uint | Source file size in bytes. |
 | width | uint | Source file width in pixels. |
