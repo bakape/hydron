@@ -167,6 +167,13 @@ func importFile(f io.Reader, tags [][]byte) (kv keyValue, err error) {
 		return
 	}
 
+	// Add title and artists metadata as tags, if any
+	for _, s := range [...]string{src.Title, src.Artist} {
+		if s != "" {
+			tags = append(tags, normalizeTag([]byte(s)))
+		}
+	}
+
 	typ := mimeTypes[src.Mime]
 	errCh := make(chan error)
 	id := hex.EncodeToString(hash[:])
