@@ -139,12 +139,13 @@ func fetchFileTags(files map[[16]byte]keyValue) error {
 		}
 	}()
 
+	fetched := 0
 	p := progressLogger{
 		total:  len(files),
 		header: "fetching tags",
 		finalize: func(p *progressLogger) {
-			if p.total != p.done {
-				stderr.Printf("no tags found for %d files", p.total-p.done)
+			if p.total != fetched {
+				stderr.Printf("no tags found for %d files", p.total-fetched)
 			}
 		},
 	}
@@ -153,13 +154,14 @@ func fetchFileTags(files map[[16]byte]keyValue) error {
 		switch r := <-res; r.err {
 		case nil:
 			if r.tags != nil {
-				err := writeFetchedTags(files[r.md5], r.tags)
-				if err != nil {
+				if err := writeFetchedTags(files[r.md5], r.tags); err != nil {
 					return err
 				}
 			}
+			fetched++
 			p.done++
 		case errNoMatch:
+			p.done++
 		default:
 			p.printError(r.err)
 		}
