@@ -62,7 +62,7 @@ Contains information about a single file stored in the database.
 
 | Field | Type | Description |
 |---|:---:|---|
-| SHA1 | string | Hex-encoded SHA1 hash of the source file. Used as the image ID throughout Hydron. |
+| sha1 | string | Hex-encoded SHA1 hash of the source file. Used as the image ID throughout Hydron. |
 | type | string | File type of the source image (jpg, png, mkv, ...). |
 | thumbIsPNG | bool | Specifies, if the thumbnail of the file is a PNG image. If false, the thumbnail is a JPEG image.  |
 | noThumb | bool | Specifies, if the record has no thumbnail. This will only be set for audio files without cover art and such. |
@@ -71,7 +71,7 @@ Contains information about a single file stored in the database.
 | width | uint | Source file width in pixels. |
 | height | uint | Source file height in pixels. |
 | length | uint | Length of source file in seconds . Only relevant for video and audio files. |
-| MD5 | string | Hex-encoded MD5 hash of the source file. |
+| md5 | string | Hex-encoded MD5 hash of the source file. |
 | tags | string[] | Array of the file's [tags](#tag). |
 
 ###tag

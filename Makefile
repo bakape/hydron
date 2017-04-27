@@ -1,5 +1,5 @@
 # Path to and target for the MXE cross environment for cross-compiling to
-# win_amd64. Default value is the debian x86-static install path.
+# win_amd64. Default value is the Debian x86-static install path.
 MXE_ROOT=/usr/lib/mxe/usr
 MXE_TARGET=x86_64-w64-mingw32.static
 
@@ -10,7 +10,7 @@ MXE_TARGET=x86_64-w64-mingw32.static
 # 	mxe-x86-64-w64-mingw32.static-libidn
 # 	mxe-x86-64-w64-mingw32.static-ffmpeg
 #   mxe-x86-64-w64-mingw32.static-graphicsmagick
-cross_compile_win_amd64:
+cross_win64_cli:
 	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
 	CC=$(MXE_ROOT)/bin/$(MXE_TARGET)-gcc \
 	PKG_CONFIG=$(MXE_ROOT)/bin/$(MXE_TARGET)-pkg-config \
@@ -18,3 +18,5 @@ cross_compile_win_amd64:
 	PKG_CONFIG_PATH=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
 	go build -v -a -o hydron.exe --ldflags '-extldflags "-static"'
 
+clean:
+	$(MAKE) -C hydron-qt clean

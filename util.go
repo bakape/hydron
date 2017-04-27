@@ -1,12 +1,9 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/bakape/hydron/core"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
@@ -42,20 +39,4 @@ func (p *progressLogger) Close() {
 
 func (p *progressLogger) SetTotal(n int) {
 	p.total = n
-}
-
-// Extract a file's SHA1 id from a string input
-func stringToSHA1(s string) (id [20]byte, err error) {
-	if len(s) != 40 {
-		err = core.InvalidIDError(s)
-		return
-	}
-	buf, err := hex.DecodeString(s)
-	if err != nil {
-		err = core.InvalidIDError(s + " : " + err.Error())
-		return
-	}
-
-	id = core.ExtractKey(buf)
-	return
 }

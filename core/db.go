@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"sort"
+
 	"github.com/boltdb/bolt"
 )
 
@@ -136,13 +138,22 @@ func IterateRecords(fn func(k []byte, r Record)) error {
 // Retrieves any records that with the provided ids and runs fn on them. Record
 // is only valid, while MapRecords is executing.
 func MapRecords(ids map[[20]byte]bool, fn func(id [20]byte, r Record)) error {
+	// Sort keys by ID for more sequential and faster reads
+	sorted := make(sha1Sorter, len(ids))
+	i := 0
+	for id := range ids {
+		sorted[i] = id
+		i++
+	}
+	sort.Sort(sorted)
+
 	tx, err := db.Begin(false)
 	if err != nil {
 		return err
 	}
 
 	buc := tx.Bucket([]byte("images"))
-	for id := range ids {
+	for _, id := range sorted {
 		v := buc.Get(id[:])
 		if v != nil {
 			fn(id, Record(v))
@@ -190,6 +201,16 @@ func getRecord(tx *bolt.Tx, id [20]byte) (r Record, err error) {
 	if r == nil {
 		err = errRecordNotFound
 	}
+	return
+}
+
+// Retrieves a single record by ID from the database. r = nil, if nor record
+// found.
+func GetRecord(id [20]byte) (r Record, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		r = Record(tx.Bucket([]byte("images")).Get(id[:])).Clone()
+		return nil
+	})
 	return
 }
 

@@ -2,3 +2,7 @@
 hydron
 hydron.exe
 hydron-*.zip
+hydron-qt/linux
+hydron-qt/deploy
+hydron-qt/rcc*
+hydron-qt/moc*

@@ -38,14 +38,14 @@ func (r KeyValue) ToJSON(w *jwriter.Writer, minimal bool) {
 	var arr [40]byte
 	buf := arr[:]
 	hex.Encode(buf, r.SHA1[:])
-	w.RawString(`{"SHA1":"`)
+	w.RawString(`{"sha1":"`)
 	w.Raw(buf, nil)
 
 	w.RawString(`","type":"`)
 	w.RawString(Extensions[r.Type()])
 	w.RawString(`","thumbIsPNG":`)
 	w.Bool(r.ThumbIsPNG())
-	w.RawString(`","noThumb":`)
+	w.RawString(`,"noThumb":`)
 	w.Bool(!r.HasThumb())
 
 	w.RawString(`,"importTime":`)
@@ -64,7 +64,7 @@ func (r KeyValue) ToJSON(w *jwriter.Writer, minimal bool) {
 		return
 	}
 
-	w.RawString(`,"MD5":"`)
+	w.RawString(`,"md5":"`)
 	md5 := r.MD5()
 	buf = arr[:32]
 	hex.Encode(buf, md5[:])

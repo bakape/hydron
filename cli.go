@@ -9,7 +9,7 @@ import (
 // Remove files from the database by ID from the CLI
 func removeFiles(ids []string) error {
 	for _, id := range ids {
-		sha1, err := stringToSHA1(id)
+		sha1, err := core.StringToSHA1(id)
 		if err != nil {
 			return err
 		}
@@ -31,7 +31,7 @@ func modTags(
 	tags []string,
 	fn func([20]byte, [][]byte) error,
 ) error {
-	sha1, err := stringToSHA1(id)
+	sha1, err := core.StringToSHA1(id)
 	if err != nil {
 		return err
 	}

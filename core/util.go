@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/hex"
 	"fmt"
 )
 
@@ -9,6 +10,29 @@ type InvalidIDError string
 
 func (e InvalidIDError) Error() string {
 	return "invalid id: " + string(e)
+}
+
+type sha1Sorter [][20]byte
+
+func (s sha1Sorter) Len() int {
+	return len(s)
+}
+
+func (s sha1Sorter) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s sha1Sorter) Less(i, j int) bool {
+	a, b := s[i], s[j]
+	for i := range a {
+		switch {
+		case a[i] < b[i]:
+			return true
+		case a[i] > b[i]:
+			return false
+		}
+	}
+	return true
 }
 
 // Extract a copy of the underlying SHA1 key from a BoltDB key
@@ -33,5 +57,21 @@ func Waterfall(fns ...func() error) (err error) {
 			break
 		}
 	}
+	return
+}
+
+// Extract a file's SHA1 id from a string input
+func StringToSHA1(s string) (id [20]byte, err error) {
+	if len(s) != 40 {
+		err = InvalidIDError(s)
+		return
+	}
+	buf, err := hex.DecodeString(s)
+	if err != nil {
+		err = InvalidIDError(s + " : " + err.Error())
+		return
+	}
+
+	id = ExtractKey(buf)
 	return
 }

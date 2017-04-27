@@ -221,7 +221,7 @@ func getFilesByIDs(
 	split := strings.Split(p["ids"], ",")
 	ids := make(map[[20]byte]bool, len(split))
 	for i := range split {
-		id, err := stringToSHA1(split[i])
+		id, err := core.StringToSHA1(split[i])
 		if err != nil {
 			sendError(w, 400, err)
 			return

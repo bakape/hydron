@@ -80,4 +80,30 @@ var (
 		WMV:  "wmv",
 		FLV:  "flv",
 	}
+
+	// Mapping from canonical extensions to internal enum
+	RevExtensions = map[string]FileType{
+		"jpg":  JPEG,
+		"png":  PNG,
+		"gif":  GIF,
+		"webp": WEBP,
+		"pdf":  PDF,
+		"bmp":  BMP,
+		"psd":  PSD,
+		"tiff": TIFF,
+		"ico":  ICO,
+		"mp3":  MP3,
+		"aac":  AAC,
+		"wave": WAVE,
+		"flac": FLAC,
+		"midi": MIDI,
+		"ogg":  OGG,
+		"webm": WEBM,
+		"mkv":  MKV,
+		"mp4":  MP4,
+		"avi":  AVI,
+		"mov":  MOV,
+		"wmv":  WMV,
+		"flv":  FLV,
+	}
 )

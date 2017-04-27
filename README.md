@@ -19,18 +19,24 @@ Platforms: Linux, OSX, Win64
 	<summary>Linux / OS X</summary>
 	<ol>
 		<li>
-			Install dependencies listed below. On a Debian-based system those would
-			the following packages or similar:
-			golang build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev
-			libavformat-dev libgraphicsmagick1-dev
+			Install dependencies listed below. On a Debian-based system those
+			would the following packages or similar:
+
+			`golang build-essential pkg-config libpth-dev libavcodec-dev
+			libavutil-dev libavformat-dev libgraphicsmagick1-dev`
+
 		</li>
 		<li>
 			Set up a Go workspace (not needed with Go >= 1.8)
+
 			`mkdir ~/go; echo 'export GOPATH=~/go' >> ~/.bashrc; . ~/.bashrc`
+
 		</li>
 		<li>
 			Add Go bin directory to your path
-			`echo 'export PATH=$PATH:~/go/bin' >> ~/.bashrc; . ~/.bashrc`	
+
+			`echo 'export PATH=$PATH:~/go/bin' >> ~/.bashrc; . ~/.bashrc`
+
 		</li>
 		<li>
 			Download and install Hydron with `go get github.com/bakape/hydron`
