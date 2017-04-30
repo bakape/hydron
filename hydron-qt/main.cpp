@@ -1,12 +1,18 @@
-#include "record.h"
 #include "bridge.h"
-#include <QQmlContext>
+#include "record.h"
 #include <QApplication>
+#include <QCoreApplication>
+#include <QObject>
 #include <QQmlApplicationEngine>
-
+#include <QQmlContext>
 
 int main(int argc, char *argv[])
 {
+    char* err = startHydron();
+    if (err) {
+        throw err;
+    }
+
     QApplication app(argc, argv);
 
     QQmlApplicationEngine engine;

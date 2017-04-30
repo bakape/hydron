@@ -3,7 +3,7 @@
 // TODO: Error reporting to the GUI
 
 // Bridges the QML side with with the CGo hydron API
-QList<QRecord*> Bridge::search(const QString &tags)
+QList<QObject *> Bridge::search(const QString &tags)
 {
     auto re = searchByTags(tags.toUtf8().data());
     if (re.r2) {
