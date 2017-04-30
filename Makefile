@@ -1,22 +1,41 @@
-# Path to and target for the MXE cross environment for cross-compiling to
-# win_amd64. Default value is the Debian x86-static install path.
-MXE_ROOT=/usr/lib/mxe/usr
-MXE_TARGET=x86_64-w64-mingw32.static
+# # Differentiate between Unix and MSYS2 builds
+# ifeq ($(OS), Windows_NT)
+# 	export PKG_CONFIG_PATH:=$(PKG_CONFIG_PATH):/mingw64/lib/pkgconfig/
+# 	export PKG_CONFIG_LIBDIR=/mingw64/lib/pkgconfig/
+# 	export PATH:=$(PATH):/mingw64/bin/
+# endif
 
-# Cross-compile from Unix into a Windows_amd64 static binary
-# Needs Go >= 1.8.
-# Depends on (on Debian-based distros):
-# 	mxe-x86-64-w64-mingw32.static-gcc
-# 	mxe-x86-64-w64-mingw32.static-libidn
-# 	mxe-x86-64-w64-mingw32.static-ffmpeg
-#   mxe-x86-64-w64-mingw32.static-graphicsmagick
-cross_win64_cli:
-	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
-	CC=$(MXE_ROOT)/bin/$(MXE_TARGET)-gcc \
-	PKG_CONFIG=$(MXE_ROOT)/bin/$(MXE_TARGET)-pkg-config \
-	PKG_CONFIG_LIBDIR=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
-	PKG_CONFIG_PATH=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
-	go build -v -a -o hydron.exe --ldflags '-extldflags "-static"'
+version=$(shell git describe --tags)
+ifeq ($(OS), Windows_NT)
+	export QT_MSYS2=true
+	export version:=win_amd64-$(version)
+	export deploy_dir=windows
+else ifeq ($(UNAME_S),Darwin)
+	export QT_HOMEBREW=true
+	export version:=osx_amd64-$(version)
+	export deploy_dir=osx
+else
+	export version:=linux_amd64-$(version)
+	export deploy_dir=linux
+endif
+
+setup:
+	go get -u -v github.com/bakape/hydron
+	$(MAKE) -C hydron-qt setup
+
+all: cli qt
+	rm -rf build
+	mkdir -p build
+	mv hydron build
+	cp -r hydron-qt/deploy/$(deploy_dir)/* build
+
+cli:
+	go build -v
+
+qt:
+	$(MAKE) -C hydron-qt build
 
 clean:
+	rm -rf build hydron hydron.exe
 	$(MAKE) -C hydron-qt clean
+
