@@ -13,7 +13,7 @@ class QRecord : public QObject
 
   public:
     bool selected, pngThumb, noThumb;
-    unsigned int importTime, size, width, height, length;
+    unsigned long importTime, size, width, height, length;
     QString sha1, md5, type;
     QList<QString> tags;
 
