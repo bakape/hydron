@@ -7,8 +7,7 @@ QList<QString> decodeTags(Tags &tags)
     if (tags.tags) {
         list.reserve(tags.len);
         for (int i = 0; i < tags.len; i++) {
-            char **pos = tags.tags + (size_t)i;
-            list.append(QString::fromUtf8(*pos));
+            list << QString::fromUtf8(*(tags.tags + i));
         }
         free(tags.tags);
     }
@@ -19,19 +18,36 @@ QList<QString> decodeTags(Tags &tags)
 QRecord::QRecord(Record &r)
 {
     selected = false;
-    pngThumb = r.pngThumb;
-    noThumb = r.noThumb;
+    type = r.type;
     importTime = r.importTime;
     size = r.size;
     width = r.width;
     height = r.height;
     length = r.length;
-    sha1 = QString::fromUtf8(r.sha1);
-    type = QString::fromUtf8(r.type);
-    if (r.md5) {
-        md5 = QString::fromUtf8(r.md5);
+    std::copy(std::begin(r.sha1), std::end(r.sha1), std::begin(sha1));
+    std::copy(std::begin(r.md5), std::end(r.md5), std::begin(md5));
+    if (r.sourcePath) {
+        sourcePath = QString::fromUtf8(r.sourcePath);
+    }
+    if (r.thumbPath) {
+        sourcePath = QString::fromUtf8(r.thumbPath);
     }
     tags = decodeTags(r.tags);
+}
+
+void QRecord::setSelected(bool val)
+{
+    selected = val;
+}
+
+bool QRecord::getSelected()
+{
+    return selected;
+}
+
+QString QRecord::getSourcePath()
+{
+    return sourcePath;
 }
 
 // Decode an array of C Records
@@ -40,10 +56,8 @@ QList<QObject *> decodeRecords(Record *recs, int len)
     QList<QObject *> list;
     if (recs) {
         list.reserve(len);
-        const size_t size = sizeof(Record);
         for (int i = 0; i < len; i++) {
-            Record r = *(recs + size * (size_t)i);
-            list.append(new QRecord(r));
+            list << new QRecord(*(recs + i));
         }
         free(recs);
     }

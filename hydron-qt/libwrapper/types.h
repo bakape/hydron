@@ -8,9 +8,36 @@ typedef struct {
 	int len;
 } Tags;
 
+enum FileType {
+	JPEG,
+	PNG,
+	GIF,
+	WEBP,
+	PDF,
+	BMP,
+	PSD,
+	TIFF,
+	ICO,
+	MP3,
+	AAC,
+	WAVE,
+	FLAC,
+	MIDI,
+	OGG,
+	WEBM,
+	MKV,
+	MP4,
+	AVI,
+	MOV,
+	WMV,
+	FLV
+};
+
 typedef struct {
-	bool pngThumb, noThumb;
 	uint64_t importTime, size, width, height, length;
-	char *sha1, *md5, *type;
+	char sha1[20];
+	char md5[16];
+	enum FileType type;
+	char *thumbPath, *sourcePath;
 	Tags tags;
 } Record;

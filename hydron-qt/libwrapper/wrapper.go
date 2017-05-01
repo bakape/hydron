@@ -12,31 +12,12 @@ import (
 // func buildBridge(app *qml.QQmlApplicationEngine) {
 // 	bridge := NewBridge(nil)
 
-// 	bridge.ConnectSourcePath(sourcePath)
-// 	bridge.ConnectThumbPath(thumbPath)
-// 	bridge.ConnectSearch(searchByTags)
 // 	bridge.ConnectGet(getRecord)
 // 	bridge.ConnectCompleteTag(completeTag)
 
 // 	//make the bridge object accessible inside qml as "go"
 // 	app.RootContext().SetContextProperty("go", bridge)
 // }
-
-//export sourcePath
-// Return source file path
-func sourcePath(id_C, fileType_C *C.char) *C.char {
-	id := C.GoString(id_C)
-	fileType := C.GoString(fileType_C)
-	s := "file:///" + core.SourcePath(id, core.RevExtensions[fileType])
-	return C.CString(s)
-}
-
-//export thumbPath
-// Return thumbnail file path
-func thumbPath(id_C *C.char, isPNG C.bool) *C.char {
-	id := C.GoString(id_C)
-	return C.CString("file:///" + core.ThumbPath(id, bool(isPNG)))
-}
 
 //export searchByTags
 // Retrieves Records by tag intersection. Returns record array, its length and

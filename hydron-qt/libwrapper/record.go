@@ -14,10 +14,7 @@ import (
 // fields should be omitted.
 func encodeRecord(kv core.KeyValue, minimal bool) C.Record {
 	dst := C.Record{
-		sha1:       C.CString(hex.EncodeToString(kv.SHA1[:])),
-		_type:      C.CString(core.Extensions[kv.Type()]),
-		pngThumb:   C.bool(kv.ThumbIsPNG()),
-		noThumb:    C.bool(!kv.HasThumb()),
+		_type:      uint32(kv.Type()),
 		importTime: C.uint64_t(kv.ImportTime()),
 		size:       C.uint64_t(kv.Size()),
 		width:      C.uint64_t(kv.Width()),
@@ -25,9 +22,25 @@ func encodeRecord(kv core.KeyValue, minimal bool) C.Record {
 		length:     C.uint64_t(kv.Length()),
 	}
 
+	// Go can't cast arrays. Need to loop.
+	for i := 0; i < 20; i++ {
+		dst.sha1[i] = C.char(kv.SHA1[i])
+	}
+
+	if kv.HasThumb() {
+		path := core.ThumbPath(hex.EncodeToString(kv.SHA1[:]), kv.ThumbIsPNG())
+		dst.thumbPath = C.CString("file:///" + path)
+	}
+
 	if !minimal {
+		path := core.SourcePath(hex.EncodeToString(kv.SHA1[:]), kv.Type())
+		dst.sourcePath = C.CString("file:///" + path)
+
 		md5 := kv.MD5()
-		dst.md5 = C.CString(hex.EncodeToString(md5[:]))
+		for i := 0; i < 16; i++ {
+			dst.md5[i] = C.char(md5[i])
+		}
+
 		dst.tags = encodeTags(kv.Tags())
 	}
 

@@ -10,15 +10,23 @@ QList<QString> decodeTags(Tags &tags);
 class QRecord : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool selected READ getSelected WRITE setSelected)
+    Q_PROPERTY(QString sourcePath READ getSourcePath)
 
   public:
-    bool selected, pngThumb, noThumb;
+    bool selected;
+    FileType type;
     unsigned long importTime, size, width, height, length;
-    QString sha1, md5, type;
+    QString sourcePath, thumbPath;
     QList<QString> tags;
+    QRecord(Record &); // Create new model from a C Record
+    void setSelected(bool);
+    bool getSelected();
+    QString getSourcePath();
 
-    // Create new model from a C Record
-    QRecord(Record &r);
+  private:
+    char sha1[20];
+    char md5[16];
 };
 
 // Decode an array of C Records
