@@ -8,13 +8,22 @@ Platforms: Linux, OSX, Win64
 
 ## Building
 
-<!--<details>
-	<summary>Windows</summary>
-	While it is possible to compile binaries on Windows with MinGW/MSYS2 similar
-	to how you would on Unix-like systems, it is a huge pain in the ass.
-	Just download statically precompiled binaries from the
-	<a href=https://github.com/bakape/hydron/releases>release page</a>.
-</details>-->
+<details><summary>Windows</summary>
+
+- Install [Go](https://golang.org/dl/)
+- Install [git](https://git-scm.com/download)
+- Install [MSYS2 64bit](http://www.msys2.org/)
+- Open a MSYS2 64bit shell and run:
+```
+pacman -Syyu
+pacman -S make git
+git clone https://github.com/bakape/hydron.git
+cd hydron
+make setup all
+```
+The binaries will be located in the build directory.
+
+</details>
 
 <details><summary>OS X</summary>
 

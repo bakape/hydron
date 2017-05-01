@@ -1,6 +1,11 @@
+flags=""
+ifeq ($(OS), Windows_NT)
+	flags=-ldflags '-L/mingw64/lib'
+endif
+
 build:
 	go generate -v
-	qtdeploy build desktop
+	qtdeploy $(flags) build desktop
 
 setup:
 	go get -u -v github.com/therecipe/qt/cmd/...
