@@ -152,7 +152,7 @@ Rectangle {
             media.source = go.sourcePath(data.sha1, data.type)
             break
         default: // PSD, PDF and others
-            error.visble = true
+            error.visible = true
             error.text = "Preview not available for this file type"
             return
         }

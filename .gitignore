@@ -5,3 +5,5 @@ hydron-*.zip
 build
 libwrapper.h
 libwrapper.so
+build-hydron-qt-*
+hydron-qt/hydron-qt.pro.user
