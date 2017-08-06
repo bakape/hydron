@@ -1,81 +1,56 @@
 package main
 
-// #include <string.h>
-// #include "types.h"
-import "C"
 import (
 	"encoding/hex"
-	"unsafe"
 
 	"github.com/bakape/hydron/core"
+	"github.com/mailru/easyjson/jwriter"
 )
 
 // Encode a Go core.KeuValue into a C Record. minimal specifies, if tags and md5
 // fields should be omitted.
-func encodeRecord(kv core.KeyValue, minimal bool) C.Record {
-	dst := C.Record{
-		_type:      uint32(kv.Type()),
-		importTime: C.uint64_t(kv.ImportTime()),
-		size:       C.uint64_t(kv.Size()),
-		width:      C.uint64_t(kv.Width()),
-		height:     C.uint64_t(kv.Height()),
-		length:     C.uint64_t(kv.Length()),
+func encodeRecord(r core.KeyValue, w *jwriter.Writer, minimal bool) {
+	w.RawString(`{"sha1":"`)
+	sha1 := hex.EncodeToString(r.SHA1[:])
+	w.RawString(sha1)
+
+	w.RawString(`","type":"`)
+	w.RawString(core.Extensions[r.Type()])
+
+	w.RawString(`","importTime":`)
+	w.Uint64(r.ImportTime())
+	w.RawString(`,"size":`)
+	w.Uint64(r.Size())
+	w.RawString(`,"width":`)
+	w.Uint64(r.Width())
+	w.RawString(`,"height":`)
+	w.Uint64(r.Height())
+	w.RawString(`,"length":`)
+	w.Uint64(r.Length())
+
+	w.RawString(`,"selected":false`)
+
+	if r.HasThumb() {
+		w.RawString(`,"thumbPath":"file:///`)
+		w.RawString(core.ThumbPath(sha1, r.ThumbIsPNG()))
+		w.RawByte('"')
 	}
 
-	// Go can't cast arrays. Need to loop.
-	for i := 0; i < 20; i++ {
-		dst.sha1[i] = C.char(kv.SHA1[i])
+	if minimal {
+		w.RawByte('}')
+		return
 	}
 
-	if kv.HasThumb() {
-		path := core.ThumbPath(hex.EncodeToString(kv.SHA1[:]), kv.ThumbIsPNG())
-		dst.thumbPath = C.CString("file:///" + path)
-	}
+	w.RawString(`,"sourcePath":"file:///`)
+	w.RawString(core.SourcePath(sha1, r.Type()))
 
-	if !minimal {
-		path := core.SourcePath(hex.EncodeToString(kv.SHA1[:]), kv.Type())
-		dst.sourcePath = C.CString("file:///" + path)
+	w.RawString(`,"md5":"`)
+	var buf [32]byte
+	md5 := r.MD5()
+	hex.Encode(buf[:], md5[:])
+	w.Raw(buf[:], nil)
 
-		md5 := kv.MD5()
-		for i := 0; i < 16; i++ {
-			dst.md5[i] = C.char(md5[i])
-		}
-
-		dst.tags = encodeTags(kv.Tags())
-	}
-
-	return dst
-}
-
-// Encode tag slice to C array
-func encodeTags(tags [][]byte) C.Tags {
-	l := len(tags)
-	if l == 0 {
-		return C.Tags{}
-	}
-
-	size := unsafe.Sizeof(uintptr(0))
-	buf := C.malloc(C.size_t(l))
-	for i, t := range tags {
-		pos := uintptr(buf) + size*uintptr(i)
-		*(**C.char)(unsafe.Pointer(pos)) = C.CString(string(t))
-	}
-	return C.Tags{
-		tags: (**C.char)(buf),
-		len:  C.int(l),
-	}
-}
-
-// Converts a Go Record array to a C Record array
-func encodeRecordArray(recs []C.Record) (*C.Record, C.int) {
-	l := len(recs)
-	if l == 0 {
-		return nil, 0
-	}
-
-	// The memory layout is the same. Just allocate a copy.
-	size := C.size_t(unsafe.Sizeof(C.Record{})) * C.size_t(l)
-	buf := C.malloc(size)
-	C.memcpy(buf, unsafe.Pointer(&recs[0]), size)
-	return (*C.Record)(buf), C.int(l)
+	w.RawString(`","tags":`)
+	r.JSONTags(w)
+	w.RawByte('}')
 }

@@ -16,7 +16,7 @@ GridView {
         model.clear()
         highlighted = {}
 
-        var data = go.search(tags)
+        var data = JSON.parse(go.search(tags))
         for (var i = 0; i < data.length; i++) {
             model.append(data[i])
         }
@@ -36,7 +36,7 @@ GridView {
             }
             asynchronous: true
             sourceSize: "150x150"
-            source: sourcePath
+            source: thumbPath
             focus: true
         }
     }

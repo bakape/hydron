@@ -1,5 +1,4 @@
 #include "bridge.h"
-#include "record.h"
 #include <QApplication>
 #include <QCoreApplication>
 #include <QObject>

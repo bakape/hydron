@@ -70,7 +70,14 @@ func (r KeyValue) ToJSON(w *jwriter.Writer, minimal bool) {
 	hex.Encode(buf, md5[:])
 	w.Raw(buf, nil)
 
-	w.RawString(`","tags":[`)
+	w.RawString(`","tags":`)
+	r.JSONTags(w)
+	w.RawByte('}')
+}
+
+// Write JSON representation of tags
+func (r KeyValue) JSONTags(w *jwriter.Writer) {
+	w.RawByte('[')
 	for i, t := range r.Tags() {
 		if i != 0 {
 			w.RawByte(',')
@@ -79,7 +86,7 @@ func (r KeyValue) ToJSON(w *jwriter.Writer, minimal bool) {
 		w.Raw(t, nil)
 		w.RawByte('"')
 	}
-	w.RawString(`]}`)
+	w.RawByte(']')
 }
 
 /*

@@ -1,7 +1,5 @@
 #pragma once
 #include "libwrapper/libwrapper.h"
-#include "libwrapper/types.h"
-#include "record.h"
 #include <QList>
 #include <QObject>
 #include <QString>
@@ -12,5 +10,5 @@ class Bridge : public QObject
     Q_OBJECT
 
   public slots:
-    QList<QObject *> search(const QString &tags);
+    QString search(const QString &tags);
 };
