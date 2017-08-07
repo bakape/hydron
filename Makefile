@@ -38,6 +38,16 @@ qt:
 	$(MAKE) -C hydron-qt build
 
 clean:
-	rm -rf build hydron hydron.exe
+	rm -rf hydron hydron.exe dist
+	$(MAKE) -C hydron-qt/libwrapper clean
+	cd hydron-qt; qmake
 	$(MAKE) -C hydron-qt clean
 
+qt:
+	$(MAKE) -C hydron-qt/libwrapper
+	cd hydron-qt; qmake
+	$(MAKE) -C hydron-qt
+	rm -rf dist
+	mkdir -p dist
+	cp hydron-qt/libwrapper/libwrapper.so hydron-qt/hydron-qt dist
+	cp scripts/unix-launch.sh dist/hydron-qt.sh

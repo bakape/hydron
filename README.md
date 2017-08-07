@@ -6,53 +6,32 @@ early development.
 
 Platforms: Linux, OSX, Win64
 
-## Building
+## Installation
 
 <details><summary>Windows</summary>
 
-- Install [Go](https://golang.org/dl/)
-- Install [git](https://git-scm.com/download)
-- Install [MSYS2 64bit](http://www.msys2.org/)
-- Open a MSYS2 64bit shell and run:
-```
-pacman -Syyu
-pacman -S make git
-git clone https://github.com/bakape/hydron.git
-cd hydron
-make setup all
-```
-The binaries will be located in the build directory.
+While it is possible to compile binaries on Windows with MinGW/MSYS2 similar
+to how you would on Unix-like systems, it is a huge pain in the ass.
+Just download statically precompiled binaries from the
+[release page](https://github.com/bakape/hydron/releases).
 
 </details>
 
-<details><summary>OS X</summary>
+<details><summary>Linux / OS X</summary>
 
-- Install XCode
-- Follow the Linux guide
-
-</details>
-
-<details><summary>Linux</summary>
-
-- Install [QT SDK](https://download.qt.io/official_releases/qt/5.8/5.8.0/)
-- Install package manager dependencies.
+- Install dependencies listed below.
 On a Debian-based system those would the following packages or similar:
-`golang build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev
-libavformat-dev libgraphicsmagick1-dev`
+
+`golang build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev libavformat-dev libgraphicsmagick1-dev qtdeclarative5-dev qt5-default qt5-qmake`
+
 - Set up a Go workspace (not needed with Go >= 1.8)
-```
-mkdir ~/go
-echo 'export GOPATH=~/go' >> ~/.bashrc
-. ~/.bashrc
-```
-- Add Go bin directory to your path
-```
-echo 'export PATH=$PATH:~/go/bin' >> ~/.bashrc
-. ~/.bashrc
-```
-- Fetch and build dependencies with `make setup`
-- Build hydron with `make all`.
-The binaries will be located in the build directory.
+
+`mkdir ~/go; echo 'export GOPATH=~/go' >> ~/.bashrc; . ~/.bashrc`
+
+- Run `make qt`. The binaries will be located in `./dist`. The GUI can be
+launched with `hydron-qt.sh`.
+
+- To build only the CLI client run `go get && go build`
 
 </details>
 
@@ -61,6 +40,7 @@ The binaries will be located in the build directory.
 * GCC or Clang
 * pkg-config
 * pthread
-* ffmpeg >= 3.0 libraries (libavcodec, libavutil, libavformat)
+* ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
 * Qt5
+* qmake

@@ -204,7 +204,7 @@ func getRecord(tx *bolt.Tx, id [20]byte) (r Record, err error) {
 	return
 }
 
-// Retrieves a single record by ID from the database. r = nil, if nor record
+// Retrieves a single record by ID from the database. r = nil, if no record
 // found.
 func GetRecord(id [20]byte) (r Record, err error) {
 	err = db.View(func(tx *bolt.Tx) error {

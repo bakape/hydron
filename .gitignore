@@ -2,8 +2,23 @@
 hydron
 hydron.exe
 hydron-*.zip
+<<<<<<< HEAD
 hydron-qt/linux
 hydron-qt/deploy
 hydron-qt/rcc*
 hydron-qt/moc*
 /build
+=======
+build
+libwrapper.h
+libwrapper.so
+build-hydron-qt-*
+hydron-qt/hydron-qt.pro.user
+hydron-qt/Makefile
+hydron-qt/hydron-qt
+hydron-qt/*.o
+moc_bridge.cpp
+qrc_qml.cpp
+.qmake.stash
+dist
+>>>>>>> cpp-gui
