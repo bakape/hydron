@@ -8,17 +8,6 @@ import (
 	"github.com/mailru/easyjson/jwriter"
 )
 
-// // Bind FFI Go-QML callbacks
-// func buildBridge(app *qml.QQmlApplicationEngine) {
-// 	bridge := NewBridge(nil)
-
-// 	bridge.ConnectGet(getRecord)
-// 	bridge.ConnectCompleteTag(completeTag)
-
-// 	//make the bridge object accessible inside qml as "go"
-// 	app.RootContext().SetContextProperty("go", bridge)
-// }
-
 //export searchByTags
 // Retrieves records by tag intersection.
 // Returns record array as JSON, it's length in bytes and error, if any.
@@ -33,27 +22,20 @@ func searchByTags(tags_C *C.char) (*C.char, *C.char) {
 		return nil, toCError(err)
 	}
 
-	var w jwriter.Writer
-	w.RawByte('[')
-	first := true
+	w, comma, flush := encodeArray()
 	err = core.MapRecords(matched, func(id [20]byte, r core.Record) {
-		if !first {
-			w.RawByte(',')
-		}
-		first = false
-
+		comma()
 		kv := core.KeyValue{
 			SHA1:   id,
 			Record: r,
 		}
-		encodeRecord(kv, &w, true)
+		encodeRecord(kv, w, true)
 	})
 	if err != nil {
 		return nil, toCError(err)
 	}
-	w.RawByte(']')
 
-	return toCJSON(&w)
+	return flush()
 }
 
 // Encodes a Go error, if any, as a C string
@@ -73,29 +55,46 @@ func toCJSON(w *jwriter.Writer) (*C.char, *C.char) {
 	return C.CString(string(buf)), nil
 }
 
-// Encode all records in the database as JSON
-func encodeAllRecords() (*C.char, *C.char) {
-	var w jwriter.Writer
+// Helper for encoding JSON arrays to C strings
+func encodeArray() (
+	w *jwriter.Writer,
+	comma func(),
+	flush func() (*C.char, *C.char),
+) {
+	w = &jwriter.Writer{}
 	w.RawByte('[')
 	first := true
-	err := core.IterateRecords(func(k []byte, r core.Record) {
-		if !first {
-			w.RawByte(',')
-		}
-		first = false
 
+	return w,
+		func() {
+			if !first {
+				w.RawByte(',')
+			} else {
+				first = false
+			}
+		},
+		func() (*C.char, *C.char) {
+			w.RawByte(']')
+			return toCJSON(w)
+		}
+}
+
+// Encode all records in the database as JSON
+func encodeAllRecords() (*C.char, *C.char) {
+	w, comma, flush := encodeArray()
+	err := core.IterateRecords(func(k []byte, r core.Record) {
+		comma()
 		kv := core.KeyValue{
 			SHA1:   core.ExtractKey(k),
 			Record: r,
 		}
-		encodeRecord(kv, &w, true)
+		encodeRecord(kv, w, true)
 	})
 	if err != nil {
 		return nil, toCError(err)
 	}
-	w.RawByte(']')
 
-	return toCJSON(&w)
+	return flush()
 }
 
 // //export getRecord
@@ -117,14 +116,22 @@ func encodeAllRecords() (*C.char, *C.char) {
 // 	return encodeRecord(kv, false), nil
 // }
 
-// //export completeTag
-// // Complete the last tag in the tag string, if any.
-// // Returns an array of tag strings and their length.
-// func completeTag(tagStr_C *C.char) C.Tags {
-// 	// Empty field or starting to type a new tag
-// 	tagStr := C.GoString(tagStr_C)
-// 	if tagStr == "" || tagStr[len(tagStr)-1] == ' ' {
-// 		return C.Tags{}
-// 	}
-// 	return encodeTags(core.SplitTagString(tagStr, ' '))
-// }
+//export completeTag
+// Complete the last tag in the tag string, if any.
+// Returns a JSON array of tag strings.
+func completeTag(tagStr_C *C.char) (*C.char, *C.char) {
+	// Empty field or starting to type a new tag
+	tagStr := C.GoString(tagStr_C)
+	if tagStr == "" || tagStr[len(tagStr)-1] == ' ' {
+		return C.CString("[]"), nil
+	}
+
+	w, comma, flush := encodeArray()
+	for _, t := range core.CompleteTag(tagStr) {
+		comma()
+		w.RawByte('"')
+		w.RawString(t)
+		w.RawByte('"')
+	}
+	return flush()
+}

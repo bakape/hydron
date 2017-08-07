@@ -1,8 +1,11 @@
 #pragma once
-#include "libwrapper/libwrapper.h"
 #include <QList>
 #include <QObject>
 #include <QString>
+
+namespace go {
+    #include "libwrapper/libwrapper.h"
+}
 
 // Bridges the QML side with with the CGo hydron API
 class Bridge : public QObject
@@ -11,4 +14,5 @@ class Bridge : public QObject
 
   public slots:
     QString search(const QString &tags);
+    QString completeTag(const QString &tags);
 };

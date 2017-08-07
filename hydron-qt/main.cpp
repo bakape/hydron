@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[])
 {
-    char* err = startHydron();
+    char* err = go::startHydron();
     if (err) {
         throw err;
     }

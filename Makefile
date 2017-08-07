@@ -19,4 +19,7 @@ cross_win64_cli:
 	go build -v -a -o hydron.exe --ldflags '-extldflags "-static"'
 
 clean:
-	$(MAKE) -C hydron-qt clean
+	$(MAKE) -C hydron-qt/libwrapper clean
+
+qt:
+	$(MAKE) -C hydron-qt/libwrapper
