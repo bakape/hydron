@@ -20,6 +20,15 @@ cross_win64_cli:
 
 clean:
 	$(MAKE) -C hydron-qt/libwrapper clean
+	cd hydron-qt; qmake
+	$(MAKE) -C hydron-qt clean
+	rm -rf dist
 
 qt:
 	$(MAKE) -C hydron-qt/libwrapper
+	cd hydron-qt; qmake
+	$(MAKE) -C hydron-qt
+	rm -rf dist
+	mkdir -p dist
+	cp hydron-qt/libwrapper/libwrapper.so hydron-qt/hydron-qt dist
+	cp scripts/unix-launch.sh dist/hydron-qt.sh

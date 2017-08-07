@@ -7,3 +7,10 @@ libwrapper.h
 libwrapper.so
 build-hydron-qt-*
 hydron-qt/hydron-qt.pro.user
+hydron-qt/Makefile
+hydron-qt/hydron-qt
+hydron-qt/*.o
+moc_bridge.cpp
+qrc_qml.cpp
+.qmake.stash
+dist

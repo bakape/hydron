@@ -8,40 +8,31 @@ Platforms: Linux, OSX, Win64
 
 ## Installation
 
-<details>
-	<summary>Windows</summary>
-	While it is possible to compile binaries on Windows with MinGW/MSYS2 similar
-	to how you would on Unix-like systems, it is a huge pain in the ass.
-	Just download statically precompiled binaries from the
-	<a href=https://github.com/bakape/hydron/releases>release page</a>.
+<details><summary>Windows</summary>
+
+While it is possible to compile binaries on Windows with MinGW/MSYS2 similar
+to how you would on Unix-like systems, it is a huge pain in the ass.
+Just download statically precompiled binaries from the
+[release page](https://github.com/bakape/hydron/releases).
+
 </details>
-<details>
-	<summary>Linux / OS X</summary>
-	<ol>
-		<li>
-			Install dependencies listed below. On a Debian-based system those
-			would the following packages or similar:
 
-			`golang build-essential pkg-config libpth-dev libavcodec-dev
-			libavutil-dev libavformat-dev libgraphicsmagick1-dev`
+<details><summary>Linux / OS X</summary>
 
-		</li>
-		<li>
-			Set up a Go workspace (not needed with Go >= 1.8)
+- Install dependencies listed below.
+On a Debian-based system those would the following packages or similar:
 
-			`mkdir ~/go; echo 'export GOPATH=~/go' >> ~/.bashrc; . ~/.bashrc`
+`golang build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev libavformat-dev libgraphicsmagick1-dev qtdeclarative5-dev qt5-default qt5-qmake`
 
-		</li>
-		<li>
-			Add Go bin directory to your path
+- Set up a Go workspace (not needed with Go >= 1.8)
 
-			`echo 'export PATH=$PATH:~/go/bin' >> ~/.bashrc; . ~/.bashrc`
+`mkdir ~/go; echo 'export GOPATH=~/go' >> ~/.bashrc; . ~/.bashrc`
 
-		</li>
-		<li>
-			Download and install Hydron with `go get github.com/bakape/hydron`
-		</li>
-	</ol>
+- Run `make qt`. The binaries will be located in `./dist`. The GUI can be
+launched with `hydron-qt.sh`.
+
+- To build only the CLI client run `go get && go build`
+
 </details>
 
 ### Build dependencies
@@ -49,9 +40,7 @@ Platforms: Linux, OSX, Win64
 * GCC or Clang
 * pkg-config
 * pthread
-* ffmpeg >= 3.0 libraries (libavcodec, libavutil, libavformat)
+* ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
-
-## Updating
-* On Windows download the new binary and replace the old one.
-* On Linux / OS X simply run `go get -u github.com/bakape/hydron`
+* Qt5
+* qmake
