@@ -52,7 +52,15 @@ func toCJSON(w *jwriter.Writer) (*C.char, *C.char) {
 	if err != nil {
 		return nil, toCError(err)
 	}
-	return C.CString(string(buf)), nil
+
+	// Coverts to C string without allocating and extra Go string and passing
+	// that to C.CString()
+	l := len(buf)
+	s := C.malloc(C.size_t(l + 1))
+	sp := (*[1 << 30]byte)(s)
+	copy(sp[:], buf)
+	sp[l] = 0
+	return (*C.char)(s), nil
 }
 
 // Helper for encoding JSON arrays to C strings
