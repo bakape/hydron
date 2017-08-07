@@ -44,7 +44,7 @@ func encodeRecord(r core.KeyValue, w *jwriter.Writer, minimal bool) {
 	w.RawString(`,"sourcePath":"file:///`)
 	w.RawString(core.SourcePath(sha1, r.Type()))
 
-	w.RawString(`,"md5":"`)
+	w.RawString(`","md5":"`)
 	var buf [32]byte
 	md5 := r.MD5()
 	hex.Encode(buf[:], md5[:])

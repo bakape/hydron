@@ -127,6 +127,6 @@ GridView {
     // Open a thumbnail for full screeen viewing
     function open(i) {
         suggestions.model.clear()
-        fileView.render(model.get(i))
+        fileView.render(model.get(i).sha1)
     }
 }

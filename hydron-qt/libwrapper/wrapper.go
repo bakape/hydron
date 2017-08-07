@@ -105,24 +105,28 @@ func encodeAllRecords() (*C.char, *C.char) {
 	return flush()
 }
 
-// //export getRecord
-// // Retrieve a single record by ID.
-// // If no record is found, "null" is returned.
-// func getRecord(id_C *C.char) (C.Record, *C.char) {
-// 	sha1, err := core.StringToSHA1(C.GoString(id_C))
-// 	if err != nil {
-// 		return C.Record{}, toCError(err)
-// 	}
-// 	r, err := core.GetRecord(sha1)
-// 	if err != nil || r == nil {
-// 		return C.Record{}, toCError(err)
-// 	}
-// 	kv := core.KeyValue{
-// 		SHA1:   sha1,
-// 		Record: r,
-// 	}
-// 	return encodeRecord(kv, false), nil
-// }
+//export getRecord
+// Retrieve a single record by ID.
+// If no record is found, "null" is returned.
+func getRecord(id_C *C.char) (*C.char, *C.char) {
+	sha1, err := core.StringToSHA1(C.GoString(id_C))
+	if err != nil {
+		return nil, toCError(err)
+	}
+
+	r, err := core.GetRecord(sha1)
+	if err != nil || r == nil {
+		return nil, toCError(err)
+	}
+
+	var w jwriter.Writer
+	kv := core.KeyValue{
+		SHA1:   sha1,
+		Record: r,
+	}
+	encodeRecord(kv, &w, false)
+	return toCJSON(&w)
+}
 
 //export completeTag
 // Complete the last tag in the tag string, if any.

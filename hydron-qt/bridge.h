@@ -15,4 +15,5 @@ class Bridge : public QObject
   public slots:
     QString search(const QString &tags);
     QString completeTag(const QString &tags);
+    QString get(const QString &id);
 };

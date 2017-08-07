@@ -109,13 +109,22 @@ Rectangle {
         }
     }
 
-    function render(data) {
+    function render(id) {
         tags.model.clear()
         fileView.visible = true
         forceActiveFocus()
         window.toolBar.visible = false
         browser.visible = false
 
+        // Fetch more detailed record struct
+        var data = JSON.parse(go.get(id))
+        if (data === null) {
+            error.visible = true
+            error.text = "File not found"
+            return
+        }
+
+        console.debug(data)
         switch (data.type) {
         case "jpg":
         case "png":
@@ -124,11 +133,11 @@ Rectangle {
         case "ico":
         case "bmp":
             image.visible = true
-            image.source = go.sourcePath(data.sha1, data.type)
+            image.source = data.sourcePath
             break
         case "gif":
             animated.visible = true
-            animated.source = go.sourcePath(data.sha1, data.type)
+            animated.source = data.sourcePath
             break
         case "webm":
         case "ogg":
@@ -139,7 +148,7 @@ Rectangle {
         case "wmv":
         case "flv":
             mediaContainer.visible = true
-            media.source = go.sourcePath(data.sha1, data.type)
+            media.source = data.sourcePath
             break
         case "mp3":
         case "aac":
@@ -147,9 +156,9 @@ Rectangle {
         case "flac":
         case "midi":
             image.visible = true
-            image.source = go.thumbPath(data.sha1, data.thumbIsPNG)
+            image.source = data.thumPath
             mediaContainer.visible = true
-            media.source = go.sourcePath(data.sha1, data.type)
+            media.source = data.sourcePath
             break
         default: // PSD, PDF and others
             error.visible = true
@@ -157,11 +166,6 @@ Rectangle {
             return
         }
 
-        // Fetch the tags
-        var data = JSON.parse(go.get(data.sha1))
-        if (!data) {
-            return
-        }
         for (var i = 0; i < data.tags.length; i++) {
             tags.model.append({tag: data.tags[i]})
         }
