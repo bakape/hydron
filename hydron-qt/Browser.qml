@@ -1,5 +1,5 @@
-import QtQuick 2.5
-import QtQuick.Layouts 1.1
+import QtQuick 2.9
+import QtQuick.Layouts 1.3
 
 GridView {
     cellHeight: 155
