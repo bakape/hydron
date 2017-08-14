@@ -1,7 +1,7 @@
-import QtQuick 2.9
+import QtQuick 2.7
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
-import QtMultimedia 5.9
+import QtMultimedia 5.7
 
 Rectangle {
     visible: false
@@ -113,7 +113,7 @@ Rectangle {
         tags.model.clear()
         fileView.visible = true
         forceActiveFocus()
-        window.header.visible = false
+        window.toolBar.visible = false
         browser.visible = false
 
         // Fetch more detailed record struct
@@ -174,7 +174,7 @@ Rectangle {
     function empty() {
         browser.visible = true
         visible = false
-        window.header.visible = true
+        window.toolBar.visible = true
 
         tags.model.clear()
 
