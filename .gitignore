@@ -13,3 +13,4 @@ hydron-qt/*.o
 moc_bridge.cpp
 qrc_qml.cpp
 .qmake.stash
+dist

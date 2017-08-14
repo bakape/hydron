@@ -1,6 +1,6 @@
-import QtQuick 2.7
+import QtQuick 2.9
 import QtQml 2.2
-import QtQuick.Controls 1.4
+import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 
 ApplicationWindow {
@@ -27,9 +27,9 @@ ApplicationWindow {
         }
     }
 
-    toolBar: SearchBar {
+    header: SearchBar {
         id: searchBar
-        anchors.fill: parent
+        Layout.fillWidth: true
     }
 
     ScrollView {
