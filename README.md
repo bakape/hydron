@@ -28,7 +28,7 @@ On a Debian-based system those would the following packages or similar:
 
 `mkdir ~/go; echo 'export GOPATH=~/go' >> ~/.bashrc; . ~/.bashrc`
 
-- Run `make qt`. The binaries will be located in `./dist`. The GUI can be
+- Run `make qt`. The binaries will be located in `./build`. The GUI can be
 launched with `hydron-qt.sh`.
 
 - To build only the CLI client run `go get && go build`
