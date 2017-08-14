@@ -149,17 +149,17 @@ func subtractTags(a, b [][]byte) [][]byte {
 	return setToTags(set)
 }
 
-// Return up to 10 random suggestions for tags by prefix
-func CompleteTag(prefix string) []string {
+// Return up to 10 random suggestions for tags by contained string
+func CompleteTag(s string) []string {
+	s = string(normalizeTag([]byte(s)))
 	var (
-		pre  = string(normalizeTag([]byte(prefix)))
 		i    = 0
 		tags = make([]string, 0, 10)
 	)
 
 	tagMu.RLock()
 	for tag := range tagIndex {
-		if strings.HasPrefix(tag, pre) {
+		if strings.Contains(tag, s) {
 			tags = append(tags, tag)
 			i++
 		}
