@@ -169,6 +169,13 @@ func CompleteTag(s string) []string {
 	}
 	tagMu.RUnlock()
 
+	// Also try to match against system tags
+	for _, t := range systemTagHeaders {
+		if strings.Contains(t, s) {
+			tags = append(tags, "system:"+t)
+		}
+	}
+
 	sort.Strings(tags)
 	return tags
 }

@@ -15,6 +15,11 @@ const (
 	tagCountValue
 )
 
+// Used for autocompletion
+var systemTagHeaders = []string{
+	"size", "width", "height", "length", "tag_count",
+}
+
 type syntaxError []byte
 
 func (e syntaxError) Error() string {
