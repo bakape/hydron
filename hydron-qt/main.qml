@@ -47,4 +47,13 @@ ApplicationWindow {
         context: Qt.ApplicationShortcut
         onActivated: Qt.quit()
     }
+
+    // Remove a file from the database nad update UI accordingly
+    function removeFiles(ids) {
+        for (var i = 0; i < ids.length; i++) {
+            go.remove(ids[i])
+        }
+        fileView.remove()
+        browser.loadThumbnails(searchBar.text)
+    }
 }

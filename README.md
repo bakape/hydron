@@ -42,5 +42,5 @@ launched with `hydron-qt.sh`.
 * pthread
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
-* Qt5 >= 5.7
+* Qt5 >= 5.9
 * qmake

@@ -147,3 +147,18 @@ func completeTag(tagStr_C *C.char) (*C.char, *C.char) {
 	}
 	return flush()
 }
+
+//export remove
+// Remove a file by ID
+func remove(id_C *C.char) *C.char {
+	id, err := core.StringToSHA1(C.GoString(id_C))
+	if err != nil {
+		return toCError(err)
+	}
+
+	err = core.RemoveFile(id)
+	if err != nil {
+		return toCError(err)
+	}
+	return nil
+}

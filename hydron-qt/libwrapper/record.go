@@ -28,8 +28,6 @@ func encodeRecord(r core.KeyValue, w *jwriter.Writer, minimal bool) {
 	w.RawString(`,"length":`)
 	w.Uint64(r.Length())
 
-	w.RawString(`,"selected":false`)
-
 	if r.HasThumb() {
 		w.RawString(`,"thumbPath":"file:///`)
 		w.RawString(core.ThumbPath(sha1, r.ThumbIsPNG()))

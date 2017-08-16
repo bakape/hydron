@@ -5,5 +5,6 @@
         <file>SearchBar.qml</file>
         <file>FileView.qml</file>
         <file>Browser.qml</file>
+        <file>FileMenu.qml</file>
     </qresource>
 </RCC>

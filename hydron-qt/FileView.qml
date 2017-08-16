@@ -4,6 +4,8 @@ import QtQuick.Layouts 1.3
 import QtMultimedia 5.9
 
 Rectangle {
+    property variant model
+
     visible: false
     color: SystemPalette.base || "white"
     focus: true
@@ -87,13 +89,31 @@ Rectangle {
                     }
                 }
             }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: parent.showMenu()
+            }
+
+            function showMenu() {
+                Qt.createComponent("FileMenu.qml")
+                    .createObject(fileView, { ids: [ fileView.model.sha1 ] })
+                    .popup()
+            }
         }
     }
 
     Keys.onPressed: {
-        if (event.key === Qt.Key_Escape) {
-            empty()
-            browser.forceActiveFocus()
+        switch (event.key) {
+        case Qt.Key_Escape:
+            remove()
+            break
+        case Qt.Key_Delete:
+            window.removeFiles([model.sha1])
+            // TODO: Navigate to next file
+            remove()
+            break
         }
 
         // TODO: Keyboard navigation in this mode
@@ -118,6 +138,7 @@ Rectangle {
 
         // Fetch more detailed record struct
         var data = JSON.parse(go.get(id))
+        fileView.model = data
         if (data === null) {
             error.visible = true
             error.text = "File not found"
@@ -188,5 +209,11 @@ Rectangle {
 
         mediaContainer.visible = false
         media.source = ""
+    }
+
+    // Reset to empty state and hide overlay
+    function remove() {
+        empty()
+        browser.forceActiveFocus()
     }
 }

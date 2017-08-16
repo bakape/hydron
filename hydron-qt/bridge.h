@@ -16,4 +16,7 @@ class Bridge : public QObject
     QString search(const QString &tags);
     QString completeTag(const QString &tags);
     QString get(const QString &id);
+    void remove(const QString &id);
 };
+
+void print_err(const char * const err);

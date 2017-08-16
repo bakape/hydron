@@ -18,7 +18,9 @@ GridView {
 
         var data = JSON.parse(go.search(tags))
         for (var i = 0; i < data.length; i++) {
-            model.append(data[i])
+            var m = data[i]
+            m.selected = m.showMenu = false
+            model.append(m)
         }
     }
 
@@ -45,6 +47,8 @@ GridView {
         if (event.modifiers & Qt.MetaModifier) {
             return
         }
+
+        // TODO: Page Up and Page Down
 
         switch (event.key) {
         case Qt.Key_Up:
@@ -73,6 +77,9 @@ GridView {
         case Qt.Key_Return:
             open(currentIndex)
             break
+        case Qt.Key_Delete:
+            window.removeFiles(selectedIDs())
+            break
         }
     }
 
@@ -82,13 +89,21 @@ GridView {
     MouseArea {
         id: dragArea
         anchors.fill: parent
-        acceptedButtons: Qt.LeftButton
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         drag.target: parent
 
         onPressed: {
             forceActiveFocus()
-            select(indexAt(mouse.x, mouse.y + contentY),
-                   !!(mouse.modifiers & Qt.ControlModifier))
+            var i = indexAt(mouse.x, mouse.y + contentY)
+            var multiple = !!(mouse.modifiers & Qt.ControlModifier)
+            if (mouse.button === Qt.RightButton) {
+                if (!model.get(i).selected) {
+                    select(i, multiple)
+                }
+                showMenu()
+            } else {
+                select(i, multiple)
+            }
         }
 
         onPressAndHold:	parent.grabToImage(function(result) {
@@ -128,5 +143,24 @@ GridView {
     function open(i) {
         suggestions.model.clear()
         fileView.render(model.get(i).sha1)
+    }
+
+    // Return selected files as an array of IDs
+    function selectedIDs() {
+        var ids = []
+        for (var i = 0; i < model.count; i++) {
+            var m = model.get(i)
+            if (m.selected) {
+                ids.push(m.sha1)
+            }
+        }
+        return ids
+    }
+
+    // Show context menu for selected files
+    function showMenu() {
+        Qt.createComponent("FileMenu.qml")
+            .createObject(fileView, { ids: selectedIDs() })
+            .popup()
     }
 }
