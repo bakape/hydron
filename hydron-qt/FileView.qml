@@ -32,6 +32,9 @@ Rectangle {
         }
 
         Rectangle {
+            property string url
+
+            id: display
             Layout.fillWidth: true
 
             Text {
@@ -80,7 +83,7 @@ Rectangle {
                 MouseArea {
                     id: playArea
                     anchors.fill: parent
-                    onPressed: {
+                    onReleased: {
                         if (media.playbackState === MediaPlayer.PlayingState) {
                             media.pause()
                         } else {
@@ -91,9 +94,18 @@ Rectangle {
             }
 
             MouseArea {
+                id: mouseArea
                 anchors.fill: parent
-                acceptedButtons: Qt.RightButton
+                acceptedButtons: Qt.RightButton | Qt.LeftButton
                 onClicked: parent.showMenu()
+                drag.target: display
+            }
+
+            Drag.active: mouseArea.drag.active
+            Drag.dragType: Drag.Automatic
+            Drag.supportedActions: Qt.CopyAction
+            Drag.mimeData: {
+                "text/uri-list": display.url
             }
 
             function showMenu() {
@@ -120,15 +132,6 @@ Rectangle {
 
     }
 
-    MouseArea {
-        enabled: true
-        acceptedButtons: Qt.AllButtons
-
-        onClicked: {
-            console.log("clicked")
-        }
-    }
-
     function render(id) {
         tags.model.clear()
         fileView.visible = true
@@ -142,9 +145,11 @@ Rectangle {
         if (data === null) {
             error.visible = true
             error.text = "File not found"
+            display.url = null
             return
         }
 
+        display.url = data.sourcePath
         switch (data.type) {
         case "jpg":
         case "png":

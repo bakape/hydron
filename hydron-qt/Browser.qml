@@ -7,14 +7,14 @@ GridView {
     model: ListModel {}
 
     highlightFollowsCurrentItem: false
-    property variant highlighted: ({})
+
+    property string url
 
     focus: true
     activeFocusOnTab: true
 
     function loadThumbnails (tags) {
         model.clear()
-        highlighted = {}
 
         var data = JSON.parse(go.search(tags))
         for (var i = 0; i < data.length; i++) {
@@ -83,16 +83,13 @@ GridView {
         }
     }
 
-    Drag.active: dragArea.drag.active
-    Drag.supportedActions: Qt.CopyAction
-
     MouseArea {
-        id: dragArea
+        id: mouseArea
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         drag.target: parent
 
-        onPressed: {
+        onReleased: {
             forceActiveFocus()
             var i = indexAt(mouse.x, mouse.y + contentY)
             var multiple = !!(mouse.modifiers & Qt.ControlModifier)
@@ -106,13 +103,16 @@ GridView {
             }
         }
 
-        onPressAndHold:	parent.grabToImage(function(result) {
-            parent.Drag.imageSource = result.url
-        })
-
         onDoubleClicked: {
             open(indexAt(mouse.x, mouse.y + contentY))
         }
+    }
+
+    Drag.active: mouseArea.drag.active
+    Drag.dragType: Drag.Automatic
+    Drag.supportedActions: Qt.CopyAction
+    Drag.mimeData: {
+        "text/uri-list": url
     }
 
     // Select and highlight a file. Optionally allow multiple selection.
@@ -120,22 +120,34 @@ GridView {
         currentIndex = i
 
         if (!multiple || i === -1) {
-            for (var id in highlighted) {
-                model.get(parseInt(id)).selected = false
+            for (var j = 0; j < model.count; j++) {
+                model.get(j).selected = false
             }
-            highlighted = {}
+            url = ""
         }
 
         if (i !== -1) {
             var m = model.get(i)
             if (multiple && m.selected) {
                 m.selected = false
-                delete highlighted[i]
             } else {
                 m.selected = true
-                highlighted[i] = true
             }
             positionViewAtIndex(i, GridView.Contain)
+
+            // Rebuild URL list for drag & drop
+            var first = true
+            for (var j = 0; j < model.count; j++) {
+                var m = model.get(j)
+                if (m.selected) {
+                    if (!first) {
+                        url += "\n"
+                    } else {
+                        first = false
+                    }
+                    url += m.sourcePath
+                }
+            }
         }
     }
 
