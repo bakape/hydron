@@ -50,36 +50,47 @@ GridView {
 
         // TODO: Page Up and Page Down
 
-        switch (event.key) {
-        case Qt.Key_Up:
-            moveCurrentIndexUp()
-            select(currentIndex, false)
-            break
-        case Qt.Key_Down:
-            moveCurrentIndexDown()
-            select(currentIndex, false)
-            break
-        case Qt.Key_Left:
-            moveCurrentIndexLeft()
-            select(currentIndex, false)
-            break
-        case Qt.Key_Right:
-            moveCurrentIndexRight()
-            select(currentIndex, false)
-            break
-        case Qt.Key_Home:
-            positionViewAtBeginning()
-            break
-        case Qt.Key_End:
-            positionViewAtEnd()
-            break
-        case Qt.Key_Space:
-        case Qt.Key_Return:
-            open(currentIndex)
-            break
-        case Qt.Key_Delete:
-            window.removeFiles(selectedIDs())
-            break
+        if (event.modifiers & Qt.ControlModifier) {
+            switch (event.key) {
+            case Qt.Key_A:
+                for (var i = 0; i < model.count; i++) {
+                    var m = model.get(i)
+                    m.selected = !m.selected
+                }
+                break
+            }
+        } else {
+            switch (event.key) {
+            case Qt.Key_Up:
+                moveCurrentIndexUp()
+                select(currentIndex, false)
+                break
+            case Qt.Key_Down:
+                moveCurrentIndexDown()
+                select(currentIndex, false)
+                break
+            case Qt.Key_Left:
+                moveCurrentIndexLeft()
+                select(currentIndex, false)
+                break
+            case Qt.Key_Right:
+                moveCurrentIndexRight()
+                select(currentIndex, false)
+                break
+            case Qt.Key_Home:
+                positionViewAtBeginning()
+                break
+            case Qt.Key_End:
+                positionViewAtEnd()
+                break
+            case Qt.Key_Space:
+            case Qt.Key_Return:
+                open(currentIndex)
+                break
+            case Qt.Key_Delete:
+                window.removeFiles(selectedIDs())
+                break
+            }
         }
     }
 
@@ -172,7 +183,7 @@ GridView {
     // Show context menu for selected files
     function showMenu() {
         Qt.createComponent("FileMenu.qml")
-            .createObject(fileView, { ids: selectedIDs() })
-            .popup()
+        .createObject(fileView, { ids: selectedIDs() })
+        .popup()
     }
 }
