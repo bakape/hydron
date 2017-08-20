@@ -134,8 +134,9 @@ GridView {
             for (var j = 0; j < model.count; j++) {
                 model.get(j).selected = false
             }
-            url = ""
         }
+
+        url = ""
 
         if (i !== -1) {
             var m = model.get(i)
