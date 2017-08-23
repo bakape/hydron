@@ -177,18 +177,14 @@ GridView {
     // Rebuild URL list for drag & drop
     function rebuildURL() {
         url = ""
-        var first = true
+        var arr = []
         for (var j = 0; j < model.count; j++) {
             var m = model.get(j)
             if (m.selected) {
-                if (!first) {
-                    url += "\n"
-                } else {
-                    first = false
-                }
-                url += m.sourcePath
+                arr.push(m.sourcePath)
             }
         }
+        url = arr.join("\n")
     }
 
     // Open a thumbnail for full screeen viewing
