@@ -45,6 +45,7 @@ func SearchByTags(tags [][]byte) (matched map[[20]byte]bool, err error) {
 		for i := 1; i < len(regular); i++ {
 			files := tagIndex[string(regular[i])]
 			if files == nil {
+				matched = nil
 				return
 			}
 			for f := range matched {

@@ -133,7 +133,7 @@ func CanFetchTags(r Record) bool {
 	return false
 }
 
-//  FetchTags fetches tags for each of files
+//  FetchTags fetches tags for each of the files
 func FetchTags(files map[[16]byte]KeyValue, l FetchLogger) error {
 	res := make(chan tagFetchResponse)
 	go func() {
