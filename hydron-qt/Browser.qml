@@ -57,6 +57,7 @@ GridView {
                     var m = model.get(i)
                     m.selected = !m.selected
                 }
+                rebuildURL()
                 break
             }
         } else {
@@ -109,6 +110,26 @@ GridView {
                     select(i, multiple)
                 }
                 showMenu()
+            } else if (mouse.modifiers & Qt.ShiftModifier
+                       && i > 0
+                       && i !== currentIndex
+                       ) {
+                if (!(mouse.modifiers & Qt.ControlModifier)) {
+                    clearSelected()
+                }
+
+                var target = i
+                for (; i !== currentIndex; target < currentIndex ? i++ : i--) {
+                    var m = model.get(i)
+                    m.selected = !m.selected
+                }
+
+                // Always select the starting position
+                model.get(currentIndex).selected = true
+
+                positionViewAtIndex(target, GridView.Contain)
+                rebuildURL()
+                currentIndex = target
             } else {
                 select(i, multiple)
             }
@@ -131,12 +152,8 @@ GridView {
         currentIndex = i
 
         if (!multiple || i === -1) {
-            for (var j = 0; j < model.count; j++) {
-                model.get(j).selected = false
-            }
+           clearSelected()
         }
-
-        url = ""
 
         if (i !== -1) {
             var m = model.get(i)
@@ -146,19 +163,30 @@ GridView {
                 m.selected = true
             }
             positionViewAtIndex(i, GridView.Contain)
+            rebuildURL()
+        }
+    }
 
-            // Rebuild URL list for drag & drop
-            var first = true
-            for (var j = 0; j < model.count; j++) {
-                var m = model.get(j)
-                if (m.selected) {
-                    if (!first) {
-                        url += "\n"
-                    } else {
-                        first = false
-                    }
-                    url += m.sourcePath
+    function clearSelected() {
+        for (var j = 0; j < model.count; j++) {
+            model.get(j).selected = false
+        }
+        url = ""
+    }
+
+    // Rebuild URL list for drag & drop
+    function rebuildURL() {
+        url = ""
+        var first = true
+        for (var j = 0; j < model.count; j++) {
+            var m = model.get(j)
+            if (m.selected) {
+                if (!first) {
+                    url += "\n"
+                } else {
+                    first = false
                 }
+                url += m.sourcePath
             }
         }
     }
