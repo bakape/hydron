@@ -54,8 +54,7 @@ GridView {
             switch (event.key) {
             case Qt.Key_A:
                 for (var i = 0; i < model.count; i++) {
-                    var m = model.get(i)
-                    m.selected = !m.selected
+                    model.get(i).selected = true
                 }
                 rebuildURL()
                 break
@@ -176,7 +175,6 @@ GridView {
 
     // Rebuild URL list for drag & drop
     function rebuildURL() {
-        url = ""
         var arr = []
         for (var j = 0; j < model.count; j++) {
             var m = model.get(j)
