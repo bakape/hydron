@@ -138,8 +138,9 @@ func completeTag(tagStr_C *C.char) (*C.char, *C.char) {
 		return C.CString("[]"), nil
 	}
 
+	tags := core.SplitTagString(tagStr, ' ')
 	w, comma, flush := encodeArray()
-	for _, t := range core.CompleteTag(tagStr) {
+	for _, t := range core.CompleteTag(string(tags[len(tags)-1])) {
 		comma()
 		w.RawByte('"')
 		w.RawString(t)
