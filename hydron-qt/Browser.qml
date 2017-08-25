@@ -139,7 +139,7 @@ GridView {
         }
     }
 
-    Drag.active: mouseArea.drag.active
+    Drag.active: url ? mouseArea.drag.active : false
     Drag.dragType: Drag.Automatic
     Drag.supportedActions: Qt.CopyAction
     Drag.mimeData: {
