@@ -16,11 +16,6 @@ ApplicationWindow {
         anchors.fill: parent
         z: 100
 
-        Suggestions {
-            id: suggestions
-            anchors.fill: parent
-        }
-
         FileView {
             id: fileView
             anchors.fill: parent

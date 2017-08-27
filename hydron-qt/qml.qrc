@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>Suggestions.qml</file>
         <file>SearchBar.qml</file>
         <file>FileView.qml</file>
         <file>Browser.qml</file>
