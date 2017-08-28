@@ -17,16 +17,17 @@ var (
 // FetchLogger provides callbacks for displaying tag fetching progress
 type FetchLogger interface {
 	Logger
-	NoMatch()
+	NoMatch(KeyValue)
+	Close()
 }
 
 type tagFetchRequest struct {
-	md5 [16]byte
+	KeyValue
 	res chan<- tagFetchResponse
 }
 
 type tagFetchResponse struct {
-	md5  [16]byte
+	KeyValue
 	tags [][]byte
 	err  error
 }
@@ -37,11 +38,11 @@ func init() {
 		go func() {
 			for {
 				req := <-fetchTags
-				tags, err := fetchFromGelbooru(req.md5)
+				tags, err := fetchFromGelbooru(req.MD5())
 				req.res <- tagFetchResponse{
-					md5:  req.md5,
-					tags: tags,
-					err:  err,
+					KeyValue: req.KeyValue,
+					tags:     tags,
+					err:      err,
 				}
 			}
 		}()
@@ -108,20 +109,34 @@ func gelbooruURL(md5 [16]byte) string {
 // tags synced with gelbooru.com
 func FetchAllTags(logger FetchLogger) error {
 	// Get list of candidate files
-	files := make(map[[16]byte]KeyValue, 64)
+	files := make([]KeyValue, 0, 64)
 	err := IterateRecords(func(k []byte, r Record) {
 		if CanFetchTags(r) && !r.HaveFetchedTags() {
-			files[r.MD5()] = KeyValue{
+			files = append(files, KeyValue{
 				SHA1:   ExtractKey(k),
 				Record: r.Clone(),
-			}
+			})
 		}
 	})
 	if err != nil {
 		return err
 	}
 
-	return FetchTags(files, logger)
+	logger.SetTotal(len(files))
+
+	// This call is synchronous, but has to use and async function
+	ch := make(chan KeyValue, len(files))
+	go func() {
+		for _, f := range files {
+			ch <- f
+		}
+		close(ch)
+	}()
+	err = FetchTags(ch, logger)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Return, if file is eligible for fetching tags from boorus
@@ -133,36 +148,39 @@ func CanFetchTags(r Record) bool {
 	return false
 }
 
-//  FetchTags fetches tags for each of the files
-func FetchTags(files map[[16]byte]KeyValue, l FetchLogger) error {
-	res := make(chan tagFetchResponse)
+// FetchTags fetches tags for each of files.
+// Does not call l.SetTotal(). This should be called by the caller of FetchTags.
+func FetchTags(files <-chan KeyValue, l FetchLogger) error {
+	res := make(chan tagFetchResponse, 4)
+	left := make(chan bool, 4) // Still files left to process
 	go func() {
-		for md5 := range files {
+		for kv := range files {
+			left <- true
 			fetchTags <- tagFetchRequest{
-				md5: md5,
-				res: res, // Simply fan-in the response
+				KeyValue: kv,
+				res:      res, // Simply fan-in the responses
 			}
 		}
+		close(left)
 	}()
 
-	l.SetTotal(len(files))
-	defer l.Close()
-	for range files {
+	for range left {
 		switch r := <-res; r.err {
 		case nil:
 			if r.tags != nil {
-				if err := writeFetchedTags(files[r.md5], r.tags); err != nil {
+				if err := writeFetchedTags(r.KeyValue, r.tags); err != nil {
 					return err
 				}
 			}
-			l.Done()
+			l.Done(r.KeyValue)
 		case errNoMatch:
-			l.NoMatch()
+			l.NoMatch(r.KeyValue)
 		default:
 			l.Err(r.err)
 		}
 	}
 
+	l.Close()
 	return nil
 }
 
@@ -175,8 +193,8 @@ func writeFetchedTags(kv KeyValue, tags [][]byte) error {
 func FetchSingleFileTags(kv KeyValue) (err error) {
 	res := make(chan tagFetchResponse)
 	fetchTags <- tagFetchRequest{
-		md5: kv.MD5(),
-		res: res,
+		KeyValue: kv,
+		res:      res,
 	}
 	r := <-res
 	switch r.err {

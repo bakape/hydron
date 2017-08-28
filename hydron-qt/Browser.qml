@@ -14,14 +14,29 @@ GridView {
     activeFocusOnTab: true
 
     function loadThumbnails (tags) {
-        model.clear()
+        clear()
 
         var data = JSON.parse(go.search(tags))
         for (var i = 0; i < data.length; i++) {
             var m = data[i]
-            m.selected = m.showMenu = false
+            m.selected = false
             model.append(m)
         }
+    }
+
+    function clear() {
+        model.clear()
+    }
+
+    Component.onCompleted: {
+        go.done.connect(append)
+    }
+
+    // Append a file to the grid
+    function append(rec) {
+        var m = JSON.parse(rec)
+        m.selected = false
+        model.append(m)
     }
 
     delegate: Rectangle {
@@ -105,7 +120,8 @@ GridView {
             var i = indexAt(mouse.x, mouse.y + contentY)
             var multiple = !!(mouse.modifiers & Qt.ControlModifier)
             if (mouse.button === Qt.RightButton) {
-                if (!model.get(i).selected) {
+                var m = model.get(i)
+                if (m && !m.selected) {
                     select(i, multiple)
                 }
                 showMenu()

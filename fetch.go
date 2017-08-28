@@ -7,17 +7,16 @@ type fetchLogger struct {
 	fetched int
 }
 
-func (f *fetchLogger) Done() {
+func (f *fetchLogger) Done(kv core.KeyValue) {
 	f.fetched++
-	f.progressLogger.Done()
+	f.progressLogger.Done(kv)
 }
 
-func (f *fetchLogger) NoMatch() {
-	f.progressLogger.Done()
+func (f *fetchLogger) NoMatch(kv core.KeyValue) {
+	f.progressLogger.Done(kv)
 }
 
 func (f *fetchLogger) Close() {
-	f.progressLogger.Close()
 	if f.total != f.fetched {
 		stderr.Printf("no tags found for %d files", f.total-f.fetched)
 	}

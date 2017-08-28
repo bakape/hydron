@@ -22,9 +22,27 @@ ApplicationWindow {
         }
     }
 
-    header: SearchBar {
-        id: searchBar
-        Layout.fillWidth: true
+    header: ToolBar {
+        ColumnLayout {
+            anchors.fill: parent
+            SearchBar {
+                id: searchBar
+                Layout.fillWidth: true
+            }
+            ProgressBar {
+                visible: false
+                Layout.fillWidth: true
+
+                Component.onCompleted: {
+                    go.set_progress_bar.connect(set)
+                }
+
+                function set(pos) {
+                    visible = pos !== 0
+                    value = pos
+                }
+            }
+        }
     }
 
     ScrollView {
@@ -51,4 +69,24 @@ ApplicationWindow {
         fileView.remove()
         browser.loadThumbnails(searchBar.text)
     }
+
+    ImportDialog {
+        id: importDialog
+    }
+
+    DropArea {
+        anchors.fill: parent
+        keys: ["text/uri-list"]
+        onDropped: {
+            // Ignore internal drags
+            if (drop.source || !drop.hasUrls) {
+                return
+            }
+            drop.accepted = true
+            importDialog.addFiles(drop.urls)
+            importDialog.open()
+        }
+    }
+
+    ErrorPopup {}
 }

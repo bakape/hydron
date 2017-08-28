@@ -5,5 +5,7 @@
         <file>FileView.qml</file>
         <file>Browser.qml</file>
         <file>FileMenu.qml</file>
+        <file>ImportDialog.qml</file>
+        <file>ErrorPopup.qml</file>
     </qresource>
 </RCC>

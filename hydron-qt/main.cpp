@@ -3,6 +3,8 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 
+Bridge *instance = 0;
+
 int main(int argc, char *argv[])
 {
     char *err = go::startHydron();
@@ -15,6 +17,7 @@ int main(int argc, char *argv[])
 
     QQmlApplicationEngine engine;
     Bridge bridge;
+    instance = &bridge;
     engine.rootContext()->setContextProperty("go", &bridge);
     engine.load(QUrl(QLatin1String("qrc:/main.qml")));
 

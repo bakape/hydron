@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/bakape/hydron/core"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
@@ -17,24 +19,20 @@ type progressLogger struct {
 func (p *progressLogger) print() {
 	fmt.Fprintf(
 		os.Stderr,
-		"\r%s: %d / %d - %.2f%%",
+		"\r%s: %d / %d - %.2f%%\n",
 		p.header,
 		p.done, p.total,
 		float32(p.done)/float32(p.total)*100,
 	)
 }
 
-func (p *progressLogger) Done() {
+func (p *progressLogger) Done(_ core.KeyValue) {
 	p.done++
 	p.print()
 }
 
 func (p *progressLogger) Err(err error) {
 	stderr.Printf("\n%s\n", err)
-}
-
-func (p *progressLogger) Close() {
-	stderr.Print("\n")
 }
 
 func (p *progressLogger) SetTotal(n int) {

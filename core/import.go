@@ -32,9 +32,8 @@ var thumbnailerOpts = thumbnailer.Options{
 // Logger provides callbacks for displaying an operation's progress
 type Logger interface {
 	SetTotal(int)
-	Done()
+	Done(KeyValue)
 	Err(error)
-	Close()
 }
 
 // Recursively import list of files and/or directories
@@ -96,28 +95,36 @@ func ImportPaths(
 	}
 
 	iLog.SetTotal(len(files))
-	var toFetch map[[16]byte]KeyValue
+	fLog.SetTotal(len(files))
+	var (
+		toFetch  chan KeyValue
+		fecthErr chan error
+	)
 	if fetchTags {
-		toFetch = make(map[[16]byte]KeyValue, len(files))
+		toFetch = make(chan KeyValue, n)
+		fecthErr = make(chan error)
+		go func() {
+			fecthErr <- FetchTags(toFetch, fLog)
+		}()
 	}
 	for range files {
 		switch r := <-res; r.err {
 		case ErrUnsupportedFile, ErrImported:
-			iLog.Done()
+			iLog.Done(r.KeyValue)
 		case nil:
+			// Fetch tags of any newly imported files
 			if fetchTags && CanFetchTags(r.Record) {
-				toFetch[r.Record.MD5()] = r.KeyValue
+				toFetch <- r.KeyValue
 			}
-			iLog.Done()
+			iLog.Done(r.KeyValue)
 		default:
 			iLog.Err(fmt.Errorf("%s: %s", r.err, r.path))
 		}
 	}
-	iLog.Close()
 
-	// Fetch tags of any newly imported files
-	if len(toFetch) != 0 {
-		return FetchTags(toFetch, fLog)
+	if fetchTags {
+		close(toFetch)
+		return <-fecthErr
 	}
 
 	return nil
