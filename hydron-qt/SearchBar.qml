@@ -32,6 +32,8 @@ TextField {
             menu.focus = false
             menu.isOpen = true
             menu.open()
+        } else {
+            closeMenu()
         }
     }
 
