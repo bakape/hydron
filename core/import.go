@@ -68,7 +68,16 @@ func ImportPaths(
 	for i := 0; i < n; i++ {
 		go func() {
 			for path := range src {
-				f, err := os.Open(path)
+				var (
+					f         io.ReadCloser
+					err       error
+					fetchable = IsFetchable(path)
+				)
+				if fetchable {
+					f, err = FetchFile(path)
+				} else {
+					f, err = os.Open(path)
+				}
 				if err != nil {
 					res <- response{
 						path: path,
@@ -79,7 +88,7 @@ func ImportPaths(
 
 				kv, err := ImportFile(f, tags)
 				f.Close()
-				if del {
+				if del && !fetchable {
 					switch err {
 					case nil, ErrImported:
 						os.Remove(path)
@@ -130,7 +139,7 @@ func ImportPaths(
 	return nil
 }
 
-// Attempt to import any readable file
+// Attempt to import any readable stream
 func ImportFile(f io.Reader, tags [][]byte) (kv KeyValue, err error) {
 	buf, err := ioutil.ReadAll(f)
 	if err != nil {

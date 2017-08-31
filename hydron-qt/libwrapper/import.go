@@ -4,6 +4,7 @@ package main
 // #include "import.h"
 import "C"
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"unsafe"
@@ -95,6 +96,7 @@ func importFiles(
 				return
 			}
 		}
+		fmt.Println(paths)
 
 		var parsedTags [][]byte
 		if tags != nil {

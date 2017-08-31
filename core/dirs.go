@@ -64,6 +64,12 @@ func traverse(paths []string) (files []string, err error) {
 	}
 
 	for _, p := range paths {
+		// Don't walk network paths
+		if IsFetchable(p) {
+			files = append(files, p)
+			continue
+		}
+
 		err = filepath.Walk(p, visit)
 		if err != nil {
 			return
