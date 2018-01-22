@@ -1,12 +1,12 @@
 .PHONY: link
 
-all: link
+all: libthumbnailer.a
 
-link: $(addsuffix .o, $(basename $(wildcard *.cc)))
-	g++ -o linked *.o
+libthumbnailer.a: $(addsuffix .o, $(basename $(wildcard *.cc)))
+	gcc-ar rcs libthumbnailer.a *.o
 
-%.bc: %.cc
-	g++ $^ -o $@ -Wall -Wextra
+%.o: %.cc
+	g++ -c -o $@ $^ -Wall -Wextra -I../lib/x86_64-unknown-linux-gnu/include -L../lib/x86_64-unknown-linux-gnu/lib
 
 clean:
-	rm -f *.bc
+	rm -f *.o libthumbnailer.a

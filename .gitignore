@@ -15,5 +15,5 @@ qrc_qml.cpp
 .qmake.stash
 dist
 .directory
-.o
-linked
+*.o
+libthumbnailer.a
