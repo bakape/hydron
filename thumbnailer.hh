@@ -29,7 +29,7 @@ typedef struct {
 typedef struct {
     Source src;
     Image thumb;
-    char* error;
+    char const* error;
 } Result;
 
 // Generate a file thumbnail

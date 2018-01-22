@@ -8,10 +8,9 @@ extern "C" Result thumbnail_file(const Buffer src, FileType type)
     try {
         auto t = Thumbnailer(src, type);
         return t.process();
-    } catch (const std::exception& e) {
+    } catch (char const* e) {
         Result res;
-        res.error = (char*)malloc(sizeof(char) * strlen(e.what()));
-        strcpy(res.error, e.what());
+        res.error = e;
         return res;
     }
 }
