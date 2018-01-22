@@ -1,0 +1,14 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=/usr/local/lib
+includedir=/usr/local/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 57.107.100
+Requires: 
+Requires.private: libswresample >= 2.9.100, libavutil >= 55.78.100
+Conflicts:
+Libs: -L${libdir}  -lavcodec 
+Libs.private: -L/home/travis/build/wang-bin/avbuild/tools/linux64-gcc/lib/pkgconfig/../../lib -lmfx -lstdc++ -ldl -lva-drm -lva-x11 -lva -lvdpau -lX11 -lva -lva-x11 -lX11 -lva -lva-drm -lva -lxcb -lxcb-shm -lxcb -lxcb-xfixes -lxcb-render -lxcb-shape -lxcb -lxcb-shape -lxcb -L/home/travis/build/wang-bin/avbuild/tools/linux64-gcc/lib/pkgconfig/../../lib -lmfx -lstdc++ -ldl -lva-drm -lva-x11 -lva -lm -ldl -llzma -lbz2 -lz -pthread -pthread -lrt
+Cflags: -I${includedir}

@@ -1,0 +1,2 @@
+configure --extra-version=QtAV --disable-doc --disable-debug --enable-shared --disable-static --enable-runtime-cpudetect --disable-iconv --enable-libmfx --enable-avresample --disable-postproc --cc=i686-w64-mingw32-gcc --target-os=mingw32 --enable-pic --extra-ldflags="-static-libgcc -Wl,-Bstatic"
+3.4

@@ -1,0 +1,14 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=/usr/local/lib
+includedir=/usr/local/include
+
+Name: libavformat
+Description: FFmpeg container format library
+Version: 57.83.100
+Requires: 
+Requires.private: libavcodec >= 57.107.100, libswresample >= 2.9.100, libavutil >= 55.78.100
+Conflicts:
+Libs: -L${libdir}  -lavformat 
+Libs.private: -lgdi32 -lpsapi -lole32 -lstrmiids -luuid -loleaut32 -lshlwapi -luser32 -LC:/projects/avbuild/tools/MINGW32/lib -lmfx -lstdc++ -lws2_32 -lvfw32 -luser32 -lsecur32 -LC:/projects/avbuild/tools/MINGW32/lib -lmfx -lstdc++ -lm -lbz2 -lz -lpsapi -ladvapi32 -lshell32 -lole32
+Cflags: -I${includedir}
