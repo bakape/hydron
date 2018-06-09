@@ -1,4 +1,4 @@
-package core
+package fetch
 
 import (
 	"io"
@@ -6,18 +6,6 @@ import (
 	"strings"
 	"time"
 )
-
-// Returns, if URL shoiuld be fetched over network
-func IsFetchable(url string) bool {
-	for _, pre := range [...]string{
-		"http://", "https://", "ftp://", "ftps://",
-	} {
-		if strings.HasPrefix(url, pre) {
-			return true
-		}
-	}
-	return false
-}
 
 // Fetch a file over network
 func FetchFile(url string) (rc io.ReadCloser, err error) {

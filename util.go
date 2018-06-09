@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/bakape/hydron/core"
+	"github.com/bakape/hydron/common"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
@@ -26,7 +26,7 @@ func (p *progressLogger) print() {
 	)
 }
 
-func (p *progressLogger) Done(_ core.KeyValue) {
+func (p *progressLogger) Done(_ common.Record) {
 	p.done++
 	p.print()
 }

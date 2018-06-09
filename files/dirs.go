@@ -1,32 +1,35 @@
-package core
+package files
 
 import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/util"
 )
 
-const hexStr = "0123456789abcdef"
-
-// Root directory path
-var rootPath, ImageRoot, ThumbRoot string
+// Root directory paths
+var RootPath, ImageRoot, ThumbRoot string
 
 // Determine root dirs
 func init() {
 	if runtime.GOOS == "windows" {
-		rootPath = filepath.Join(os.Getenv("APPDATA"), "hydron")
+		RootPath = filepath.Join(os.Getenv("APPDATA"), "hydron2")
 	} else {
-		rootPath = filepath.Join(os.Getenv("HOME"), ".hydron")
+		RootPath = filepath.Join(os.Getenv("HOME"), ".hydron2")
 	}
 	sep := string(filepath.Separator)
-	ImageRoot = concatStrings(rootPath, sep, "images", sep)
-	ThumbRoot = concatStrings(rootPath, sep, "thumbs", sep)
+	ImageRoot = concatStrings(RootPath, sep, "images", sep)
+	ThumbRoot = concatStrings(RootPath, sep, "thumbs", sep)
 }
 
-func initDirs() error {
-	if _, err := os.Stat(rootPath); !os.IsNotExist(err) {
+func Init() error {
+	if _, err := os.Stat(RootPath); !os.IsNotExist(err) {
 		return err
 	}
+
+	const hexStr = "0123456789abcdef"
 
 	// Create source file and thumbnail directories
 	const dirMode = os.ModeDir | 0700
@@ -49,8 +52,8 @@ func initDirs() error {
 	return nil
 }
 
-// traverse recursively traverses an array of file and/or directory paths
-func traverse(paths []string) (files []string, err error) {
+// Recursively traverses an array of file and/or directory paths
+func Traverse(paths []string) (files []string, err error) {
 	files = make([]string, 0, 64)
 
 	visit := func(path string, info os.FileInfo, err error) error {
@@ -65,7 +68,7 @@ func traverse(paths []string) (files []string, err error) {
 
 	for _, p := range paths {
 		// Don't walk network paths
-		if IsFetchable(p) {
+		if util.IsFetchable(p) {
 			files = append(files, p)
 			continue
 		}
@@ -79,8 +82,8 @@ func traverse(paths []string) (files []string, err error) {
 }
 
 // Returns the path to the source file
-func SourcePath(id string, typ FileType) string {
-	name := concatStrings(id, ".", Extensions[typ])
+func SourcePath(id string, typ common.FileType) string {
+	name := concatStrings(id, ".", common.Extensions[typ])
 	return filepath.Join(ImageRoot, id[:2], name)
 }
 

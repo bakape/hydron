@@ -1,24 +1,31 @@
 package main
 
 import (
-	"bytes"
+	"compress/gzip"
+	"database/sql"
 	"errors"
 	"fmt"
 	"html"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/bakape/hydron/core"
+	"github.com/bakape/hydron/common"
+	"github.com/mailru/easyjson/jwriter"
+
+	"github.com/bakape/hydron/db"
+	"github.com/bakape/hydron/files"
 	"github.com/dimfeld/httptreemux"
+	"github.com/gorilla/handlers"
 )
 
 func startServer(addr string) error {
 	stderr.Println("listening on " + addr)
 
-	r := httptreemux.New()
+	r := httptreemux.NewContextMux()
 	r.NotFoundHandler = func(w http.ResponseWriter, _ *http.Request) {
 		send404(w)
 	}
@@ -31,60 +38,55 @@ func startServer(addr string) error {
 	}
 
 	// Assets
-	r.GET("/files/:file", serveSourceFiles)
-	r.GET("/thumbs/:file", serveThumbnails)
+	r.GET("/files/:file", func(w http.ResponseWriter, r *http.Request) {
+		serveFiles(w, r, files.ImageRoot)
+	})
+	r.GET("/thumbs/:file", func(w http.ResponseWriter, r *http.Request) {
+		serveFiles(w, r, files.ThumbRoot)
+	})
 
-	// JSON
-	r.GET("/get/", wrapHandler(serveAllFileJSON)) // Dumps everything
-	r.GET("/get/:ids", getFilesByIDs)
-	r.GET("/search/", wrapHandler(serveAllFileJSON))
-	r.GET("/search/:tags", serveSearch)
+	// Image API
+
 	r.GET("/complete_tag/:prefix", completeTagHTTP)
 
-	// Uploads
-	r.POST("/import", wrapHandler(importUpload))
+	images := r.NewContextGroup("/images")
+	images.GET("/", serveEverything) // Dumps everything
+	images.POST("/", importUpload)
 
-	// Commands
-	r.POST("/fetch_tags", wrapHandler(fetchAllTagsHTTP))
-	r.POST("/remove/:ids", removeFilesHTTP)
-	r.POST("/add_tags/:id/:tags", addTagsHTTP)
-	r.POST("/remove_tags/:id/:tags", removeTagsHTTP)
+	search := images.NewContextGroup("/search")
+	search.GET("/", serveEverything)
+	search.GET("/:tags", func(w http.ResponseWriter, r *http.Request) {
+		q := html.UnescapeString(extractParam(r, "tags"))
+		q = strings.Replace(q, ",", " ", -1)
+		serveSearch(w, r, q)
+	})
 
-	return http.ListenAndServe(addr, r)
+	imgID := images.NewContextGroup("/:id")
+	imgID.GET("/", getFilesByIDs)
+	imgID.DELETE("/", removeFilesHTTP)
+
+	tags := imgID.NewContextGroup("/tags")
+	tags.PATCH("/", addTagsHTTP)
+	tags.DELETE("/", removeTagsHTTP)
+
+	return http.ListenAndServe(addr,
+		handlers.CompressHandlerLevel(r, gzip.DefaultCompression))
 }
 
-// Serve the source files from the ./images/ directory
-func serveSourceFiles(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-) {
-	serveFiles(w, r, p, core.ImageRoot)
-}
-
-// Serve thumbnail images
-func serveThumbnails(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-) {
-	serveFiles(w, r, p, core.ThumbRoot)
+// Extract URL paramater from request context
+func extractParam(r *http.Request, id string) string {
+	return httptreemux.ContextParams(r.Context())[id]
 }
 
 // More performant handler for serving file assets. These are immutable, so we
 // can also set separate caching policies for them.
-func serveFiles(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-	root string,
-) {
+func serveFiles(w http.ResponseWriter, r *http.Request, root string) {
 	if r.Header.Get("If-None-Match") == "0" {
 		w.WriteHeader(304)
 		return
 	}
 
-	name := p["file"]
+	name := extractParam(r, "name")
 	if len(name) < 40 {
 		send404(w)
 		return
@@ -106,18 +108,36 @@ func serveFiles(
 		"ETag": "0",
 	})
 
-	http.ServeContent(w, r, p["path"], time.Time{}, file)
+	http.ServeContent(w, r, extractParam(r, "path"), time.Time{}, file)
+}
+
+// Dump all images as JSON
+func serveEverything(w http.ResponseWriter, r *http.Request) {
+	serveSearch(w, r, "")
 }
 
 // Serve a tag search result as JSON
-func serveSearch(w http.ResponseWriter, r *http.Request, p map[string]string) {
-	tags := core.SplitTagString(html.UnescapeString(p["tags"]), ',')
-	matched, err := core.SearchByTags(tags)
+func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
+	var jw jwriter.Writer
+	jw.RawByte('[')
+	first := true
+	err := db.SearchImages(params, func(rec common.CompactRecord) error {
+		if first {
+			first = false
+		} else {
+			jw.RawByte(',')
+		}
+		rec.MarshalEasyJSON(&jw)
+		return nil
+	})
 	if err != nil {
 		send500(w, r, err)
 		return
 	}
-	serveJSONByID(w, r, matched)
+	jw.RawByte(']')
+
+	setJSONHeaders(w)
+	jw.DumpTo(w)
 }
 
 // Retrieve records from the database and serve as JSON
@@ -126,155 +146,128 @@ func serveJSONByID(
 	r *http.Request,
 	ids map[[20]byte]bool,
 ) {
-	jrs := newJSONRecordStreamer(w, r)
-	defer jrs.close()
-	jrs.err = core.MapRecords(ids, func(id [20]byte, r core.Record) {
-		jrs.writeKeyValue(core.KeyValue{
-			SHA1:   id,
-			Record: r,
-		})
-	})
-}
-
-// Serve all file data as JSON
-func serveAllFileJSON(w http.ResponseWriter, r *http.Request) {
-	jrs := newJSONRecordStreamer(w, r)
-	defer jrs.close()
-	jrs.err = core.IterateRecords(func(k []byte, rec core.Record) {
-		jrs.writeKeyValue(core.KeyValue{
-			SHA1:   core.ExtractKey(k),
-			Record: rec,
-		})
-	})
+	panic("TODO")
+	// jrs := newJSONRecordStreamer(w, r)
+	// defer jrs.close()
+	// jrs.err = core.MapRecords(ids, func(id [20]byte, r core.Record) {
+	// 	jrs.writeKeyValue(core.KeyValue{
+	// 		SHA1:   id,
+	// 		Record: r,
+	// 	})
+	// })
 }
 
 // Download and import a file from the client
 func importUpload(w http.ResponseWriter, r *http.Request) {
-	f, _, err := r.FormFile("file")
-	if err != nil {
-		send500(w, r, err)
-		return
-	}
-	defer f.Close()
+	panic("TODO")
+	// f, _, err := r.FormFile("file")
+	// if err != nil {
+	// 	send500(w, r, err)
+	// 	return
+	// }
+	// defer f.Close()
 
-	// Assign tags to file
-	var tags [][]byte
-	if s := r.FormValue("tags"); s != "" {
-		tags = core.SplitTagString(s, ',')
-	}
+	// // Assign tags to file
+	// var tags [][]byte
+	// if s := r.FormValue("tags"); s != "" {
+	// 	tags = tags.SplitTagString(s, ',')
+	// }
 
-	kv, err := core.ImportFile(f, tags)
-	switch err {
-	case nil:
-	case core.ErrImported:
-		sendError(w, 409, err)
-		return
-	case core.ErrUnsupportedFile:
-		sendError(w, 400, err)
-		return
-	default:
-		send500(w, r, err)
-		return
-	}
+	// kv, err := import.ImportFile(f, tags)
+	// switch err {
+	// case nil:
+	// case import.ErrImported:
+	// 	sendError(w, 409, err)
+	// 	return
+	// case import.ErrUnsupportedFile:
+	// 	sendError(w, 400, err)
+	// 	return
+	// default:
+	// 	send500(w, r, err)
+	// 	return
+	// }
 
-	// Fetch tags from boorus
-	if r.FormValue("fetch_tags") != "true" && core.CanFetchTags(kv.Record) {
-		err := core.FetchSingleFileTags(kv)
-		if err != nil {
-			send500(w, r, err)
-		}
-	}
-}
-
-// Attempt to fetch tags for all files that have not yet had their tags synced
-// with gelbooru.com
-func fetchAllTagsHTTP(w http.ResponseWriter, r *http.Request) {
-	err := fetchAllTags()
-	if err != nil {
-		send500(w, r, err)
-	}
+	// // Fetch tags from boorus
+	// if r.FormValue("fetch_tags") != "true" && core.CanFetchTags(kv.Record) {
+	// 	err := core.FetchSingleFileTags(kv)
+	// 	if err != nil {
+	// 		send500(w, r, err)
+	// 	}
+	// }
 }
 
 // Remove files from the database by ID
-func removeFilesHTTP(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-) {
-	err := removeFiles(strings.Split(p["ids"], ","))
-	if err != nil {
-		_, ok := err.(core.InvalidIDError)
-		if ok {
-			sendError(w, 400, err)
-		} else {
-			send500(w, r, err)
-		}
-	}
+func removeFilesHTTP(w http.ResponseWriter, r *http.Request) {
+	panic("TODO")
+	// err := removeFiles(strings.Split(p["ids"], ","))
+	// if err != nil {
+	// 	_, ok := err.(core.InvalidIDError)
+	// 	if ok {
+	// 		sendError(w, 400, err)
+	// 	} else {
+	// 		send500(w, r, err)
+	// 	}
+	// }
 }
 
 // Serve file JSON by ID
-func getFilesByIDs(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-) {
-	split := strings.Split(p["ids"], ",")
-	ids := make(map[[20]byte]bool, len(split))
-	for i := range split {
-		id, err := core.StringToSHA1(split[i])
-		if err != nil {
-			sendError(w, 400, err)
-			return
-		}
-		ids[id] = true
-	}
+func getFilesByIDs(w http.ResponseWriter, r *http.Request) {
+	panic("TODO")
+	// split := strings.Split(p["ids"], ",")
+	// ids := make(map[[20]byte]bool, len(split))
+	// for i := range split {
+	// 	id, err := core.StringToSHA1(split[i])
+	// 	if err != nil {
+	// 		sendError(w, 400, err)
+	// 		return
+	// 	}
+	// 	ids[id] = true
+	// }
 
-	serveJSONByID(w, r, ids)
+	// serveJSONByID(w, r, ids)
 }
 
 // Complete a tag by prefix from an HTTP request
-func completeTagHTTP(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-) {
+func completeTagHTTP(w http.ResponseWriter, r *http.Request) {
 	setJSONHeaders(w)
 
-	var buf bytes.Buffer
-	buf.WriteByte('[')
-	for i, t := range core.CompleteTag(p["prefix"]) {
-		if i != 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteByte('"')
-		buf.WriteString(t)
-		buf.WriteByte('"')
+	tags, err := db.CompleTag(extractParam(r, "prefix"))
+	if err != nil {
+		send500(w, r, err)
+		return
 	}
-	buf.WriteByte(']')
 
-	w.Write(buf.Bytes())
+	b := make([]byte, 1, 256)
+	b[0] = '['
+	for i, t := range tags {
+		if i != 0 {
+			b = append(b, ',')
+		}
+		b = strconv.AppendQuote(b, t)
+	}
+	b = append(b, ']')
+
+	w.Write(b)
 }
 
 // Add tags to a specific file
-func addTagsHTTP(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-) {
-	modTagsHTTP(w, r, p, addTags)
+func addTagsHTTP(w http.ResponseWriter, r *http.Request) {
+	modTagsHTTP(w, r, addTags)
 }
 
-func modTagsHTTP(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-	fn func(string, []string) error,
+func modTagsHTTP(w http.ResponseWriter, r *http.Request,
+	fn func(sha1 string, tagStr string) error,
 ) {
-	tags := strings.Split(html.UnescapeString(p["tags"]), ",")
-	err := fn(p["id"], tags)
-	switch err.(type) {
+	err := r.ParseForm()
+	if err != nil {
+		sendError(w, 400, err)
+		return
+	}
+
+	err = fn(extractParam(r, "id"), r.Form.Get("tags"))
+	switch err {
 	case nil:
-	case core.InvalidIDError:
+	case sql.ErrNoRows:
 		sendError(w, 400, err)
 	default:
 		send500(w, r, err)
@@ -282,10 +275,6 @@ func modTagsHTTP(
 }
 
 // Remove tags from a specific file
-func removeTagsHTTP(
-	w http.ResponseWriter,
-	r *http.Request,
-	p map[string]string,
-) {
-	modTagsHTTP(w, r, p, removeTags)
+func removeTagsHTTP(w http.ResponseWriter, r *http.Request) {
+	modTagsHTTP(w, r, removeTags)
 }

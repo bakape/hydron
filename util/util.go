@@ -1,9 +1,21 @@
-package core
+package util
 
 import (
-	"encoding/hex"
 	"fmt"
+	"strings"
 )
+
+// Returns, if URL shoiuld be fetched over network
+func IsFetchable(url string) bool {
+	for _, pre := range [...]string{
+		"http://", "https://", "ftp://", "ftps://",
+	} {
+		if strings.HasPrefix(url, pre) {
+			return true
+		}
+	}
+	return false
+}
 
 // User passed an invalid file ID
 type InvalidIDError string
@@ -57,21 +69,5 @@ func Waterfall(fns ...func() error) (err error) {
 			break
 		}
 	}
-	return
-}
-
-// Extract a file's SHA1 id from a string input
-func StringToSHA1(s string) (id [20]byte, err error) {
-	if len(s) != 40 {
-		err = InvalidIDError(s)
-		return
-	}
-	buf, err := hex.DecodeString(s)
-	if err != nil {
-		err = InvalidIDError(s + " : " + err.Error())
-		return
-	}
-
-	id = ExtractKey(buf)
 	return
 }

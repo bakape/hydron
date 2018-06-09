@@ -1,44 +1,40 @@
 package main
 
 import (
-	"strings"
-
-	"github.com/bakape/hydron/core"
+	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/db"
+	"github.com/bakape/hydron/tags"
 )
 
 // Remove files from the database by ID from the CLI
-func removeFiles(ids []string) error {
+func removeFiles(ids []string) (err error) {
 	for _, id := range ids {
-		sha1, err := core.StringToSHA1(id)
+		err = db.RemoveImage(id)
 		if err != nil {
-			return err
-		}
-		err = core.RemoveFile(sha1)
-		if err != nil {
-			return err
+			return
 		}
 	}
-	return nil
+	return
 }
 
 // Add tags to the target file from the CLI
-func addTags(id string, tags []string) error {
-	return modTags(id, tags, core.AddTags)
+func addTags(sha1 string, tagStr string) error {
+	return modTags(sha1, tagStr, db.AddTags)
 }
 
 func modTags(
-	id string,
-	tags []string,
-	fn func([20]byte, [][]byte) error,
+	sha1 string,
+	tagStr string,
+	fn func(imageID uint64, tags []common.Tag) error,
 ) error {
-	sha1, err := core.StringToSHA1(id)
+	id, err := db.GetImageID(sha1)
 	if err != nil {
 		return err
 	}
-	return fn(sha1, core.SplitTagString(strings.Join(tags, " "), ' '))
+	return fn(id, tags.FromString(tagStr, common.User))
 }
 
 // Remove tags from the target file from the CLI
-func removeTags(id string, tags []string) error {
-	return modTags(id, tags, core.RemoveTags)
+func removeTags(sha1 string, tagStr string) error {
+	return modTags(sha1, tagStr, db.RemoveTags)
 }

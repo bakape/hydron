@@ -6,16 +6,26 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bakape/hydron/core"
+	"github.com/bakape/hydron/db"
+	"github.com/bakape/hydron/files"
+	"github.com/bakape/hydron/util"
 )
+
+const defaultAddress = ":8010"
 
 var (
 	modeFlags = map[string]*flag.FlagSet{
+		"serve":  flag.NewFlagSet("serve", flag.PanicOnError),
 		"import": flag.NewFlagSet("import", flag.PanicOnError),
 		"search": flag.NewFlagSet("search", flag.PanicOnError),
-		"serve":  flag.NewFlagSet("serve", flag.PanicOnError),
 	}
 	modeTooltips = [][3]string{
+		{
+			"serve (default)",
+			"",
+			`Launch hydron in server mode, exposing files and commands through
+  a HTTP/JSON API until terminated.`,
+		},
 		{
 			"import",
 			"PATHS...",
@@ -61,12 +71,6 @@ var (
 			"Fetch tags for imported images and webm from gelbooru.com.",
 		},
 		{
-			"serve",
-			"",
-			`Launch hydron in server mode, exposing files and commands through
-  a HTTP/JSON API until terminated.`,
-		},
-		{
 			"print",
 			"",
 			"Print the contents of the database for debuging purposes.",
@@ -83,7 +87,7 @@ var (
 		"add tags to all imported files",
 	)
 	fetchTagsForImports = modeFlags["import"].Bool(
-		"F",
+		"f",
 		false,
 		"fetch tags from gelbooru.com for imported files",
 	)
@@ -94,28 +98,42 @@ var (
 	)
 	address = modeFlags["serve"].String(
 		"a",
-		":8010",
+		defaultAddress,
 		"address to listen on for requests",
 	)
 )
 
 func main() {
-	assertArgCount(2)
-	mode := os.Args[1]
-	fl, ok := modeFlags[mode]
-	if ok {
-		if err := fl.Parse(os.Args[2:]); err != nil {
-			stderr.Println(err)
-			printHelp()
+	var (
+		mode string
+		fl   *flag.FlagSet
+	)
+	if len(os.Args) == 1 {
+		mode = "serve"
+		*address = defaultAddress
+	} else {
+		assertArgCount(2)
+		mode = os.Args[1]
+
+		var ok bool
+		fl, ok = modeFlags[mode]
+		if ok {
+			if err := fl.Parse(os.Args[2:]); err != nil {
+				stderr.Println(err)
+				printHelp()
+			}
 		}
 	}
-	if err := core.Init(); err != nil {
+
+	if err := util.Waterfall(files.Init, db.Open); err != nil {
 		panic(err)
 	}
-	defer core.ShutDown()
+	defer db.Close()
 
 	var err error
 	switch mode {
+	case "serve":
+		err = startServer(*address)
 	case "import":
 		assertArgCount(3)
 		err = importPaths(
@@ -135,16 +153,15 @@ func main() {
 		err = searchPathsByTags(strings.Join(fl.Args(), " "), *returnRandom)
 	case "complete_tag":
 		assertArgCount(3)
-		tags := core.CompleteTag(os.Args[2])
-		fmt.Println(strings.Join(tags, " "))
+		var suggests []string
+		suggests, err = db.CompleTag(os.Args[2])
+		fmt.Println(strings.Join(suggests, " "))
 	case "add_tags":
 		assertArgCount(4)
-		err = addTags(os.Args[2], os.Args[3:])
+		err = addTags(os.Args[2], strings.Join(os.Args[3:], " "))
 	case "remove_tags":
 		assertArgCount(4)
-		err = removeTags(os.Args[2], os.Args[3:])
-	case "serve":
-		err = startServer(*address)
+		err = removeTags(os.Args[2], strings.Join(os.Args[3:], " "))
 	default:
 		printHelp()
 	}

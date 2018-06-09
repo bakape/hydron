@@ -1,4 +1,4 @@
-package core
+package common
 
 type FileType uint8
 
@@ -12,12 +12,6 @@ const (
 	BMP
 	PSD
 	TIFF
-	ICO
-	MP3
-	AAC
-	WAVE
-	FLAC
-	MIDI
 	OGG
 	WEBM
 	MKV
@@ -39,12 +33,6 @@ var (
 		"image/bmp":        BMP,
 		"image/photoshop":  PSD,
 		"image/tiff":       TIFF,
-		"image/x-icon":     ICO,
-		"audio/mpeg":       MP3,
-		"audio/aac":        AAC,
-		"audio/wave":       WAVE,
-		"audio/x-flac":     FLAC,
-		"audio/midi":       MIDI,
 		"application/ogg":  OGG,
 		"video/webm":       WEBM,
 		"video/x-matroska": MKV,
@@ -65,12 +53,6 @@ var (
 		BMP:  "bmp",
 		PSD:  "psd",
 		TIFF: "tiff",
-		ICO:  "ico",
-		MP3:  "mp3",
-		AAC:  "aac",
-		WAVE: "wave",
-		FLAC: "flac",
-		MIDI: "midi",
 		OGG:  "ogg",
 		WEBM: "webm",
 		MKV:  "mkv",
@@ -91,12 +73,6 @@ var (
 		"bmp":  BMP,
 		"psd":  PSD,
 		"tiff": TIFF,
-		"ico":  ICO,
-		"mp3":  MP3,
-		"aac":  AAC,
-		"wave": WAVE,
-		"flac": FLAC,
-		"midi": MIDI,
 		"ogg":  OGG,
 		"webm": WEBM,
 		"mkv":  MKV,
