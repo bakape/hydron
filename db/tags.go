@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/squirrel"
@@ -108,7 +109,9 @@ func CompleTag(s string) (tags []string, err error) {
 	r, err := sq.Select("tag").
 		Distinct().
 		From("tags").
-		Where("tag LIKE ?*", s).
+		Where("tag like ? || '%' escape '$'", // Escape underscores
+			strings.Replace(s, "_", "$_", -1)).
+		OrderBy("tag").
 		Limit(10).
 		Query()
 	if err != nil {
