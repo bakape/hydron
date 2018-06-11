@@ -5,11 +5,17 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/tags"
 )
+
+type IDAndMD5 struct {
+	ID  int64
+	MD5 string
+}
 
 // Searches images by params and executes function on each.
 // Matches all images, if params = "".
@@ -17,7 +23,7 @@ import (
 // thumbnails.
 // TODO: System tags (requires more indexes)
 // TODO: Sorting (requires more indexes)
-func SearchImages(params string, fn func(common.CompactRecord) error) (
+func SearchImages(params string, fn func(common.CompactImage) error) (
 	err error,
 ) {
 	// Get tag IDs for all params
@@ -116,13 +122,15 @@ func SearchImages(params string, fn func(common.CompactRecord) error) (
 
 	// Read all matched rows
 
+	sql, _, _ := q.ToSql()
+	println(sql)
 	r, err := q.Query()
 	if err != nil {
 		return
 	}
 	defer r.Close()
 
-	var rec common.CompactRecord
+	var rec common.CompactImage
 	for r.Next() {
 		err = r.Scan(&rec.SHA1, &rec.Thumb.IsPNG, &rec.Thumb.Width,
 			&rec.Thumb.Height)
@@ -144,25 +152,23 @@ func RemoveImage(id string) (err error) {
 		pngThumb bool
 	)
 	err = InTransaction(func(tx *sql.Tx) (err error) {
-		r, err := withTransaction(tx, sq.
+		err = withTransaction(tx, sq.
 			Select("type", "thumb_is_png").
 			From("images").
 			Where("sha1 = ?", id),
 		).
-			QueryRow()
-		if err != nil {
-			return
-		}
-		err = r.Scan(&srcType, &pngThumb)
+			QueryRow().
+			Scan(&srcType, &pngThumb)
 		if err != nil {
 			return
 		}
 
-		return withTransaction(tx, sq.
+		_, err = withTransaction(tx, sq.
 			Delete("images").
 			Where("sha1 = ?", id),
 		).
 			Exec()
+		return
 	})
 	switch err {
 	case nil:
@@ -195,10 +201,74 @@ func getImageID(tx *sql.Tx) preparedStatement {
 	return lazyPrepare(tx, `select id from images where sha1 = ?`)
 }
 
-func GetImageID(sha1 string) (id uint64, err error) {
-	err = InTransaction(func(tx *sql.Tx) error {
-		q := getImageID(tx)
-		return q.QueryRow(sha1).Scan(&id)
+func GetImageID(sha1 string) (id int64, err error) {
+	err = sq.Select("id").
+		From("images").
+		Where("sha1 = ?", sha1).
+		QueryRow().
+		Scan(&id)
+	return
+}
+
+// Get IDs and MD5 hashes of all images that can have tags on gelbooru
+func GetGelbooruTaggable() (pairs []IDAndMD5, err error) {
+	r, err := sq.Select("id", "md5").
+		From("images").
+		Where("type in (?,?,?,?)",
+			common.JPEG, common.PNG, common.GIF, common.WEBM).
+		Query()
+	if err != nil {
+		return
+	}
+	defer r.Close()
+
+	pairs = make([]IDAndMD5, 0, 1<<15)
+	var pair IDAndMD5
+	for r.Next() {
+		err = r.Scan(&pair.ID, &pair.MD5)
+		if err != nil {
+			return
+		}
+		pairs = append(pairs, pair)
+	}
+	err = r.Err()
+	return
+}
+
+// Return, if images is already imported into the database
+func IsImported(sha1 string) (imported bool, err error) {
+	err = db.QueryRow(
+		`select exists (select 1 from images where sha1 = ?)`,
+		sha1,
+	).
+		Scan(&imported)
+	return
+}
+
+// Write image and its tags to database and return the image ID
+func WriteImage(i common.Image) (id int64, err error) {
+	err = InTransaction(func(tx *sql.Tx) (err error) {
+		q := sq.Insert("images").
+			Columns(
+				"type", "width", "height", "import_time", "size", "duration",
+				"md5", "sha1", "thumb_width", "thumb_height", "thumb_is_png",
+			).
+			Values(
+				i.Type, i.Width, i.Height, i.ImportTime, i.Size, i.Duration,
+				i.MD5, i.SHA1, i.Thumb.Width, i.Thumb.Height, i.Thumb.IsPNG,
+			)
+		var res sql.Result
+		res, err = withTransaction(tx, q).Exec()
+		if err != nil {
+			return
+		}
+		id, err = res.LastInsertId()
+		if err != nil {
+			return
+		}
+
+		err = AddTagsTx(tx, id, i.Tags, time.Now())
+		return
 	})
 	return
 }

@@ -14,12 +14,11 @@ import (
 	"time"
 
 	"github.com/bakape/hydron/common"
-	"github.com/mailru/easyjson/jwriter"
-
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/files"
 	"github.com/dimfeld/httptreemux"
 	"github.com/gorilla/handlers"
+	"github.com/mailru/easyjson/jwriter"
 )
 
 func startServer(addr string) error {
@@ -121,7 +120,7 @@ func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
 	var jw jwriter.Writer
 	jw.RawByte('[')
 	first := true
-	err := db.SearchImages(params, func(rec common.CompactRecord) error {
+	err := db.SearchImages(params, func(rec common.CompactImage) error {
 		if first {
 			first = false
 		} else {

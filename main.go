@@ -21,8 +21,8 @@ var (
 	}
 	modeTooltips = [][3]string{
 		{
-			"serve (default)",
-			"",
+			"serve",
+			"(default)",
 			`Launch hydron in server mode, exposing files and commands through
   a HTTP/JSON API until terminated.`,
 		},
@@ -89,7 +89,9 @@ var (
 	fetchTagsForImports = modeFlags["import"].Bool(
 		"f",
 		false,
-		"fetch tags from gelbooru.com for imported files",
+		"Fetch tags from gelbooru.com for imported files.\n"+
+			"NB: This will notably slow down importing large amounts of files.\n"+
+			"Consider using import, followed by fetch_tags!",
 	)
 	returnRandom = modeFlags["search"].Bool(
 		"r",

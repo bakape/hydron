@@ -19,6 +19,8 @@ func Normalize(s string, source common.TagSource) (tag common.Tag) {
 			tag.Type = common.Series
 		case "character":
 			tag.Type = common.Character
+		case "rating":
+			tag.Type = common.Rating
 		}
 		s = s[strings.LastIndexByte(s, ':')+1:]
 	}
@@ -44,47 +46,6 @@ func Normalize(s string, source common.TagSource) (tag common.Tag) {
 
 	return
 }
-
-// // Merge two sets of tags
-// func mergeTagSets(a, b [][]byte) [][]byte {
-// 	set := make(map[string]struct{}, len(a)+len(b))
-// 	for _, arr := range [...][][]byte{a, b} {
-// 		for _, tag := range arr {
-// 			set[string(tag)] = struct{}{}
-// 		}
-// 	}
-
-// 	return setToTags(set)
-// }
-
-// // Convert an array of tags to a set
-// func tagsToSet(tags [][]byte) map[string]struct{} {
-// 	set := make(map[string]struct{}, len(tags))
-// 	for _, tag := range tags {
-// 		set[string(tag)] = struct{}{}
-// 	}
-// 	return set
-// }
-
-// // Convert a set of tags to an array
-// func setToTags(set map[string]struct{}) [][]byte {
-// 	tags := make([][]byte, 0, len(set))
-// 	for tag := range set {
-// 		if tag != "" {
-// 			tags = append(tags, []byte(tag))
-// 		}
-// 	}
-// 	return tags
-// }
-
-// // Subtact tags in set b from set a
-// func subtractTags(a, b [][]byte) [][]byte {
-// 	set := tagsToSet(a)
-// 	for _, tag := range b {
-// 		delete(set, string(tag))
-// 	}
-// 	return setToTags(set)
-// }
 
 // Split a sep-delimited list of tags and normalize each
 func FromString(s string, source common.TagSource) []common.Tag {

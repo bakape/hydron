@@ -15,6 +15,7 @@ const (
 	Author
 	Character
 	Series
+	Rating
 )
 
 // Tag of an image

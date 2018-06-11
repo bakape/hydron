@@ -1,18 +1,29 @@
-package core
+package imp
 
 import (
+	"bytes"
+	"crypto/md5"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"io"
+	"os"
+	"runtime"
+	"time"
 
 	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/fetch"
+	"github.com/bakape/hydron/files"
+	"github.com/bakape/hydron/tags"
 	"github.com/bakape/thumbnailer"
 )
 
 // Common errors
 var (
 	ErrUnsupportedFile = errors.New("usuported file type")
-	ErrImported        = errors.New("file already imported")
+	ErrImported        = errors.New("already imported")
+	importFile         = make(chan request)
 )
 
 var thumbnailerOpts = thumbnailer.Options{
@@ -23,206 +34,162 @@ var thumbnailerOpts = thumbnailer.Options{
 	},
 }
 
-// Recursively import list of files and/or directories
-func ImportPaths(
-	paths []string,
-	del, fetchTags bool,
-	tags [][]byte,
-	iLog common.Logger,
-	fLog fetch.FetchLogger,
-) (err error) {
-	panic("TODO")
-	return nil
-	// files, err := files.Traverse(paths)
-	// if err != nil {
-	// 	return
-	// }
-
-	// // Parallelize across all cores and report progress in real time
-	// type response struct {
-	// 	KeyValue
-	// 	path string
-	// 	err  error
-	// }
-	// src := make(chan string)
-	// res := make(chan response)
-	// go func() {
-	// 	for _, f := range files {
-	// 		src <- f
-	// 	}
-	// 	close(src)
-	// }()
-
-	// n := runtime.NumCPU()
-	// for i := 0; i < n; i++ {
-	// 	go func() {
-	// 		for path := range src {
-	// 			var (
-	// 				f         io.ReadCloser
-	// 				err       error
-	// 				fetchable = IsFetchable(path)
-	// 			)
-	// 			if fetchable {
-	// 				f, err = FetchFile(path)
-	// 			} else {
-	// 				f, err = os.Open(path)
-	// 			}
-	// 			if err != nil {
-	// 				res <- response{
-	// 					path: path,
-	// 					err:  err,
-	// 				}
-	// 				continue
-	// 			}
-
-	// 			kv, err := ImportFile(f, tags)
-	// 			f.Close()
-	// 			if del && !fetchable {
-	// 				switch err {
-	// 				case nil, ErrImported:
-	// 					os.Remove(path)
-	// 				}
-	// 			}
-	// 			res <- response{
-	// 				KeyValue: kv,
-	// 				path:     path,
-	// 				err:      err,
-	// 			}
-	// 		}
-	// 	}()
-	// }
-
-	// iLog.SetTotal(len(files))
-	// fLog.SetTotal(len(files))
-	// var (
-	// 	toFetch  chan KeyValue
-	// 	fecthErr chan error
-	// )
-	// if fetchTags {
-	// 	toFetch = make(chan KeyValue, n)
-	// 	fecthErr = make(chan error)
-	// 	go func() {
-	// 		fecthErr <- FetchTags(toFetch, fLog)
-	// 	}()
-	// }
-	// for range files {
-	// 	switch r := <-res; r.err {
-	// 	case ErrUnsupportedFile, ErrImported:
-	// 		iLog.Done(r.KeyValue)
-	// 	case nil:
-	// 		// Fetch tags of any newly imported files
-	// 		if fetchTags && CanFetchTags(r.Record) {
-	// 			toFetch <- r.KeyValue
-	// 		}
-	// 		iLog.Done(r.KeyValue)
-	// 	default:
-	// 		iLog.Err(fmt.Errorf("%s: %s", r.err, r.path))
-	// 	}
-	// }
-
-	// if fetchTags {
-	// 	close(toFetch)
-	// 	return <-fecthErr
-	// }
-
-	// return nil
+type request struct {
+	f       io.Reader
+	addTags string
+	res     chan<- response
 }
 
-// Attempt to import any readable stream
-func ImportFile(f io.Reader, tags [][]byte) (r common.Record, err error) {
-	panic("TODO")
-	return common.Record{}, nil
-	// buf, err := ioutil.ReadAll(f)
-	// if err != nil {
-	// 	return
-	// }
-	// hash := sha1.Sum(buf)
+type response struct {
+	common.Image
+	err error
+}
 
-	// // Check, if not already in the database
-	// isImported, err := isImported(hash)
-	// if err != nil {
-	// 	return
-	// } else if isImported {
-	// 	err = ErrImported
-	// 	return
-	// }
+// Spawn goroutines to perform parallel thumbnailing and importing
+func init() {
+	n := runtime.NumCPU() + 1
+	for i := 0; i < n; i++ {
+		go func() {
+			for {
+				req := <-importFile
+				img, err := doImport(req.f, req.addTags)
+				req.res <- response{
+					Image: img,
+					err:   err,
+				}
+			}
+		}()
+	}
+}
 
-	// var noImage bool
-	// src, thumb, err := thumbnailer.ProcessBuffer(buf, thumbnailerOpts)
-	// switch err {
-	// case nil:
-	// case thumbnailer.ErrNoCoverArt:
-	// 	noImage = true
-	// case thumbnailer.ErrNoStreams:
-	// 	err = ErrUnsupportedFile
-	// 	return
-	// default:
-	// 	if _, ok := err.(thumbnailer.UnsupportedMIMEError); ok {
-	// 		err = ErrUnsupportedFile
-	// 	}
-	// 	return
-	// }
+// Worker function for file importing
+func doImport(f io.Reader, addTags string) (r common.Image, err error) {
+	srcBuf := bytes.NewBuffer(thumbnailer.GetBuffer())
+	defer func() {
+		thumbnailer.ReturnBuffer(srcBuf.Bytes())
+	}()
+	_, err = srcBuf.ReadFrom(f)
+	if err != nil {
+		return
+	}
+	sHash := sha1.Sum(srcBuf.Bytes())
+	SHA1 := hex.EncodeToString(sHash[:])
 
-	// // Add title and artists metadata as tags, if any
-	// if src.Artist != "" || src.Title != "" {
-	// 	// Perform a copy, as not to modify the underlying array of the original
-	// 	l := len(tags)
-	// 	c := make([][]byte, l, l+2)
-	// 	copy(c, tags)
-	// 	tags = c
+	// Check, if not already in the database
+	isImported, err := db.IsImported(SHA1)
+	if err != nil {
+		return
+	}
+	if isImported {
+		err = ErrImported
+		return
+	}
 
-	// 	for _, s := range [...]string{src.Title, src.Artist} {
-	// 		if s != "" {
-	// 			tags = append(tags, normalizeTag([]byte(s)))
-	// 		}
-	// 	}
-	// }
+	src, thumb, err := thumbnailer.ProcessBuffer(srcBuf.Bytes(),
+		thumbnailerOpts)
+	switch err {
+	case nil:
+	case thumbnailer.ErrNoStreams:
+		err = ErrUnsupportedFile
+		return
+	default:
+		if _, ok := err.(thumbnailer.UnsupportedMIMEError); ok {
+			err = ErrUnsupportedFile
+		}
+		return
+	}
+	defer thumbnailer.ReturnBuffer(thumb.Data)
 
-	// var (
-	// 	typ   = MimeTypes[src.Mime]
-	// 	errCh chan error
-	// )
-	// if !noImage {
-	// 	errCh = make(chan error)
-	// 	id := hex.EncodeToString(hash[:])
-	// 	go func() {
-	// 		errCh <- writeFile(SourcePath(id, typ), buf)
-	// 	}()
-	// 	go func() {
-	// 		errCh <- writeFile(ThumbPath(id, thumb.IsPNG), thumb.Data)
-	// 	}()
-	// }
+	mHash := md5.Sum(srcBuf.Bytes())
+	r = common.Image{
+		Type: common.MimeTypes[src.Mime],
+		CompactImage: common.CompactImage{
+			SHA1: SHA1,
+			Thumb: common.Thumbnail{
+				IsPNG: thumb.IsPNG,
+				Dims: common.Dims{
+					Width:  uint64(thumb.Width),
+					Height: uint64(thumb.Height),
+				},
+			},
+		},
+		Dims: common.Dims{
+			Width:  uint64(src.Width),
+			Height: uint64(src.Height),
+		},
+		ImportTime: time.Now().Unix(),
+		Size:       len(src.Data),
+		Duration:   uint64(src.Length / time.Second),
+		MD5:        hex.EncodeToString(mHash[:]),
+		Tags:       tags.FromString(addTags, common.User),
+	}
 
-	// // Create database key-value pair
-	// kv = KeyValue{
-	// 	SHA1:   hash,
-	// 	Record: make(Record, offsetTags),
-	// }
-	// kv.setType(typ)
-	// kv.setStats(
-	// 	uint64(time.Now().Unix()),
-	// 	uint64(len(buf)),
-	// 	uint64(src.Width),
-	// 	uint64(src.Height),
-	// 	uint64(src.Length/time.Second),
-	// )
-	// if thumb.IsPNG {
-	// 	kv.setPNGThumb()
-	// }
-	// kv.setMD5(md5.Sum(buf))
+	// Write files in parallel.
+	// Buffered to prevent goroutine leaks on early return.
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- writeFile(files.ThumbPath(r.SHA1, thumb.IsPNG), thumb.Data)
+	}()
+	err = writeFile(files.SourcePath(r.SHA1, r.Type), srcBuf.Bytes())
+	if err != nil {
+		return
+	}
+	err = <-errCh
+	if err != nil {
+		return
+	}
 
-	// // Receive any disk write errors
-	// if !noImage {
-	// 	for i := 0; i < 2; i++ {
-	// 		err = <-errCh
-	// 		if err != nil {
-	// 			return
-	// 		}
-	// 	}
-	// } else {
-	// 	kv.setNoThumb()
-	// }
+	r.ID, err = db.WriteImage(r)
+	return
+}
 
-	// err = writeRecord(kv, tags)
-	// return
+// Write a file to disk. If a file already exists, because of an interrupted
+// write or something, overwrite it.
+func writeFile(path string, buf []byte) (err error) {
+	const flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	f, err := os.OpenFile(path, flags, 0660)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	_, err = f.Write(buf)
+	return
+}
+
+/*
+Attempt to import any readable stream
+f: strem to read
+addTags: Add a list of tags to all images
+fetchTags: fetch tags from gelbooru
+*/
+func ImportFile(f io.Reader, addTags string, fetchTags bool) (
+	r common.Image, err error,
+) {
+	ch := make(chan response)
+	importFile <- request{f, addTags, ch}
+	res := <-ch
+	r = res.Image
+	err = res.err
+	if err != nil {
+		return
+	}
+
+	if fetchTags && fetch.CanFetchTags(r.Type) {
+		var (
+			fetched    []common.Tag
+			changeTime time.Time
+		)
+		fetched, changeTime, err = fetch.FetchTags(r.MD5)
+		if err != nil {
+			return
+		}
+		err = db.AddTags(r.ID, fetched, changeTime)
+		if err != nil {
+			return
+		}
+		r.Tags = append(r.Tags, fetched...)
+	}
+
+	return
 }

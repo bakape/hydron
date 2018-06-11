@@ -12,11 +12,11 @@ var migrations = []func(*sql.Tx) error{
 		// Initialize DB
 		return execAll(tx,
 			`create table main (
-				id text primary key,
+				id text not null primary key,
 				val text not null
 			)`,
 			`create table tags (
-				id int primary key,
+				id INTEGER PRIMARY KEY,
 				type tinyint not null,
 				tag text not null
 			)`,
@@ -24,7 +24,7 @@ var migrations = []func(*sql.Tx) error{
 			// Enables prefix search optimization for LIKE queries
 			`create index i_tags on tags(tag)`,
 			`create table images (
-				id int primary key,
+				id INTEGER PRIMARY KEY,
 				type tinyint not null,
 				width int not null,
 				height int not null,
@@ -46,6 +46,18 @@ var migrations = []func(*sql.Tx) error{
 			)`,
 			`create index i_image_tags on image_tags(image_id)`,
 			`create index i_tag_images on image_tags(tag_id)`,
+			`insert into main (id, val) values ('version', '1')`,
+		)
+	},
+	func(tx *sql.Tx) (err error) {
+		return execAll(tx,
+			`create table last_change (
+				source tinyint not null,
+				image_id int not null references images on delete cascade,
+				time bigint not null,
+				primary key (source, image_id)
+			)`,
+			`create index i_last_change_image on last_change(image_id)`,
 		)
 	},
 }

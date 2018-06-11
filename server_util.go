@@ -8,47 +8,6 @@ import (
 	"github.com/dimfeld/httptreemux"
 )
 
-// // Helper for continuously streaming JSON file data to the client as it is being
-// // retrieved and encoded
-// type jsonRecordStreamer struct {
-// 	minimal, notFirst bool
-// 	jwriter.Writer
-// 	w   http.ResponseWriter
-// 	r   *http.Request
-// 	err error
-// }
-
-// func newJSONRecordStreamer(
-// 	w http.ResponseWriter,
-// 	r *http.Request,
-// ) jsonRecordStreamer {
-// 	setJSONHeaders(w)
-// 	w.Write([]byte{'['})
-// 	return jsonRecordStreamer{
-// 		minimal: r.URL.Query().Get("minimal") == "true",
-// 		w:       w,
-// 		r:       r,
-// 	}
-// }
-
-// func (j *jsonRecordStreamer) close() {
-// 	if j.err != nil {
-// 		send500(j.w, j.r, j.err)
-// 		return
-// 	}
-// 	j.w.Write([]byte{']'})
-// }
-
-// func (j *jsonRecordStreamer) writeKeyValue(kv core.KeyValue) {
-// 	if !j.notFirst {
-// 		j.notFirst = true
-// 	} else {
-// 		j.RawByte(',')
-// 	}
-// 	kv.ToJSON(&j.Writer, j.minimal)
-// 	j.DumpTo(j.w)
-// }
-
 func sendError(w http.ResponseWriter, code int, err error) {
 	http.Error(w, fmt.Sprintf("%d %s", code, err), code)
 }
