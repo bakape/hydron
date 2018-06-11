@@ -4,7 +4,6 @@ package common
 
 // Record of an image stored in the database
 type Image struct {
-	Type FileType `json:"type"`
 	CompactImage
 	Dims
 	ID         int64  `json:"-"`
@@ -30,6 +29,7 @@ type Thumbnail struct {
 
 // Only provides the most minimal of fields. Optimal for thumbnail views.
 type CompactImage struct {
+	Type  FileType  `json:"type"`
 	SHA1  string    `json:"sha1"`
 	Thumb Thumbnail `json:"thumb"`
 }

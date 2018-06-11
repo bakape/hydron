@@ -15,9 +15,9 @@ var RootPath, ImageRoot, ThumbRoot string
 // Determine root dirs
 func init() {
 	if runtime.GOOS == "windows" {
-		RootPath = filepath.Join(os.Getenv("APPDATA"), "hydron2")
+		RootPath = filepath.Join(os.Getenv("APPDATA"), "hydron")
 	} else {
-		RootPath = filepath.Join(os.Getenv("HOME"), ".hydron2")
+		RootPath = filepath.Join(os.Getenv("HOME"), ".hydron")
 	}
 	sep := string(filepath.Separator)
 	ImageRoot = concatStrings(RootPath, sep, "images", sep)

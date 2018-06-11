@@ -149,10 +149,8 @@ func main() {
 		err = removeFiles(os.Args[2:])
 	case "fetch_tags":
 		err = fetchAllTags()
-	case "print":
-		err = printDB()
 	case "search":
-		err = searchPathsByTags(strings.Join(fl.Args(), " "), *returnRandom)
+		err = searchImages(strings.Join(fl.Args(), " "), *returnRandom)
 	case "complete_tag":
 		assertArgCount(3)
 		var suggests []string

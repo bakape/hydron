@@ -102,8 +102,8 @@ func doImport(f io.Reader, addTags string) (r common.Image, err error) {
 
 	mHash := md5.Sum(srcBuf.Bytes())
 	r = common.Image{
-		Type: common.MimeTypes[src.Mime],
 		CompactImage: common.CompactImage{
+			Type: common.MimeTypes[src.Mime],
 			SHA1: SHA1,
 			Thumb: common.Thumbnail{
 				IsPNG: thumb.IsPNG,

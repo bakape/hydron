@@ -88,7 +88,9 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 	}
 
 	// Build query
-	q := sq.Select("sha1", "thumb_is_png", "thumb_width", "thumb_height").
+	q := sq.Select(
+		"sha1", "type", "thumb_is_png", "thumb_width", "thumb_height",
+	).
 		From("images as i")
 	for _, id := range pos {
 		q = q.Where(
@@ -113,7 +115,7 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 		q = q.Where(
 			`not exists (
 				select 1
-				from image_tags
+				from image_tags as it
 				where it.image_id = i.id and it.tag_id in ?
 			)`,
 			string(b),
@@ -121,18 +123,14 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 	}
 
 	// Read all matched rows
-
-	sql, _, _ := q.ToSql()
-	println(sql)
 	r, err := q.Query()
 	if err != nil {
 		return
 	}
 	defer r.Close()
-
 	var rec common.CompactImage
 	for r.Next() {
-		err = r.Scan(&rec.SHA1, &rec.Thumb.IsPNG, &rec.Thumb.Width,
+		err = r.Scan(&rec.SHA1, &rec.Type, &rec.Thumb.IsPNG, &rec.Thumb.Width,
 			&rec.Thumb.Height)
 		if err != nil {
 			return
