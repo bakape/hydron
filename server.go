@@ -1,7 +1,6 @@
 package main
 
 import (
-	"compress/gzip"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -45,14 +44,14 @@ func startServer(addr string) error {
 	})
 
 	// Image API
+	api := r.NewGroup("/api")
+	api.GET("/complete_tag/:prefix", completeTagHTTP)
 
-	r.GET("/complete_tag/:prefix", completeTagHTTP)
-
-	images := r.NewContextGroup("/images")
+	images := api.NewGroup("/images")
 	images.GET("/", serveEverything) // Dumps everything
 	images.POST("/", importUpload)
 
-	search := images.NewContextGroup("/search")
+	search := images.NewGroup("/search")
 	search.GET("/", serveEverything)
 	search.GET("/:tags", func(w http.ResponseWriter, r *http.Request) {
 		q := html.UnescapeString(extractParam(r, "tags"))
@@ -60,16 +59,27 @@ func startServer(addr string) error {
 		serveSearch(w, r, q)
 	})
 
-	imgID := images.NewContextGroup("/:id")
+	imgID := images.NewGroup("/:id")
 	imgID.GET("/", getFilesByIDs)
 	imgID.DELETE("/", removeFilesHTTP)
 
-	tags := imgID.NewContextGroup("/tags")
+	tags := imgID.NewGroup("/tags")
 	tags.PATCH("/", addTagsHTTP)
 	tags.DELETE("/", removeTagsHTTP)
 
-	return http.ListenAndServe(addr,
-		handlers.CompressHandlerLevel(r, gzip.DefaultCompression))
+	return http.ListenAndServe(addr, compressAPI(r))
+}
+
+// Only compress API responses
+func compressAPI(h http.Handler) http.Handler {
+	comp := handlers.CompressHandler(h)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api") {
+			comp.ServeHTTP(w, r)
+		} else {
+			h.ServeHTTP(w, r)
+		}
+	})
 }
 
 // Extract URL paramater from request context
@@ -85,7 +95,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request, root string) {
 		return
 	}
 
-	name := extractParam(r, "name")
+	name := extractParam(r, "file")
 	if len(name) < 40 {
 		send404(w)
 		return

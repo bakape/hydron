@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
-
-	"github.com/dimfeld/httptreemux"
 )
 
 func sendError(w http.ResponseWriter, code int, err error) {
@@ -34,11 +32,4 @@ func setJSONHeaders(w http.ResponseWriter) {
 		"Expires":       "Fri, 01 Jan 1990 00:00:00 GMT",
 		"Content-Type":  "application/json",
 	})
-}
-
-// Adapter for http.HandlerFunc -> httptreemux.HandlerFunc
-func wrapHandler(fn http.HandlerFunc) httptreemux.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
-		fn(w, r)
-	}
 }
