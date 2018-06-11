@@ -2,12 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"html"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +19,15 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/mailru/easyjson/jwriter"
 )
+
+var fileHeaders = map[string]string{
+	// max-age set to 350 days. Some caches and browsers ignore max-age, if
+	// it is a year or greater, so keep it a little below.
+	"Cache-Control":   "max-age=30240000, public, immutable",
+	"X-Frame-Options": "sameorigin",
+	// Fake E-tag, because all files are immutable
+	"ETag": "0",
+}
 
 func startServer(addr string) error {
 	stderr.Println("listening on " + addr)
@@ -32,7 +41,8 @@ func startServer(addr string) error {
 		r *http.Request,
 		err interface{},
 	) {
-		send500(w, r, errors.New(fmt.Sprint(err)))
+		http.Error(w, fmt.Sprintf("500 %s", err), 500)
+		stderr.Printf("server: %s: %s\n%s", r.RemoteAddr, err, debug.Stack())
 	}
 
 	// Assets
@@ -108,14 +118,7 @@ func serveFiles(w http.ResponseWriter, r *http.Request, root string) {
 	}
 	defer file.Close()
 
-	setHeaders(w, map[string]string{
-		// max-age set to 350 days. Some caches and browsers ignore max-age, if
-		// it is a year or greater, so keep it a little below.
-		"Cache-Control":   "max-age=30240000, public, immutable",
-		"X-Frame-Options": "sameorigin",
-		// Fake E-tag, because all files are immutable
-		"ETag": "0",
-	})
+	setHeaders(w, fileHeaders)
 
 	http.ServeContent(w, r, extractParam(r, "path"), time.Time{}, file)
 }

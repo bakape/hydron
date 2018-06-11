@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -21,24 +22,32 @@ type IDAndMD5 struct {
 // Matches all images, if params = "".
 // The returned images will only contain the bare minimum data to render
 // thumbnails.
-// TODO: System tags (requires more indexes)
-// TODO: Sorting (requires more indexes)
+// TODO: System tags (requires more indices)
+// TODO: Sorting (requires more indices)
 func SearchImages(params string, fn func(common.CompactImage) error) (
 	err error,
 ) {
 	// Get tag IDs for all params
 	var (
 		split = strings.Split(params, " ")
-		pos   []uint64
-		neg   []uint64
+		pos   []int64 // Must all match
+		neg   []int64 // Must not match any
 	)
 	if len(split) != 0 {
 		err = InTransaction(func(tx *sql.Tx) (err error) {
 			qWithType := lazyPrepare(tx,
 				`select id from tags
 				where type = ? and tag = ?`)
-			qAnyType := lazyPrepare(tx, `select id from tags where tag = ?`)
-			var id uint64
+			// Undefined tag type matches the first tag type available.
+			// User should be specific about tag types, when matching by artist,
+			// character, series, etc.
+			qAnyType := lazyPrepare(tx,
+				`select id from tags
+				where tag = ?
+				order by type asc
+				limit 1`)
+
+			var id int64
 			for _, s := range split {
 				s = strings.TrimSpace(s)
 				if len(s) == 0 {
@@ -51,7 +60,6 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 				}
 				t := tags.Normalize(s, common.User)
 
-				// Undefined tag type matches all
 				var rs rowScanner
 				if t.Type == common.Undefined {
 					rs = qAnyType.QueryRow(t.Tag)
@@ -67,8 +75,10 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 						err = nil
 						continue
 					}
-					// But missing positives would result in mathcing nothing
+					// But missing positives would result in matching nothing
 					// anyway
+					return
+				default:
 					return
 				}
 				if !isNeg {
@@ -84,42 +94,34 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 		case sql.ErrNoRows:
 			err = nil
 			return
+		default:
+			return
 		}
 	}
 
 	// Build query
-	q := sq.Select(
-		"sha1", "type", "thumb_is_png", "thumb_width", "thumb_height",
+	q := sq.Select("sha1", "type", "thumb_is_png", "thumb_width",
+		"thumb_height",
 	).
-		From("images as i")
-	for _, id := range pos {
-		q = q.Where(
-			`exists (
-				select 1
-				from image_tags as it
-				where it.image_id = i.id and it.tag_id = ?
-			)`,
-			id,
-		)
+		From("images")
+	if len(pos) != 0 {
+		q = q.Where(fmt.Sprintf(
+			`id in (
+				select image_id from image_tags
+				where tag_id in %s
+				group by image_id
+				having count(*) = %d)`,
+			formatSet(pos), len(pos),
+		))
 	}
 	if len(neg) != 0 {
-		b := make([]byte, 1, 128)
-		b[0] = '('
-		for i, id := range neg {
-			if i != 0 {
-				b = append(b, ',')
-			}
-			b = strconv.AppendUint(b, id, 10)
-		}
-		b = append(b, ')')
-		q = q.Where(
+		q = q.Where(fmt.Sprintf(
 			`not exists (
 				select 1
-				from image_tags as it
-				where it.image_id = i.id and it.tag_id in ?
-			)`,
-			string(b),
-		)
+				from image_tags
+				where image_id = id and tag_id in %s)`,
+			formatSet(neg),
+		))
 	}
 
 	// Read all matched rows
@@ -141,6 +143,20 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 		}
 	}
 	return r.Err()
+}
+
+// Format SQL set
+func formatSet(arr []int64) string {
+	b := make([]byte, 1, 256)
+	b[0] = '('
+	for i, n := range arr {
+		if i != 0 {
+			b = append(b, ',')
+		}
+		b = strconv.AppendInt(b, n, 10)
+	}
+	b = append(b, ')')
+	return string(b)
 }
 
 // Remove an image from the database by ID. Non-existant files are ignored.
