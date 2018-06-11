@@ -4,7 +4,6 @@ package common
 
 import (
 	json "encoding/json"
-
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -113,7 +112,7 @@ func (v *Thumbnail) UnmarshalJSON(data []byte) error {
 func (v *Thumbnail) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson220accf5DecodeGithubComBakapeHydronCommon(l, v)
 }
-func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *Image) {
+func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *Tag) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -133,8 +132,101 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *I
 		}
 		switch key {
 		case "type":
-			out.Type = FileType(in.Uint8())
-		case "importTime":
+			out.Type = TagType(in.Uint8())
+		case "source":
+			out.Source = TagSource(in.Uint8())
+		case "tag":
+			out.Tag = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in Tag) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"type\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint8(uint8(in.Type))
+	}
+	{
+		const prefix string = ",\"source\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint8(uint8(in.Source))
+	}
+	{
+		const prefix string = ",\"tag\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Tag))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v Tag) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson220accf5EncodeGithubComBakapeHydronCommon1(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v Tag) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson220accf5EncodeGithubComBakapeHydronCommon1(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *Tag) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson220accf5DecodeGithubComBakapeHydronCommon1(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *Tag) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson220accf5DecodeGithubComBakapeHydronCommon1(l, v)
+}
+func easyjson220accf5DecodeGithubComBakapeHydronCommon2(in *jlexer.Lexer, out *Image) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "import_time":
 			out.ImportTime = int64(in.Int64())
 		case "size":
 			out.Size = int(in.Int())
@@ -159,7 +251,7 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *I
 				}
 				for !in.IsDelim(']') {
 					var v1 Tag
-					easyjson220accf5DecodeGithubComBakapeHydronCommon2(in, &v1)
+					(v1).UnmarshalEasyJSON(in)
 					out.Tags = append(out.Tags, v1)
 					in.WantComma()
 				}
@@ -169,6 +261,8 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *I
 			out.Width = uint64(in.Uint64())
 		case "height":
 			out.Height = uint64(in.Uint64())
+		case "type":
+			out.Type = FileType(in.Uint8())
 		case "sha1":
 			out.SHA1 = string(in.String())
 		case "thumb":
@@ -183,22 +277,12 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *I
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in Image) {
+func easyjson220accf5EncodeGithubComBakapeHydronCommon2(out *jwriter.Writer, in Image) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"type\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Uint8(uint8(in.Type))
-	}
-	{
-		const prefix string = ",\"importTime\":"
+		const prefix string = ",\"import_time\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -251,7 +335,7 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in 
 				if v2 > 0 {
 					out.RawByte(',')
 				}
-				easyjson220accf5EncodeGithubComBakapeHydronCommon2(out, v3)
+				(v3).MarshalEasyJSON(out)
 			}
 			out.RawByte(']')
 		}
@@ -275,6 +359,16 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in 
 			out.RawString(prefix)
 		}
 		out.Uint64(uint64(in.Height))
+	}
+	{
+		const prefix string = ",\"type\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint8(uint8(in.Type))
 	}
 	{
 		const prefix string = ",\"sha1\":"
@@ -302,96 +396,25 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in 
 // MarshalJSON supports json.Marshaler interface
 func (v Image) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson220accf5EncodeGithubComBakapeHydronCommon1(&w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Image) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson220accf5EncodeGithubComBakapeHydronCommon1(w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Image) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson220accf5DecodeGithubComBakapeHydronCommon1(&r, v)
+	easyjson220accf5DecodeGithubComBakapeHydronCommon2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Image) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson220accf5DecodeGithubComBakapeHydronCommon1(l, v)
-}
-func easyjson220accf5DecodeGithubComBakapeHydronCommon2(in *jlexer.Lexer, out *Tag) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "type":
-			out.Type = TagType(in.Uint8())
-		case "source":
-			out.Source = TagSource(in.Uint8())
-		case "tag":
-			out.Tag = string(in.String())
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson220accf5EncodeGithubComBakapeHydronCommon2(out *jwriter.Writer, in Tag) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"type\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Uint8(uint8(in.Type))
-	}
-	{
-		const prefix string = ",\"source\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Uint8(uint8(in.Source))
-	}
-	{
-		const prefix string = ",\"tag\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.String(string(in.Tag))
-	}
-	out.RawByte('}')
+	easyjson220accf5DecodeGithubComBakapeHydronCommon2(l, v)
 }
 func easyjson220accf5DecodeGithubComBakapeHydronCommon3(in *jlexer.Lexer, out *Dims) {
 	isTopLevel := in.IsStart()
@@ -495,6 +518,8 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon4(in *jlexer.Lexer, out *C
 			continue
 		}
 		switch key {
+		case "type":
+			out.Type = FileType(in.Uint8())
 		case "sha1":
 			out.SHA1 = string(in.String())
 		case "thumb":
@@ -513,6 +538,16 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon4(out *jwriter.Writer, in 
 	out.RawByte('{')
 	first := true
 	_ = first
+	{
+		const prefix string = ",\"type\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Uint8(uint8(in.Type))
+	}
 	{
 		const prefix string = ",\"sha1\":"
 		if first {

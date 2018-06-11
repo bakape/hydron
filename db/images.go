@@ -194,9 +194,47 @@ func RemoveImage(id string) (err error) {
 	return
 }
 
-// Prepare statement for fetching internal image ID by SHA1 for transaction
-func getImageID(tx *sql.Tx) preparedStatement {
-	return lazyPrepare(tx, `select id from images where sha1 = ?`)
+// Retrieve an image and all it's tags by SHA1 hash
+func GetImage(sha1 string) (img common.Image, err error) {
+	err = InTransaction(func(tx *sql.Tx) (err error) {
+		q := sq.Select(
+			"type", "sha1", "thumb_is_png", "thumb_width", "thumb_height",
+			"width", "height", "import_time", "size", "duration", "md5", "id",
+		).
+			From("images").
+			Where("sha1 = ?", sha1)
+		err = withTransaction(tx, q).QueryRow().Scan(
+			&img.Type, &img.SHA1, &img.Thumb.IsPNG, &img.Thumb.Width,
+			&img.Thumb.Height,
+			&img.Width, &img.Height, &img.ImportTime, &img.Size,
+			&img.Duration, &img.MD5, &img.ID,
+		)
+		if err != nil {
+			return
+		}
+
+		q = sq.Select("source", "type", "tag").
+			From("image_tags").
+			Join("tags on image_tags.tag_id = tags.id").
+			Where("image_id = ?", img.ID)
+		r, err := withTransaction(tx, q).Query()
+		if err != nil {
+			return
+		}
+		defer r.Close()
+		var tag common.Tag
+		img.Tags = make([]common.Tag, 0, 64)
+		for r.Next() {
+			err = r.Scan(&tag.Source, &tag.Type, &tag.Tag)
+			if err != nil {
+				return
+			}
+			img.Tags = append(img.Tags, tag)
+		}
+
+		return
+	})
+	return
 }
 
 func GetImageID(sha1 string) (id int64, err error) {

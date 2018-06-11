@@ -60,7 +60,7 @@ func startServer(addr string) error {
 	})
 
 	imgID := images.NewGroup("/:id")
-	imgID.GET("/", getFilesByIDs)
+	imgID.GET("/", serveByID)
 	imgID.DELETE("/", removeFilesHTTP)
 
 	tags := imgID.NewGroup("/tags")
@@ -149,21 +149,17 @@ func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
 	jw.DumpTo(w)
 }
 
-// Retrieve records from the database and serve as JSON
-func serveJSONByID(
-	w http.ResponseWriter,
-	r *http.Request,
-	ids map[[20]byte]bool,
-) {
-	panic("TODO")
-	// jrs := newJSONRecordStreamer(w, r)
-	// defer jrs.close()
-	// jrs.err = core.MapRecords(ids, func(id [20]byte, r core.Record) {
-	// 	jrs.writeKeyValue(core.KeyValue{
-	// 		SHA1:   id,
-	// 		Record: r,
-	// 	})
-	// })
+// Serve single image data by ID
+func serveByID(w http.ResponseWriter, r *http.Request) {
+	img, err := db.GetImage(extractParam(r, "id"))
+	switch err {
+	case nil:
+		serveJSON(w, r, img)
+	case sql.ErrNoRows:
+		send404(w)
+	default:
+		send500(w, r, err)
+	}
 }
 
 // Download and import a file from the client
@@ -217,23 +213,6 @@ func removeFilesHTTP(w http.ResponseWriter, r *http.Request) {
 	// 		send500(w, r, err)
 	// 	}
 	// }
-}
-
-// Serve file JSON by ID
-func getFilesByIDs(w http.ResponseWriter, r *http.Request) {
-	panic("TODO")
-	// split := strings.Split(p["ids"], ",")
-	// ids := make(map[[20]byte]bool, len(split))
-	// for i := range split {
-	// 	id, err := core.StringToSHA1(split[i])
-	// 	if err != nil {
-	// 		sendError(w, 400, err)
-	// 		return
-	// 	}
-	// 	ids[id] = true
-	// }
-
-	// serveJSONByID(w, r, ids)
 }
 
 // Complete a tag by prefix from an HTTP request

@@ -2,12 +2,38 @@
 
 package common
 
+type TagSource uint8
+
+const (
+	User TagSource = iota
+	Gelbooru
+	Hydrus
+)
+
+type TagType uint8
+
+const (
+	Undefined TagType = iota
+	Author
+	Character
+	Series
+	Rating
+)
+
+// Tag of an image
+type Tag struct {
+	Type   TagType   `json:"type"`
+	Source TagSource `json:"source"`
+	ID     uint64    `json:"-"`
+	Tag    string    `json:"tag"` // Not always defined for performance reasons
+}
+
 // Record of an image stored in the database
 type Image struct {
 	CompactImage
 	Dims
 	ID         int64  `json:"-"`
-	ImportTime int64  `json:"importTime"`
+	ImportTime int64  `json:"import_time"`
 	Size       int    `json:"size"`
 	Duration   uint64 `json:"duration,omitempty"`
 	MD5        string `json:"md5"`

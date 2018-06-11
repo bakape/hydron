@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -32,4 +33,14 @@ func setJSONHeaders(w http.ResponseWriter) {
 		"Expires":       "Fri, 01 Jan 1990 00:00:00 GMT",
 		"Content-Type":  "application/json",
 	})
+}
+
+func serveJSON(w http.ResponseWriter, r *http.Request, data interface{}) {
+	buf, err := json.Marshal(data)
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	setJSONHeaders(w)
+	w.Write(buf)
 }
