@@ -1,4 +1,4 @@
-import QtQuick 2.9
+import QtQuick 2.11
 import QtQuick.Layouts 1.3
 import "http.js" as HTTP
 import "paths.js" as Paths
@@ -9,8 +9,6 @@ GridView {
     model: ListModel {
     }
     highlightFollowsCurrentItem: true
-
-    property string url
 
     focus: true
     activeFocusOnTab: true
@@ -61,7 +59,7 @@ GridView {
 
     Keys.onPressed: {
         if (event.modifiers & Qt.MetaModifier) {
-            return
+            return event.accepted = true;
         }
 
 
@@ -72,26 +70,25 @@ GridView {
                 for (var i = 0; i < model.count; i++) {
                     model.get(i).selected = true
                 }
-                rebuildURL()
                 break
             }
         } else {
             switch (event.key) {
             case Qt.Key_Up:
                 moveCurrentIndexUp()
-                select(currentIndex, false)
+                selectCurrent()
                 break
             case Qt.Key_Down:
                 moveCurrentIndexDown()
-                select(currentIndex, false)
+                selectCurrent()
                 break
             case Qt.Key_Left:
                 moveCurrentIndexLeft()
-                select(currentIndex, false)
+                selectCurrent()
                 break
             case Qt.Key_Right:
                 moveCurrentIndexRight()
-                select(currentIndex, false)
+                selectCurrent()
                 break
             case Qt.Key_Home:
                 positionViewAtBeginning()
@@ -107,7 +104,9 @@ GridView {
                 window.removeFiles(selectedIDs())
                 break
             }
+            console.log(currentIndex)
         }
+        event.accepted = true;
     }
 
     MouseArea {
@@ -134,7 +133,7 @@ GridView {
 
                 var target = i
                 for (; i !== currentIndex; target < currentIndex ? i++ : i--) {
-                    var m = model.get(i)
+                    m = model.get(i)
                     m.selected = !m.selected
                 }
 
@@ -142,7 +141,6 @@ GridView {
                 model.get(currentIndex).selected = true
 
                 positionViewAtIndex(target, GridView.Contain)
-                rebuildURL()
                 currentIndex = target
             } else {
                 select(i, multiple)
@@ -154,12 +152,12 @@ GridView {
         }
     }
 
-    Drag.active: url ? mouseArea.drag.active : false
-    Drag.dragType: Drag.Automatic
-    Drag.supportedActions: Qt.CopyAction
-    Drag.mimeData: {
-        "text/uri-list": url
-    }
+//    Drag.active: url ? mouseArea.drag.active : false
+//    Drag.dragType: Drag.Automatic
+//    Drag.supportedActions: Qt.CopyAction
+//    Drag.mimeData: {
+//        "text/uri-list": url
+//    }
 
     // Select and highlight a file. Optionally allow multiple selection.
     function select(i, multiple) {
@@ -177,28 +175,21 @@ GridView {
                 m.selected = true
             }
             positionViewAtIndex(i, GridView.Contain)
-            rebuildURL()
         }
+    }
+
+    // Select the currently positioned over item
+    function selectCurrent() {
+        clearSelected();
+        model.get(currentIndex).selected = true;
     }
 
     function clearSelected() {
         for (var j = 0; j < model.count; j++) {
             model.get(j).selected = false
         }
-        url = ""
     }
 
-    // Rebuild URL list for drag & drop
-    function rebuildURL() {
-        var arr = []
-        for (var j = 0; j < model.count; j++) {
-            var m = model.get(j)
-            if (m.selected) {
-                arr.push(m.sourcePath)
-            }
-        }
-        url = arr.join("\n")
-    }
 
     // Open a thumbnail for full screeen viewing
     function open(i) {

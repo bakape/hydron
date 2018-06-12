@@ -79,6 +79,7 @@ TextField {
             event.accepted = true
             menu.focus = true
             menu.forceActiveFocus()
+            event.accepted = true;
             break
         }
     }

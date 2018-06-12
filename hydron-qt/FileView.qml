@@ -122,6 +122,8 @@ Rectangle {
         }
 
         // TODO: Keyboard navigation in this mode
+
+        event.accepted = true;
     }
 
     function render(id) {
