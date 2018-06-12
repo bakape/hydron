@@ -1,7 +1,7 @@
 import QtQuick 2.9
 import QtQml 2.2
 import QtQuick.Layouts 1.3
-import QtQuick.Controls 2.2
+import QtQuick.Controls 2.4
 import "http.js" as HTTP
 
 TextField {
@@ -76,10 +76,13 @@ TextField {
         switch (event.key) {
         case Qt.Key_Down:
         case Qt.Key_Tab:
+        case Qt.Key_Up:
             event.accepted = true
             menu.focus = true
             menu.forceActiveFocus()
-            event.accepted = true;
+            if (menu.count) {
+                menu.currentIndex = event.key === Qt.Key_Up ? menu.count - 1 : 0
+            }
             break
         }
     }
