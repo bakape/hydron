@@ -1,4 +1,3 @@
-
 function get(url, cb) {
     var xhr = new XMLHttpRequest()
     xhr.onreadystatechange = function () {
@@ -6,7 +5,8 @@ function get(url, cb) {
             if (xhr.status === 200) {
                 cb(JSON.parse(xhr.responseText), null)
             } else {
-                cb(null, xhr.status + ": " + xhr.statusText)
+                cb(null,
+                   xhr.status + ": " + (xhr.statusText || "server unavailable"))
             }
         }
     }
