@@ -32,6 +32,7 @@ var thumbnailerOpts = thumbnailer.Options{
 		Width:  200,
 		Height: 200,
 	},
+	AcceptedMimeTypes: common.AllowedMimes,
 }
 
 type request struct {

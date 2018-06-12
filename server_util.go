@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,16 +34,24 @@ func setHeaders(w http.ResponseWriter, headers map[string]string) {
 	}
 }
 
-func setJSONHeaders(w http.ResponseWriter) {
-	setHeaders(w, jsonHeaders)
-}
-
 func serveJSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 	buf, err := json.Marshal(data)
 	if err != nil {
 		send500(w, r, err)
 		return
 	}
-	setJSONHeaders(w)
+	serveJSONBuf(w, r, buf)
+}
+
+func serveJSONBuf(w http.ResponseWriter, r *http.Request, buf []byte) {
+	h := md5.Sum(buf)
+	etag := base64.RawStdEncoding.EncodeToString(h[:])
+	if r.Header.Get("If-None-Match") == etag {
+		w.WriteHeader(304)
+		return
+	}
+
+	setHeaders(w, jsonHeaders)
+	w.Header().Set("ETag", etag)
 	w.Write(buf)
 }

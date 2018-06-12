@@ -1,50 +1,51 @@
 import QtQuick 2.9
 import QtQuick.Layouts 1.3
+import "http.js" as HTTP
+import "paths.js" as Paths
 
 GridView {
     cellHeight: 155
     cellWidth: 155
-    model: ListModel {}
-
-    highlightFollowsCurrentItem: false
+    model: ListModel {
+    }
+    highlightFollowsCurrentItem: true
 
     property string url
 
     focus: true
     activeFocusOnTab: true
 
-    function loadThumbnails (tags) {
+    function loadThumbnails(tags) {
         clear()
 
-        var data = JSON.parse(go.search(tags))
-        for (var i = 0; i < data.length; i++) {
-            var m = data[i]
-            m.selected = false
-            model.append(m)
-        }
+        HTTP.get("/images/search/" + tags, function (data, err) {
+            if (err) {
+                errorPopup.render(err)
+                return
+            }
+
+            for (var i = 0; i < data.length; i++) {
+                var m = data[i]
+                m.selected = false
+                model.append(m)
+            }
+        })
     }
 
     function clear() {
         model.clear()
     }
 
-    Component.onCompleted: {
-        go.done.connect(append)
-    }
-
     // Append a file to the grid
-    function append(rec) {
-        var m = JSON.parse(rec)
-        m.selected = false
+    function append(m) {
         model.append(m)
     }
 
     delegate: Rectangle {
         height: 155
         width: 155
-        color: selected
-               ? (SystemPalette.highlight || "lightsteelblue")
-               : "transparent"
+        color: selected ? (SystemPalette.highlight
+                           || "lightsteelblue") : "transparent"
         radius: 5
         Image {
             anchors {
@@ -53,7 +54,7 @@ GridView {
             }
             asynchronous: true
             sourceSize: "150x150"
-            source: thumbPath
+            source: Paths.thumb(sha1, thumb.is_png)
             focus: true
         }
     }
@@ -63,8 +64,8 @@ GridView {
             return
         }
 
-        // TODO: Page Up and Page Down
 
+        // TODO: Page Up and Page Down
         if (event.modifiers & Qt.ControlModifier) {
             switch (event.key) {
             case Qt.Key_A:
@@ -125,10 +126,8 @@ GridView {
                     select(i, multiple)
                 }
                 showMenu()
-            } else if (mouse.modifiers & Qt.ShiftModifier
-                       && i > 0
-                       && i !== currentIndex
-                       ) {
+            } else if (mouse.modifiers & Qt.ShiftModifier && i > 0
+                       && i !== currentIndex) {
                 if (!(mouse.modifiers & Qt.ControlModifier)) {
                     clearSelected()
                 }
@@ -167,7 +166,7 @@ GridView {
         currentIndex = i
 
         if (!multiple || i === -1) {
-           clearSelected()
+            clearSelected()
         }
 
         if (i !== -1) {
@@ -220,8 +219,8 @@ GridView {
 
     // Show context menu for selected files
     function showMenu() {
-        Qt.createComponent("FileMenu.qml")
-        .createObject(fileView, { ids: selectedIDs() })
-        .popup()
+        Qt.createComponent("FileMenu.qml").createObject(fileView, {
+                                                            ids: selectedIDs()
+                                                        }).popup()
     }
 }

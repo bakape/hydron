@@ -2,10 +2,9 @@ TEMPLATE = app
 
 QT += qml quick widgets
 
-CONFIG += c++11
+CONFIG += c++17 qtquickcompiler reduce-relocations ltcg
 
-SOURCES += main.cpp \
-    bridge.cpp
+SOURCES += main.cpp
 
 RESOURCES += qml.qrc
 
@@ -15,7 +14,4 @@ QML_IMPORT_PATH =
 # Default rules for deployment.
 include(deployment.pri)
 
-HEADERS += \
-    bridge.h
-
-LIBS += -L"$$_PRO_FILE_PWD_/libwrapper" -lwrapper
+DISTFILES +=

@@ -2,6 +2,7 @@ import QtQuick 2.9
 import QtQml 2.2
 import QtQuick.Layouts 1.3
 import QtQuick.Controls 2.2
+import "http.js" as HTTP
 
 TextField {
     Layout.fillWidth: true
@@ -16,25 +17,33 @@ TextField {
     }
     Component.onCompleted: forceActiveFocus()
     onTextChanged: {
-        if (!text.length || text[text.length -1 ] === " ") {
+        if (!text.length || text[text.length - 1] === " ") {
             closeMenu()
             return
         }
 
         var i = text.lastIndexOf(" ")
         var last = i === -1 ? text : text.slice(i + 1)
-        var tags = JSON.parse(go.completeTag(last))
-        suggestions.model.clear()
-        if (tags.length) {
-            for (i = 0; i < tags.length; i++) {
-                suggestions.model.append({tag: tags[i]})
+        HTTP.get("/complete_tag/" + last, function (tags, err) {
+            if (err) {
+                errorPopup.render(err)
+                return
             }
-            menu.focus = false
-            menu.isOpen = true
-            menu.open()
-        } else {
-            closeMenu()
-        }
+
+            suggestions.model.clear()
+            if (tags.length) {
+                for (i = 0; i < tags.length; i++) {
+                    suggestions.model.append({
+                                                 tag: tags[i]
+                                             })
+                }
+                menu.focus = false
+                menu.isOpen = true
+                menu.open()
+            } else {
+                closeMenu()
+            }
+        })
     }
 
     Menu {
@@ -47,10 +56,11 @@ TextField {
 
         Instantiator {
             id: suggestions
-            model: ListModel {}
+            model: ListModel {
+            }
             onObjectAdded: menu.addItem(object)
             onObjectRemoved: menu.removeItem(index)
-            delegate: MenuItem{
+            delegate: MenuItem {
                 text: tag
                 onTriggered: append(tag)
                 Keys.onReturnPressed: triggered()

@@ -43,6 +43,26 @@ var (
 		"video/x-flv":      FLV,
 	}
 
+	// MIME types allowed to be imported
+	AllowedMimes = map[string]bool{
+		"image/jpeg":       true,
+		"image/png":        true,
+		"image/gif":        true,
+		"image/webp":       true,
+		"application/pdf":  true,
+		"image/bmp":        true,
+		"image/photoshop":  true,
+		"image/tiff":       true,
+		"application/ogg":  true,
+		"video/webm":       true,
+		"video/x-matroska": true,
+		"video/mp4":        true,
+		"video/avi":        true,
+		"video/quicktime":  true,
+		"video/x-ms-wmv":   true,
+		"video/x-flv":      true,
+	}
+
 	// Canonical MIME type extensions
 	Extensions = map[FileType]string{
 		JPEG: "jpg",

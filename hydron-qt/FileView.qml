@@ -2,6 +2,8 @@ import QtQuick 2.9
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
 import QtMultimedia 5.9
+import "http.js" as HTTP
+import "paths.js" as Paths
 
 Rectangle {
     property variant model
@@ -24,7 +26,8 @@ Rectangle {
                 anchors.fill: parent
                 interactive: false
                 boundsBehavior: Flickable.StopAtBounds
-                model: ListModel {}
+                model: ListModel {
+                }
                 delegate: Text {
                     text: tag
                 }
@@ -36,13 +39,6 @@ Rectangle {
 
             id: display
             Layout.fillWidth: true
-
-            Text {
-                id: error
-                visible: false
-                anchors.fill: parent
-                anchors.centerIn: parent
-            }
 
             Image {
                 id: image
@@ -67,7 +63,6 @@ Rectangle {
                 anchors.fill: parent
 
                 // TODO: Media controls
-
                 MediaPlayer {
                     id: media
                     loops: MediaPlayer.Infinite
@@ -104,14 +99,12 @@ Rectangle {
             Drag.active: mouseArea.drag.active
             Drag.dragType: Drag.Automatic
             Drag.supportedActions: Qt.CopyAction
-            Drag.mimeData: {
-                "text/uri-list": display.url
-            }
+            Drag.mimeData: {"text/uri-list": display.url}
 
             function showMenu() {
-                Qt.createComponent("FileMenu.qml")
-                    .createObject(fileView, { ids: [ fileView.model.sha1 ] })
-                    .popup()
+                Qt.createComponent("FileMenu.qml").createObject(fileView, {
+                                                                    ids: [fileView.model.sha1]
+                                                                }).popup()
             }
         }
     }
@@ -129,7 +122,6 @@ Rectangle {
         }
 
         // TODO: Keyboard navigation in this mode
-
     }
 
     function render(id) {
@@ -140,60 +132,55 @@ Rectangle {
         browser.visible = false
 
         // Fetch more detailed record struct
-        var data = JSON.parse(go.get(id))
-        fileView.model = data
-        if (data === null) {
-            error.visible = true
-            error.text = "File not found"
-            display.url = null
-            return
-        }
+        HTTP.get("/images/" + id, function (data, err) {
+            fileView.model = null
+            if (data === null || err) {
+                errorPopup.render(err || "File not found")
+                return
+            }
 
-        display.url = data.sourcePath
-        switch (data.type) {
-        case "jpg":
-        case "png":
-        case "webp":
-        case "tiff":
-        case "ico":
-        case "bmp":
-            image.visible = true
-            image.source = data.sourcePath
-            break
-        case "gif":
-            animated.visible = true
-            animated.source = data.sourcePath
-            break
-        case "webm":
-        case "ogg":
-        case "mkv":
-        case "mp4":
-        case "avi":
-        case "mov":
-        case "wmv":
-        case "flv":
-            mediaContainer.visible = true
-            media.source = data.sourcePath
-            break
-        case "mp3":
-        case "aac":
-        case "wave":
-        case "flac":
-        case "midi":
-            image.visible = true
-            image.source = data.thumPath
-            mediaContainer.visible = true
-            media.source = data.sourcePath
-            break
-        default: // PSD, PDF and others
-            error.visible = true
-            error.text = "Preview not available for this file type"
-            return
-        }
+            var srcPath = Paths.source(data.sha1, data.type)
+            display.url = srcPath
+            switch (data.type) {
+            case 0:
+            case 1:
+            case 3:
+            case 7:
+            case 5:
+                image.visible = true
+                image.source = srcPath
+                break
+            case 2:
+                animated.visible = true
+                animated.source = srcPath
+                break
+            case 9:
+            case 8:
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+                mediaContainer.visible = true
+                media.source = srcPath
+                break
+            default:
+                // PSD, PDF and others
+                errorPopup.render("Preview not available for this file type")
+                return
+            }
 
-        for (var i = 0; i < data.tags.length; i++) {
-            tags.model.append({tag: data.tags[i]})
-        }
+            fileView.model = data
+
+            // TODO: Sort and group tags
+            if (data.tags) {
+                for (var i = 0; i < data.tags.length; i++) {
+                    var t = data.tags[i]
+                    tags.model.append({tag: t.tag})
+                }
+            }
+        })
     }
 
     // Reset to empty state
@@ -203,8 +190,6 @@ Rectangle {
         window.header.visible = true
 
         tags.model.clear()
-
-        error.visible = false
 
         animated.source = ""
         animated.visible = false

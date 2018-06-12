@@ -33,10 +33,6 @@ ApplicationWindow {
                 visible: false
                 Layout.fillWidth: true
 
-                Component.onCompleted: {
-                    go.set_progress_bar.connect(set)
-                }
-
                 function set(pos) {
                     visible = pos !== 0
                     value = pos
@@ -88,5 +84,7 @@ ApplicationWindow {
         }
     }
 
-    ErrorPopup {}
+    ErrorPopup {
+        id: errorPopup
+    }
 }

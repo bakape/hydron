@@ -16,10 +16,6 @@ Dialog {
         wrapMode: Text.Wrap
     }
 
-    Component.onCompleted: {
-        go.error.connect(render)
-    }
-
     function render(err) {
         errorText.text = err
         open()

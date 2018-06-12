@@ -69,11 +69,10 @@ func startServer(addr string) error {
 		serveSearch(w, r, q)
 	})
 
-	imgID := images.NewGroup("/:id")
-	imgID.GET("/", serveByID)
-	imgID.DELETE("/", removeFilesHTTP)
+	images.GET("/:id", serveByID)
+	images.DELETE("/:id", removeFilesHTTP)
 
-	tags := imgID.NewGroup("/tags")
+	tags := images.NewGroup("/:id/tags")
 	tags.PATCH("/", addTagsHTTP)
 	tags.DELETE("/", removeTagsHTTP)
 
@@ -148,8 +147,12 @@ func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
 	}
 	jw.RawByte(']')
 
-	setJSONHeaders(w)
-	jw.DumpTo(w)
+	buf, err := jw.BuildBytes()
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	serveJSONBuf(w, r, buf)
 }
 
 // Serve single image data by ID
@@ -220,8 +223,6 @@ func removeFilesHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Complete a tag by prefix from an HTTP request
 func completeTagHTTP(w http.ResponseWriter, r *http.Request) {
-	setJSONHeaders(w)
-
 	tags, err := db.CompleTag(extractParam(r, "prefix"))
 	if err != nil {
 		send500(w, r, err)
@@ -238,7 +239,7 @@ func completeTagHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	b = append(b, ']')
 
-	w.Write(b)
+	serveJSONBuf(w, r, b)
 }
 
 // Add tags to a specific file

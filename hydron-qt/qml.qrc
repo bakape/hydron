@@ -7,5 +7,7 @@
         <file>FileMenu.qml</file>
         <file>ImportDialog.qml</file>
         <file>ErrorPopup.qml</file>
+        <file>http.js</file>
+        <file>paths.js</file>
     </qresource>
 </RCC>
