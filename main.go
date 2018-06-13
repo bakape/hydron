@@ -40,15 +40,21 @@ var (
 			"search",
 			"TAGS...",
 			"Return paths to files that match the set of TAGS." + `
+  TAGS can be prefixed with - to match a subset that does not include this tag.
+  TAGS can be prefixed to match a specific tag category like artist, series and
+  character.
+  TAGS can include an order:$x parameter where $x is one of:
+	  size, width, height, duration, tag_count, random.
+  Prefixing - before $x will reverse the order.
   TAGS can include prefixed system tags for searching by file metadata:
-    size, width, height, length, tag_count,
+    size, width, height, duration, tag_count,
   followed by one of these comparison operators:
-    >, <, =
-  and a positive number.
+    >, <, =, >=, <=
+  and a positive integer.
   Examples:
-    hydron search 'system:width>1920 system:height>1080'
-    hydron search 'system:tag_count=0
-    hydron search 'red_scarf system:size<10485760'`,
+    hydron search system:width>1920 system:height>1080 artist:null
+    hydron search system:tag_count=0 order:random
+    hydron search 'red_scarf -bed system:size<10485760'`,
 		},
 		{
 			"complete_tag",

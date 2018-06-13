@@ -18,6 +18,7 @@ const (
 	Character
 	Series
 	Rating
+	System
 )
 
 // Tag of an image

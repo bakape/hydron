@@ -7,7 +7,10 @@ import (
 )
 
 // Convert any externally-input tags to the internal format
-func Normalize(s string, source common.TagSource) (tag common.Tag) {
+// source: tag source to apply to tag
+func Normalize(s string, source common.TagSource) (
+	tag common.Tag,
+) {
 	tag.Source = source
 
 	i := strings.IndexByte(s, ':')

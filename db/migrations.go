@@ -60,6 +60,14 @@ var migrations = []func(*sql.Tx) error{
 			`create index i_last_change_image on last_change(image_id)`,
 		)
 	},
+	func(tx *sql.Tx) (err error) {
+		return execAll(tx,
+			`create index i_image_size on images(size)`,
+			`create index i_image_width on images(width)`,
+			`create index i_image_height on images(height)`,
+			`create index i_image_duration on images(duration)`,
+		)
+	},
 }
 
 // Run migrations from version `from`to version `to`

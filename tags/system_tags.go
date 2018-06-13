@@ -1,167 +1,153 @@
 package tags
 
-// // Types of system values to retrieve
-// const (
-// 	sizeValue = iota
-// 	widthValue
-// 	heightValue
-// 	lengthValue
-// 	tagCountValue
-// )
+import (
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+)
 
-// // Used for autocompletion
-// var systemTagHeaders = []string{
-// 	"size", "width", "height", "length", "tag_count",
-// }
+// Types of system values to retrieve
+type SystemTagType uint8
 
-// type syntaxError []byte
+const (
+	Size SystemTagType = iota
+	Width
+	Height
+	Duration
+	TagCount
+)
 
-// func (e syntaxError) Error() string {
-// 	return fmt.Sprintf("syntax error: %s", string(e))
-// }
+// Parsed data of system tag
+type SystemTag struct {
+	Type       SystemTagType
+	Comparator string
+	Value      uint64
+}
 
-// type systemTagTest struct {
-// 	typ  uint8
-// 	comp byte
-// 	val  uint64
-// }
+// Type of ordering for search results
+type Ordering struct {
+	Type    OrderingType
+	Reverse bool
+}
 
-// func isSystemTag(t []byte) bool {
-// 	return bytes.HasPrefix(t, []byte("system:"))
-// }
+// Types of ordering for search results
+type OrderingType uint8
 
-// // Further search for matches by internal system tags like size and width.
-// // If matched is nil, the entire database is searched.
-// func searchBySystemTags(matched map[[20]byte]bool, tags [][]byte) (
-// 	rematched map[[20]byte]bool, err error,
-// ) {
-// 	tests, err := parseSystemTags(tags)
-// 	if err != nil {
-// 		return
-// 	}
+const (
+	None OrderingType = iota
+	BySize
+	ByWidth
+	ByHeight
+	ByDuration
+	ByTagCount
+	Random
+)
 
-// 	check := func(k []byte, r common.Record) {
-// 		pass := true
+var (
+	// Possible headers of internal tag matching rules
+	SystemHeaders = []string{"size", "width", "height", "duration", "tag_count"}
+	systemRegex   = regexp.MustCompile(`^([\w_]+)(=|>|>=|<|<=)(\d+)$`)
+)
 
-// 		for _, t := range tests {
-// 			// Extract values from Record
-// 			var val uint64
-// 			switch t.typ {
-// 			case sizeValue:
-// 				val = r.Size
-// 			case widthValue:
-// 				val = r.Width
-// 			case heightValue:
-// 				val = r.Height
-// 			case lengthValue:
-// 				val = r.Duration
-// 			case tagCountValue:
-// 				val = uint64(len(r.Tags))
-// 			}
+type SyntaxError string
 
-// 			// Compare to test argument
-// 			switch t.comp {
-// 			case '=':
-// 				pass = val == t.val
-// 			case '>':
-// 				pass = val > t.val
-// 			case '<':
-// 				pass = val < t.val
-// 			}
-// 			if !pass {
-// 				break
-// 			}
-// 		}
+func (e SyntaxError) Error() string {
+	return fmt.Sprintf("syntax error: %s", string(e))
+}
 
-// 		if !pass {
-// 			// If matched is not nil, remove not passing values from an
-// 			// existing set
-// 			if matched != nil {
-// 				delete(rematched, ExtractKey(k))
-// 			}
-// 		} else {
-// 			// If matched is nil, add passed values to a fresh new set
-// 			if matched == nil {
-// 				rematched[ExtractKey(k)] = true
-// 			}
-// 		}
-// 	}
+// Extract system, ordering and limit parameters from tag list
+func ExtractInternal(tags *[]string) (
+	sys []SystemTag, orderBy Ordering, limit uint64, err error,
+) {
+	mod := make([]string, 0, len(*tags))
+	for _, t := range *tags {
+		t = strings.TrimSpace(t)
+		i := strings.IndexByte(t, ':')
+		if i != -1 {
+			arg := t[i+1:]
+			switch t[:i] {
+			case "system":
+				var s SystemTag
+				s, err = parseSystemTag(arg)
+				sys = append(sys, s)
+			case "order":
+				orderBy, err = parseOrdering(arg)
+			case "limit":
+				limit, err = strconv.ParseUint(arg, 10, 64)
+			default:
+				goto unmatched
+			}
+			if err != nil {
+				return
+			}
+			continue
+		}
+	unmatched:
+		if len(t) != 0 { // Might as well filter empty spaces here
+			mod = append(mod, t)
+		}
+	}
 
-// 	// Search entire database
-// 	if matched == nil {
-// 		rematched = make(map[[20]byte]bool, 128)
-// 		err = IterateRecords(check)
-// 		return
-// 	}
+	*tags = mod
+	return
+}
 
-// 	// Search only the already matched keys
-// 	rematched = matched
-// 	tx, err := db.Begin(false)
-// 	if err != nil {
-// 		return
-// 	}
+func parseSystemTag(arg string) (sys SystemTag, err error) {
+	m := systemRegex.FindStringSubmatch(arg)
+	if m == nil {
+		err = SyntaxError(arg)
+		return
+	}
 
-// 	buc := tx.Bucket([]byte("images"))
-// 	for id := range matched {
-// 		check(id[:], Record(buc.Get(id[:])))
-// 	}
-// 	err = tx.Rollback()
+	switch m[1] {
+	case "size":
+		sys.Type = Size
+	case "width":
+		sys.Type = Width
+	case "height":
+		sys.Type = Height
+	case "duration":
+		sys.Type = Duration
+	case "tag_count":
+		sys.Type = TagCount
+	default:
+		err = SyntaxError(arg)
+		return
+	}
+	sys.Comparator = m[2]
+	sys.Value, err = strconv.ParseUint(m[3], 10, 64)
+	if err != nil {
+		err = SyntaxError(err.Error())
+	}
 
-// 	return
-// }
+	return
+}
 
-// func parseSystemTags(tags [][]byte) (tests []systemTagTest, err error) {
-// 	tests = make([]systemTagTest, 0, len(tags))
-
-// 	for i, t := range tags {
-// 		var test systemTagTest
-// 		t = t[7:]
-
-// 	parser:
-// 		for j, b := range t {
-// 			// Parse value type and comparison operator
-// 			switch {
-// 			case ('a' <= b && b <= 'z') || b == '_':
-// 			case b == '>' || b == '<' || b == '=':
-// 				// String too short
-// 				if j+1 >= len(t) {
-// 					err = syntaxError(tags[i])
-// 					return
-// 				}
-
-// 				switch string(t[:j]) {
-// 				case "size":
-// 					test.typ = sizeValue
-// 				case "width":
-// 					test.typ = widthValue
-// 				case "height":
-// 					test.typ = heightValue
-// 				case "length":
-// 					test.typ = lengthValue
-// 				case "tag_count":
-// 					test.typ = tagCountValue
-// 				default:
-// 					err = syntaxError(tags[i])
-// 					return
-// 				}
-
-// 				test.comp = b
-
-// 				// Parse numeric value to compare to
-// 				test.val, err = strconv.ParseUint(string(t[j+1:]), 10, 64)
-// 				if err != nil {
-// 					err = syntaxError(string(tags[i]) + " : " + err.Error())
-// 					return
-// 				}
-
-// 				tests = append(tests, test)
-// 				break parser
-// 			default:
-// 				err = syntaxError(tags[i])
-// 				return
-// 			}
-// 		}
-// 	}
-
-// 	return
-// }
+func parseOrdering(arg string) (o Ordering, err error) {
+	if len(arg) < 4 {
+		err = SyntaxError(arg)
+		return
+	}
+	if arg[0] == '-' {
+		o.Reverse = true
+		arg = arg[1:]
+	}
+	switch arg {
+	case "size":
+		o.Type = BySize
+	case "width":
+		o.Type = ByWidth
+	case "height":
+		o.Type = ByHeight
+	case "duration":
+		o.Type = ByDuration
+	case "tag_count":
+		o.Type = ByTagCount
+	case "random":
+		o.Type = Random
+	default:
+		err = SyntaxError(arg)
+	}
+	return
+}

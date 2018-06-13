@@ -22,80 +22,84 @@ type IDAndMD5 struct {
 // Matches all images, if params = "".
 // The returned images will only contain the bare minimum data to render
 // thumbnails.
-// TODO: System tags (requires more indices)
-// TODO: Sorting (requires more indices)
 func SearchImages(params string, fn func(common.CompactImage) error) (
 	err error,
 ) {
-	// Get tag IDs for all params
 	var (
-		split = strings.Split(params, " ")
-		pos   []int64 // Must all match
-		neg   []int64 // Must not match any
+		split  = strings.Split(params, " ")
+		pos    []int64 // Must all match
+		neg    []int64 // Must not match any
+		system []tags.SystemTag
+		order  tags.Ordering
+		limit  uint64
 	)
 	if len(split) != 0 {
-		err = InTransaction(func(tx *sql.Tx) (err error) {
-			qWithType := lazyPrepare(tx,
-				`select id from tags
-				where type = ? and tag = ?`)
-			// Undefined tag type matches the first tag type available.
-			// User should be specific about tag types, when matching by artist,
-			// character, series, etc.
-			qAnyType := lazyPrepare(tx,
-				`select id from tags
-				where tag = ?
-				order by type asc
-				limit 1`)
+		system, order, limit, err = tags.ExtractInternal(&split)
+		if err != nil {
+			return
+		}
 
-			var id int64
-			for _, s := range split {
-				s = strings.TrimSpace(s)
-				if len(s) == 0 {
-					continue
-				}
-				isNeg := false
-				if s[0] == '-' {
-					isNeg = true
-					s = s[1:]
-				}
-				t := tags.Normalize(s, common.User)
+		// Get tag IDs for all tag params
+		if len(split) != 0 {
+			err = InTransaction(func(tx *sql.Tx) (err error) {
+				qWithType := lazyPrepare(tx,
+					`select id from tags
+					where type = ? and tag = ?`)
+				// Undefined tag type matches the first tag type available.
+				// User should be specific about tag types, when matching by
+				// artist, character, series, etc.
+				qAnyType := lazyPrepare(tx,
+					`select id from tags
+					where tag = ?
+					order by type asc
+					limit 1`)
 
-				var rs rowScanner
-				if t.Type == common.Undefined {
-					rs = qAnyType.QueryRow(t.Tag)
-				} else {
-					rs = qWithType.QueryRow(t.Type, t.Tag)
-				}
-				err = rs.Scan(&id)
-				switch err {
-				case nil:
-				case sql.ErrNoRows:
-					// Missing negations can be ignored
-					if isNeg {
-						err = nil
-						continue
+				var id int64
+				for _, s := range split {
+					isNeg := false
+					if s[0] == '-' {
+						isNeg = true
+						s = s[1:]
 					}
-					// But missing positives would result in matching nothing
-					// anyway
-					return
-				default:
-					return
+					t := tags.Normalize(s, common.User)
+
+					var rs rowScanner
+					if t.Type == common.Undefined {
+						rs = qAnyType.QueryRow(t.Tag)
+					} else {
+						rs = qWithType.QueryRow(t.Type, t.Tag)
+					}
+					err = rs.Scan(&id)
+					switch err {
+					case nil:
+					case sql.ErrNoRows:
+						// Missing negations can be ignored
+						if isNeg {
+							err = nil
+							continue
+						}
+						// But missing positives would result in matching
+						// nothing anyway
+						return
+					default:
+						return
+					}
+					if !isNeg {
+						pos = append(pos, id)
+					} else {
+						neg = append(neg, id)
+					}
 				}
-				if !isNeg {
-					pos = append(pos, id)
-				} else {
-					neg = append(neg, id)
-				}
+				return
+			})
+			switch err {
+			case nil:
+			case sql.ErrNoRows:
+				err = nil
+				return
+			default:
+				return
 			}
-			return
-		})
-		switch err {
-		case nil:
-		case sql.ErrNoRows:
-			err = nil
-			return
-		default:
-			return
 		}
 	}
 
@@ -103,7 +107,7 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 	q := sq.Select("sha1", "type", "thumb_is_png", "thumb_width",
 		"thumb_height",
 	).
-		From("images")
+		From("images as  i")
 	if len(pos) != 0 {
 		q = q.Where(fmt.Sprintf(
 			`id in (
@@ -122,6 +126,51 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 				where image_id = id and tag_id in %s)`,
 			formatSet(neg),
 		))
+	}
+	for _, s := range system {
+		var p string
+		switch s.Type {
+		case tags.Size:
+			p = "size"
+		case tags.Width:
+			p = "width"
+		case tags.Height:
+			p = "height"
+		case tags.Duration:
+			p = "duration"
+		case tags.TagCount:
+			p = `(select count(*)
+				from image_tags as it
+				where it.image_id = i.id)`
+		}
+		q = q.Where(fmt.Sprintf("%s %s %d", p, s.Comparator, s.Value))
+	}
+	if order.Type != tags.None {
+		var by string
+		mode := "asc"
+		if order.Reverse {
+			mode = "desc"
+		}
+		switch order.Type {
+		case tags.BySize:
+			by = "size"
+		case tags.ByWidth:
+			by = "width"
+		case tags.ByHeight:
+			by = "height"
+		case tags.ByDuration:
+			by = "duration"
+		case tags.ByTagCount:
+			by = `(select count(*)
+				from image_tags as it
+				where it.image_id = i.id)`
+		case tags.Random:
+			by = "random()"
+		}
+		q = q.OrderBy(fmt.Sprintf("%s %s", by, mode))
+	}
+	if limit != 0 {
+		q = q.Limit(limit)
 	}
 
 	// Read all matched rows

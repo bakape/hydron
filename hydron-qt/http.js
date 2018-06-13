@@ -6,7 +6,7 @@ function get(url, cb) {
                 cb(JSON.parse(xhr.responseText), null)
             } else {
                 cb(null,
-                   xhr.status + ": " + (xhr.statusText || "server unavailable"))
+                   xhr.status + ": " + (xhr.responseText || "server unavailable"))
             }
         }
     }

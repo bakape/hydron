@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bakape/hydron/tags"
+
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/files"
@@ -141,7 +143,12 @@ func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
 		rec.MarshalEasyJSON(&jw)
 		return nil
 	})
-	if err != nil {
+	switch err.(type) {
+	case nil:
+	case tags.SyntaxError:
+		sendError(w, 400, err)
+		return
+	default:
 		send500(w, r, err)
 		return
 	}
