@@ -17,7 +17,7 @@ package: all
 	zip -9 hydron-$(version).zip build/*
 
 setup_mingw:
-	pacman -Su --noconfirm --needed mingw-w64-x86_64-qt-creator mingw-w64-x86_64-qt5-static mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-graphicsmagick zip
+	pacman -Su --noconfirm --needed mingw-w64-x86_64-qt-creator mingw-w64-x86_64-qt5-static mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config mingw-w64-x86_64-ffmpeg-static mingw-w64-x86_64-graphicsmagick-static zip
 	pacman -Scc --noconfirm
 
 cli:
@@ -26,12 +26,10 @@ cli:
 	cp -f $(binary) build
 
 clean:
-	rm -rf hydron hydron.exe hydron-*.zip build
-	cd hydron-qt && qmake
-	$(MAKE) -C hydron-qt clean
+	rm -rf hydron hydron.exe hydron-*.zip build hydron-qt/moc_* hydron-qt/.o hydron-qt/hydron-qt
 
 qt:
-	cd hydron-qt && qmake "CONFIG+=c++17 qtquickcompiler reduce-relocations ltcg"
+	cd hydron-qt && qmake "CONFIG+=c++17 qtquickcompiler static reduce-relocations ltcg"
 	$(MAKE) -C hydron-qt
 	mkdir -p build
 	cp -f hydron-qt/hydron-qt build
