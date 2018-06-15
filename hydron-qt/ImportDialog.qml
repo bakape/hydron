@@ -1,8 +1,8 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.2
+import uploader 1.0
 
 Dialog {
-    property variant files: []
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape
@@ -28,16 +28,34 @@ Dialog {
         }
     }
 
+    Uploader {
+        id: uploader
+
+        onDone: {
+            progressBar.set(progress)
+            if (json) {
+                browser.append(JSON.parse(json))
+            }
+            if (error) {
+                errorPopup.render(error)
+            }
+        }
+
+        onError: {
+            errorPopup.render(err)
+        }
+    }
+
     onAccepted: {
         browser.clear()
-        go.importFiles(files, tags.text, deleteAfter.checked, fetch.checked)
-        files = []
+        uploader.run(tags.text, deleteAfter.checked, fetch.checked)
     }
+
     onRejected: {
-        files = []
+        uploader.reset()
     }
 
     function addFiles(f) {
-        files = files.concat(f)
+        uploader.add_paths(f)
     }
 }

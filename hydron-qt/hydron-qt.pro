@@ -2,9 +2,10 @@ TEMPLATE = app
 
 QT += qml quick widgets
 
-CONFIG += c++17 qtquickcompiler reduce-relocations ltcg
+CONFIG += c++17
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    import.cpp
 
 RESOURCES += qml.qrc
 
@@ -15,3 +16,6 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 DISTFILES +=
+
+HEADERS += \
+    import.h

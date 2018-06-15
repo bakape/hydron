@@ -30,11 +30,12 @@ ApplicationWindow {
                 Layout.fillWidth: true
             }
             ProgressBar {
+                id: progressBar
                 visible: false
                 Layout.fillWidth: true
 
                 function set(pos) {
-                    visible = pos !== 0
+                    visible = pos !== 0 && pos !== 1
                     value = pos
                 }
             }
@@ -79,7 +80,7 @@ ApplicationWindow {
                 return
             }
             drop.accepted = true
-            importDialog.addFiles(drop.urls)
+            importDialog.addFiles(drop.text)
             importDialog.open()
         }
     }

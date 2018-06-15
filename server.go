@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bakape/hydron/tags"
-
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/files"
+	"github.com/bakape/hydron/import"
+	"github.com/bakape/hydron/tags"
 	"github.com/dimfeld/httptreemux"
 	"github.com/gorilla/handlers"
 	"github.com/mailru/easyjson/jwriter"
@@ -177,41 +177,33 @@ func serveByID(w http.ResponseWriter, r *http.Request) {
 
 // Download and import a file from the client
 func importUpload(w http.ResponseWriter, r *http.Request) {
-	panic("TODO")
-	// f, _, err := r.FormFile("file")
-	// if err != nil {
-	// 	send500(w, r, err)
-	// 	return
-	// }
-	// defer f.Close()
+	f, _, err := r.FormFile("file")
+	if err != nil {
+		sendError(w, 400, err)
+		return
+	}
+	defer f.Close()
 
-	// // Assign tags to file
-	// var tags [][]byte
-	// if s := r.FormValue("tags"); s != "" {
-	// 	tags = tags.SplitTagString(s, ',')
-	// }
+	img, err := imp.ImportFile(f, r.Form.Get("tags"),
+		r.Form.Get("fetch_tags") == "true")
+	switch err {
+	case nil:
+	case imp.ErrImported:
+		// Still return the JSON, if already imported
+		img, err = db.GetImage(img.SHA1)
+		if err != nil {
+			send500(w, r, err)
+			return
+		}
+	case imp.ErrUnsupportedFile:
+		sendError(w, 415, err)
+		return
+	default:
+		send500(w, r, err)
+		return
+	}
 
-	// kv, err := import.ImportFile(f, tags)
-	// switch err {
-	// case nil:
-	// case import.ErrImported:
-	// 	sendError(w, 409, err)
-	// 	return
-	// case import.ErrUnsupportedFile:
-	// 	sendError(w, 400, err)
-	// 	return
-	// default:
-	// 	send500(w, r, err)
-	// 	return
-	// }
-
-	// // Fetch tags from boorus
-	// if r.FormValue("fetch_tags") != "true" && core.CanFetchTags(kv.Record) {
-	// 	err := core.FetchSingleFileTags(kv)
-	// 	if err != nil {
-	// 		send500(w, r, err)
-	// 	}
-	// }
+	serveJSON(w, r, img)
 }
 
 // Remove files from the database by ID

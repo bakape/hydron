@@ -1,6 +1,8 @@
 import QtQuick 2.9
 import QtQuick.Controls 2.2
 
+
+// TODO: Overlapping errors are currently silenced. Need to create new popups for each
 Dialog {
     modal: true
     focus: true

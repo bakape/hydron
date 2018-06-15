@@ -74,10 +74,10 @@ func doImport(f io.Reader, addTags string) (r common.Image, err error) {
 		return
 	}
 	sHash := sha1.Sum(srcBuf.Bytes())
-	SHA1 := hex.EncodeToString(sHash[:])
+	r.SHA1 = hex.EncodeToString(sHash[:])
 
 	// Check, if not already in the database
-	isImported, err := db.IsImported(SHA1)
+	isImported, err := db.IsImported(r.SHA1)
 	if err != nil {
 		return
 	}
@@ -105,7 +105,7 @@ func doImport(f io.Reader, addTags string) (r common.Image, err error) {
 	r = common.Image{
 		CompactImage: common.CompactImage{
 			Type: common.MimeTypes[src.Mime],
-			SHA1: SHA1,
+			SHA1: r.SHA1,
 			Thumb: common.Thumbnail{
 				IsPNG: thumb.IsPNG,
 				Dims: common.Dims{
