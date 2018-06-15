@@ -6,12 +6,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/dimfeld/httptreemux"
 )
 
 var jsonHeaders = map[string]string{
 	"Cache-Control": "max-age=0, must-revalidate",
 	"Expires":       "Fri, 01 Jan 1990 00:00:00 GMT",
 	"Content-Type":  "application/json",
+}
+
+var htmlHeaders = map[string]string{
+	"Cache-Control": "max-age=0, must-revalidate",
+	"Expires":       "Fri, 01 Jan 1990 00:00:00 GMT",
+	"Content-Type":  "text/html",
 }
 
 func sendError(w http.ResponseWriter, code int, err error) {
@@ -22,9 +31,18 @@ func send404(w http.ResponseWriter) {
 	http.Error(w, "404 not found", 404)
 }
 
+func send400(w http.ResponseWriter, err error) {
+	sendError(w, 400, err)
+}
+
 func send500(w http.ResponseWriter, r *http.Request, err error) {
-	http.Error(w, fmt.Sprintf("500 %s", err), 500)
+	sendError(w, 500, err)
 	stderr.Printf("server: %s: %s", r.RemoteAddr, err)
+}
+
+// Extract URL paramater from request context
+func extractParam(r *http.Request, id string) string {
+	return httptreemux.ContextParams(r.Context())[id]
 }
 
 func setHeaders(w http.ResponseWriter, headers map[string]string) {
@@ -40,10 +58,12 @@ func serveJSON(w http.ResponseWriter, r *http.Request, data interface{}) {
 		send500(w, r, err)
 		return
 	}
-	serveJSONBuf(w, r, buf)
+	serveData(w, r, jsonHeaders, buf)
 }
 
-func serveJSONBuf(w http.ResponseWriter, r *http.Request, buf []byte) {
+func serveData(w http.ResponseWriter, r *http.Request,
+	headers map[string]string, buf []byte,
+) {
 	h := md5.Sum(buf)
 	etag := base64.RawStdEncoding.EncodeToString(h[:])
 	if r.Header.Get("If-None-Match") == etag {
@@ -51,7 +71,12 @@ func serveJSONBuf(w http.ResponseWriter, r *http.Request, buf []byte) {
 		return
 	}
 
-	setHeaders(w, jsonHeaders)
+	setHeaders(w, headers)
 	w.Header().Set("ETag", etag)
+	w.Header().Set("Content-Length", strconv.Itoa(len(buf)))
 	w.Write(buf)
+}
+
+func serveHTML(w http.ResponseWriter, r *http.Request, html string) {
+	serveData(w, r, htmlHeaders, []byte(html))
 }

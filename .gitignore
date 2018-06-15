@@ -3,12 +3,5 @@ hydron
 hydron.exe
 hydron-*.zip
 build
-build-hydron-qt-*
-hydron-qt/hydron-qt.pro.user
-hydron-qt/Makefile
-hydron-qt/hydron-qt
-hydron-qt/*.o
-hydron-qt/moc_*
-hydron-qt/qrc_*
-dist
 debug
+node_modules

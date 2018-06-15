@@ -11,25 +11,38 @@ else
 	version:=linux_amd64-$(version)
 endif
 
-all: cli qt
+all: client generate
 
-package: all
-	zip -9 hydron-$(version).zip build/*
+client: css js
 
-setup_mingw:
-	pacman -Su --noconfirm --needed mingw-w64-x86_64-qt-creator mingw-w64-x86_64-qt5-static mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config mingw-w64-x86_64-ffmpeg-static mingw-w64-x86_64-graphicsmagick-static zip
-	pacman -Scc --noconfirm
+css:
+	node_modules/.bin/lessc --clean-css client/main.less www/main.css
 
-cli:
-	go build -v
-	mkdir -p build
-	cp -f $(binary) build
+js:
+	node_modules/.bin/uglifyjs client/main.js -o www/main.js
 
-clean:
-	rm -rf hydron hydron.exe hydron-*.zip build hydron-qt/moc_* hydron-qt/.o hydron-qt/hydron-qt
+generate:
+	go generate ./templates
 
-qt:
-	cd hydron-qt && qmake "CONFIG+=c++17 qtquickcompiler static reduce-relocations ltcg"
-	$(MAKE) -C hydron-qt
-	mkdir -p build
-	cp -f hydron-qt/hydron-qt build
+# all: cli qt
+
+# package: all
+# 	zip -9 hydron-$(version).zip build/*
+
+# setup_mingw:
+# 	pacman -Su --noconfirm --needed mingw-w64-x86_64-qt-creator mingw-w64-x86_64-qt5-static mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config mingw-w64-x86_64-ffmpeg-static mingw-w64-x86_64-graphicsmagick-static zip
+# 	pacman -Scc --noconfirm
+
+# cli:
+# 	go build -v
+# 	mkdir -p build
+# 	cp -f $(binary) build
+
+# clean:
+# 	rm -rf hydron hydron.exe hydron-*.zip build hydron-qt/moc_* hydron-qt/.o hydron-qt/hydron-qt
+
+# qt:
+# 	cd hydron-qt && qmake "CONFIG+=c++17 qtquickcompiler static reduce-relocations ltcg"
+# 	$(MAKE) -C hydron-qt
+# 	mkdir -p build
+# 	cp -f hydron-qt/hydron-qt build

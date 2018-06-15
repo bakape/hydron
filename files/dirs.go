@@ -98,6 +98,22 @@ func ThumbPath(id string, isPNG bool) string {
 	return filepath.Join(ThumbRoot, id[:2], concatStrings(id, ".", ext))
 }
 
+// Net URL to thumbnail path
+func NetThumbPath(id string, isPNG bool) string {
+	var ext string
+	if isPNG {
+		ext = "png"
+	} else {
+		ext = "jpg"
+	}
+	return concatStrings("/thumbs/", id, ".", ext)
+}
+
+// Net URL to source file path
+func NetSourcePath(id string, typ common.FileType) string {
+	return concatStrings("/files/", id, ".", common.Extensions[typ])
+}
+
 func concatStrings(s ...string) string {
 	l := 0
 	for _, s := range s {

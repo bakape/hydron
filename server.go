@@ -17,6 +17,7 @@ import (
 	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/import"
 	"github.com/bakape/hydron/tags"
+	"github.com/bakape/hydron/templates"
 	"github.com/dimfeld/httptreemux"
 	"github.com/gorilla/handlers"
 	"github.com/mailru/easyjson/jwriter"
@@ -47,6 +48,10 @@ func startServer(addr string) error {
 		stderr.Printf("server: %s: %s\n%s", r.RemoteAddr, err, debug.Stack())
 	}
 
+	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/search", 301)
+	})
+
 	// Assets
 	r.GET("/files/:file", func(w http.ResponseWriter, r *http.Request) {
 		serveFiles(w, r, files.ImageRoot)
@@ -54,6 +59,13 @@ func startServer(addr string) error {
 	r.GET("/thumbs/:file", func(w http.ResponseWriter, r *http.Request) {
 		serveFiles(w, r, files.ThumbRoot)
 	})
+	r.GET("/assets/*path", func(w http.ResponseWriter, r *http.Request) {
+		serveFile(w, r,
+			filepath.Clean(filepath.Join("www", extractParam(r, "path"))))
+	})
+
+	// HTML paths
+	r.GET("/search", serveSearchHTML)
 
 	// Image API
 	api := r.NewGroup("/api")
@@ -78,24 +90,46 @@ func startServer(addr string) error {
 	tags.PATCH("/", addTagsHTTP)
 	tags.DELETE("/", removeTagsHTTP)
 
-	return http.ListenAndServe(addr, compressAPI(r))
+	return http.ListenAndServe(addr, selectiveCompression(r))
 }
 
-// Only compress API responses
-func compressAPI(h http.Handler) http.Handler {
+// Only compress JSON and HTML responses
+func selectiveCompression(h http.Handler) http.Handler {
 	comp := handlers.CompressHandler(h)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api") {
+		switch w.Header().Get("Content-Type") {
+		case "text/html", "application/json":
 			comp.ServeHTTP(w, r)
-		} else {
+		default:
 			h.ServeHTTP(w, r)
 		}
 	})
 }
 
-// Extract URL paramater from request context
-func extractParam(r *http.Request, id string) string {
-	return httptreemux.ContextParams(r.Context())[id]
+func serveFile(w http.ResponseWriter, r *http.Request, path string) {
+	file, err := os.Open(path)
+	if err != nil {
+		send404(w)
+		return
+	}
+	defer file.Close()
+
+	stats, err := file.Stat()
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	if stats.IsDir() {
+		send404(w)
+		return
+	}
+	modTime := stats.ModTime()
+	etag := strconv.FormatInt(modTime.Unix(), 10)
+
+	head := w.Header()
+	head.Set("Cache-Control", "no-cache")
+	head.Set("ETag", etag)
+	http.ServeContent(w, r, path, modTime, file)
 }
 
 // More performant handler for serving file assets. These are immutable, so we
@@ -159,7 +193,24 @@ func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
 		send500(w, r, err)
 		return
 	}
-	serveJSONBuf(w, r, buf)
+	serveData(w, r, jsonHeaders, buf)
+}
+
+func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
+	images := make([]common.CompactImage, 0, 1<<10)
+	params := strings.Join(r.URL.Query()["q"], " ")
+	err := db.SearchImages(params, func(rec common.CompactImage) error {
+		images = append(images, rec)
+		return nil
+	})
+	switch err.(type) {
+	case nil:
+		serveHTML(w, r, templates.Browser(params, images))
+	case tags.SyntaxError:
+		sendError(w, 400, err)
+	default:
+		send500(w, r, err)
+	}
 }
 
 // Serve single image data by ID
@@ -232,7 +283,7 @@ func completeTagHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	b = append(b, ']')
 
-	serveJSONBuf(w, r, b)
+	serveData(w, r, jsonHeaders, b)
 }
 
 // Add tags to a specific file

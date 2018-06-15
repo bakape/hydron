@@ -1,0 +1,10 @@
+{% func head(title string) %}{% stripspace %}
+	<!doctype html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0">
+		<title>{%s title %}</title>
+		<link rel="stylesheet" href="/assets/main.css">
+		<script src="/assets/main.js" async></script>
+	</head>
+{% endstripspace %}{% endfunc %}

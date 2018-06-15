@@ -1,0 +1,15 @@
+{
+  "name": "hydron",
+  "version": "1.0.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bakape/hydron.git"
+  },
+  "author": "bakape <scorpid33@gmail.com> (https://github.com/bakape)",
+  "dependencies": {
+    "clean-css": "^4.1.11",
+    "less": "^3.0.4",
+    "uglify-js": "^3.4.0"
+  }
+}

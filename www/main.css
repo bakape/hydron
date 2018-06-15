@@ -1,0 +1,56 @@
+#top-banner {
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: #282a2e;
+  border: 1px solid #282a2e;
+  padding: 0.3em;
+}
+#top-banner input[type=search] {
+  width: calc(100% - 2*0.3em - 4px);
+}
+body {
+  background: #1d1f21;
+  color: #c5c8c6;
+}
+#browser {
+  display: flex;
+  flex-wrap: wrap;
+  user-select: none;
+  padding-top: 1.7em;
+}
+figure {
+  background-color: #282a2e;
+  border: 1px solid #282a2e;
+  width: 200px;
+  height: 200px;
+  padding: 5px;
+  margin: 2px;
+  position: relative;
+  display: flex;
+  border-radius: 1em;
+}
+figure input[type=checkbox] {
+  display: none;
+}
+figure .background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 1em;
+  opacity: 0.3;
+}
+figure label {
+  margin: auto;
+}
+figure img {
+  border-radius: 1em;
+}
+input[type=checkbox]:checked + .background {
+  background-color: #81a2be;
+}

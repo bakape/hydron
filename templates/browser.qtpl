@@ -1,0 +1,33 @@
+{% import "github.com/bakape/hydron/common" %}
+{% import "github.com/bakape/hydron/files" %}
+{% import "strconv" %}
+
+{% func Browser(params string, imgs []common.CompactImage) %}{% stripspace %}
+	{% code title := params %}
+	{% if title == "" %}
+		{% code title = "hydron" %}
+	{% endif %}
+	{%= head(title) %}
+	<body>
+		<nav id="top-banner">
+			<form method="get">
+				<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q">
+			</form>
+		</nav>
+		<div id="overlay"></div>
+		<section id="browser">
+			{% for _, img := range imgs %}
+				<figure>
+					<label>
+						<input type="checkbox" name="{%s= img.SHA1 %}">
+						<div class="background"></div>
+						<img width="{%s= strconv.FormatUint(img.Thumb.Width, 10) %}"
+							height="{%s= strconv.FormatUint(img.Thumb.Height, 10) %}"
+							src="{%s= files.NetThumbPath(img.SHA1, img.Thumb.IsPNG) %}"
+						>
+					</label>
+				</figure>
+			{% endfor %}
+		</section>
+	</body>
+{% endstripspace %}{% endfunc %}
