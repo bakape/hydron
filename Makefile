@@ -25,14 +25,11 @@ cli:
 
 clean:
 	rm -rf hydron hydron.exe build
-	$(MAKE) -C hydron-qt/libwrapper clean
 	cd hydron-qt; qmake
 	$(MAKE) -C hydron-qt clean
 
 qt:
-	$(MAKE) -C hydron-qt/libwrapper
-	cd hydron-qt; qmake
+	cd hydron-qt && qmake "CONFIG+=c++17 qtquickcompiler reduce-relocations ltcg"
 	$(MAKE) -C hydron-qt
 	mkdir -p build
-	cp hydron-qt/libwrapper/libwrapper.so hydron-qt/hydron-qt build
-	cp scripts/unix-launch.sh build/hydron-qt.sh
+	cp -f hydron-qt/hydron-qt build

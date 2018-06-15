@@ -6,7 +6,12 @@ early development.
 
 Platforms: Linux, OSX, Win64
 
-## Installation
+## Runtime dependacies
+* ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
+* GraphicsMagick
+* Qt5 >= 5.10
+
+## Building
 
 <details><summary>Windows</summary>
 
@@ -19,7 +24,7 @@ Just download statically precompiled binaries from the
 
 <details><summary>Linux / OS X</summary>
 
-- Install dependencies listed below.
+- Install build dependencies listed below.
 On a Debian-based system those would the following packages or similar:
 
 `golang build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev libavformat-dev libgraphicsmagick1-dev qtdeclarative5-dev qt5-default qt5-qmake`
@@ -42,5 +47,5 @@ launched with `hydron-qt.sh`.
 * pthread
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
-* Qt5 >= 5.9
+* Qt5 >= 5.10
 * qmake
