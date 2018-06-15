@@ -96,11 +96,13 @@ Rectangle {
                 drag.target: display
             }
 
-            Drag.active: mouseArea.drag.active
-            Drag.dragType: Drag.Automatic
-            Drag.supportedActions: Qt.CopyAction
-            Drag.mimeData: {"text/uri-list": display.url}
 
+            //            Drag.active: mouseArea.drag.active
+            //            Drag.dragType: Drag.Automatic
+            //            Drag.supportedActions: Qt.CopyAction
+            //            Drag.mimeData: {
+            //                text/uri-list: display.url
+            //            }
             function showMenu() {
                 Qt.createComponent("FileMenu.qml").createObject(fileView, {
                                                                     ids: [fileView.model.sha1]
@@ -122,8 +124,7 @@ Rectangle {
         }
 
         // TODO: Keyboard navigation in this mode
-
-        event.accepted = true;
+        event.accepted = true
     }
 
     function render(id) {
@@ -137,7 +138,7 @@ Rectangle {
         HTTP.get("/images/" + id, function (data, err) {
             fileView.model = null
             if (data === null || err) {
-                errorPopup.render(err || "File not found")
+                displayError(err || "File not found")
                 return
             }
 
@@ -169,7 +170,7 @@ Rectangle {
                 break
             default:
                 // PSD, PDF and others
-                errorPopup.render("Preview not available for this file type")
+                displayError("Preview not available for this file type")
                 return
             }
 
@@ -179,7 +180,9 @@ Rectangle {
             if (data.tags) {
                 for (var i = 0; i < data.tags.length; i++) {
                     var t = data.tags[i]
-                    tags.model.append({tag: t.tag})
+                    tags.model.append({
+                                          tag: t.tag
+                                      })
                 }
             }
         })

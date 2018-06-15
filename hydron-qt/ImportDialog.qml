@@ -37,12 +37,12 @@ Dialog {
                 browser.append(JSON.parse(json))
             }
             if (error) {
-                errorPopup.render(error)
+                displayError(error)
             }
         }
 
         onError: {
-            errorPopup.render(err)
+            displayError(err)
         }
     }
 

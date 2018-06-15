@@ -18,7 +18,7 @@ GridView {
 
         HTTP.get("/images/search/" + tags, function (data, err) {
             if (err) {
-                errorPopup.render(err)
+                displayError(err)
                 return
             }
 
@@ -221,7 +221,7 @@ GridView {
             HTTP.send("/images/" + m.sha1, "DELETE", undefined,
                       function (res, err) {
                           if (err) {
-                              errorPopup.render(err)
+                              displayError(err)
                           }
                       })
             model.remove(index)

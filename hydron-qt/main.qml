@@ -76,7 +76,9 @@ ApplicationWindow {
         }
     }
 
-    ErrorPopup {
-        id: errorPopup
+    function displayError(err) {
+        Qt.createComponent("ErrorPopup.qml").createObject(window, {
+                                                              error: err
+                                                          }).open()
     }
 }

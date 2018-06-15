@@ -26,7 +26,7 @@ TextField {
         var last = i === -1 ? text : text.slice(i + 1)
         HTTP.get("/complete_tag/" + last, function (tags, err) {
             if (err) {
-                errorPopup.render(err)
+               displayError(err)
                 return
             }
 
