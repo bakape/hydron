@@ -6,6 +6,6 @@ Menu {
 
     MenuItem {
         text: "Delete"
-        onTriggered: window.removeFiles(ids)
+        onTriggered: browser.remove(ids)
     }
 }

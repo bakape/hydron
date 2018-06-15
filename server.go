@@ -72,7 +72,7 @@ func startServer(addr string) error {
 	})
 
 	images.GET("/:id", serveByID)
-	images.DELETE("/:id", removeFilesHTTP)
+	images.DELETE("/:id", removeFileHTTP)
 
 	tags := images.NewGroup("/:id/tags")
 	tags.PATCH("/", addTagsHTTP)
@@ -207,17 +207,11 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 // Remove files from the database by ID
-func removeFilesHTTP(w http.ResponseWriter, r *http.Request) {
-	panic("TODO")
-	// err := removeFiles(strings.Split(p["ids"], ","))
-	// if err != nil {
-	// 	_, ok := err.(core.InvalidIDError)
-	// 	if ok {
-	// 		sendError(w, 400, err)
-	// 	} else {
-	// 		send500(w, r, err)
-	// 	}
-	// }
+func removeFileHTTP(w http.ResponseWriter, r *http.Request) {
+	err := db.RemoveImage(extractParam(r, "id"))
+	if err != nil {
+		send500(w, r, err)
+	}
 }
 
 // Complete a tag by prefix from an HTTP request

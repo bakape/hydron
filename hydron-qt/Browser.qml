@@ -36,6 +36,7 @@ GridView {
 
     // Append a file to the grid
     function append(m) {
+        m.selected = false
         model.append(m)
     }
 
@@ -59,9 +60,8 @@ GridView {
 
     Keys.onPressed: {
         if (event.modifiers & Qt.MetaModifier) {
-            return event.accepted = true;
+            return event.accepted = true
         }
-
 
         // TODO: Page Up and Page Down
         if (event.modifiers & Qt.ControlModifier) {
@@ -101,12 +101,11 @@ GridView {
                 open(currentIndex)
                 break
             case Qt.Key_Delete:
-                window.removeFiles(selectedIDs())
+                browser.remove(selected())
                 break
             }
-            console.log(currentIndex)
         }
-        event.accepted = true;
+        event.accepted = true
     }
 
     MouseArea {
@@ -152,12 +151,12 @@ GridView {
         }
     }
 
-//    Drag.active: url ? mouseArea.drag.active : false
-//    Drag.dragType: Drag.Automatic
-//    Drag.supportedActions: Qt.CopyAction
-//    Drag.mimeData: {
-//        "text/uri-list": url
-//    }
+    //    Drag.active: url ? mouseArea.drag.active : false
+    //    Drag.dragType: Drag.Automatic
+    //    Drag.supportedActions: Qt.CopyAction
+    //    Drag.mimeData: {
+    //        "text/uri-list": url
+    //    }
 
     // Select and highlight a file. Optionally allow multiple selection.
     function select(i, multiple) {
@@ -180,8 +179,8 @@ GridView {
 
     // Select the currently positioned over item
     function selectCurrent() {
-        clearSelected();
-        model.get(currentIndex).selected = true;
+        clearSelected()
+        model.get(currentIndex).selected = true
     }
 
     function clearSelected() {
@@ -190,19 +189,17 @@ GridView {
         }
     }
 
-
     // Open a thumbnail for full screeen viewing
     function open(i) {
         fileView.render(model.get(i).sha1)
     }
 
     // Return selected files as an array of IDs
-    function selectedIDs() {
+    function selected() {
         var ids = []
         for (var i = 0; i < model.count; i++) {
-            var m = model.get(i)
-            if (m.selected) {
-                ids.push(m.sha1)
+            if (model.get(i).selected) {
+                ids.push(i)
             }
         }
         return ids
@@ -211,7 +208,23 @@ GridView {
     // Show context menu for selected files
     function showMenu() {
         Qt.createComponent("FileMenu.qml").createObject(fileView, {
-                                                            ids: selectedIDs()
+                                                            ids: selected()
                                                         }).popup()
+    }
+
+    // Remove a file from the database and update UI accordingly
+    function remove(indeces) {
+        for (var i = 0; i < indeces.length; i++) {
+            // Compensate for index drift
+            var index = indeces[i] - i
+            var m = model.get(index)
+            HTTP.send("/images/" + m.sha1, "DELETE", undefined,
+                      function (res, err) {
+                          if (err) {
+                              errorPopup.render(err)
+                          }
+                      })
+            model.remove(index)
+        }
     }
 }
