@@ -6,7 +6,12 @@ early development.
 
 Platforms: Linux, OSX, Win64
 
-## Runtime dependacies
+## Running
+
+1. Start the `hydron` server. See `hydron -h` for more options.
+2. Start `hydron-qt`, for a GUI frontend.
+
+### Runtime dependecies
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
 * Qt5 >= 5.10

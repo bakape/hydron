@@ -1,4 +1,4 @@
-#include "import.h"
+#include "import.hpp"
 #include <QFile>
 #include <QHttpMultiPart>
 #include <QJsonDocument>

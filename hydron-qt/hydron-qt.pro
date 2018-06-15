@@ -18,4 +18,4 @@ include(deployment.pri)
 DISTFILES +=
 
 HEADERS += \
-    import.h
+    import.hpp
