@@ -13,7 +13,11 @@
 	<body>
 		<nav id="top-banner">
 			<form method="get">
-				<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q">
+				<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q" autofocus autocomplete="off">
+				<script>
+					var el = document.getElementById("search");
+					el.selectionStart = el.selectionEnd = el.value.length;
+				</script>
 			</form>
 			{%= pagination(page, totalPages, params) %}
 		</nav>
