@@ -13,11 +13,12 @@
 	<body>
 		<nav id="top-banner">
 			<form method="get">
-				<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q" autofocus autocomplete="off">
+				<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q" autofocus autocomplete="off" list="search-suggestions">
 				<script>
 					var el = document.getElementById("search");
 					el.selectionStart = el.selectionEnd = el.value.length;
 				</script>
+				<datalist id="search-suggestions"></datalist>
 			</form>
 			{%= pagination(page, totalPages, params) %}
 		</nav>
@@ -36,6 +37,7 @@
 				</figure>
 			{% endfor %}
 		</section>
+		<script src="/assets/main.js" async></script>
 	</body>
 {% endstripspace %}{% endfunc %}
 
