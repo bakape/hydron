@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bakape/hydron/assets"
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/files"
@@ -58,10 +59,7 @@ func startServer(addr string) error {
 	r.GET("/thumbs/:file", func(w http.ResponseWriter, r *http.Request) {
 		serveFiles(w, r, files.ThumbRoot)
 	})
-	r.GET("/assets/*path", func(w http.ResponseWriter, r *http.Request) {
-		serveFile(w, r,
-			filepath.Clean(filepath.Join("www", extractParam(r, "path"))))
-	})
+	r.GET("/assets/*path", serveAssets)
 
 	// HTML paths
 	r.GET("/search", serveSearchHTML)
@@ -90,8 +88,7 @@ func selectiveCompression(h http.Handler) http.Handler {
 	comp := handlers.CompressHandler(h)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch w.Header().Get("Content-Type") {
-		case "text/html", "application/json", "application/javascript",
-			"text/css":
+		case "text/html", "application/json":
 			comp.ServeHTTP(w, r)
 		default:
 			h.ServeHTTP(w, r)
@@ -99,30 +96,25 @@ func selectiveCompression(h http.Handler) http.Handler {
 	})
 }
 
-func serveFile(w http.ResponseWriter, r *http.Request, path string) {
-	file, err := os.Open(path)
-	if err != nil {
+func serveAssets(w http.ResponseWriter, r *http.Request) {
+	buf, etag, cType, err := assets.Asset("", "/"+extractParam(r, "path"))
+	switch err {
+	case nil:
+		if r.Header.Get("If-None-Match") == etag {
+			w.WriteHeader(304)
+			return
+		}
+		setHeaders(w, htmlHeaders)
+		h := w.Header()
+		h.Set("ETag", etag)
+		h.Set("Content-Encoding", "gzip")
+		h.Set("Content-Type", cType)
+		w.Write(buf)
+	case assets.ErrAssetFileNotFound:
 		send404(w)
-		return
-	}
-	defer file.Close()
-
-	stats, err := file.Stat()
-	if err != nil {
+	default:
 		send500(w, r, err)
-		return
 	}
-	if stats.IsDir() {
-		send404(w)
-		return
-	}
-	modTime := stats.ModTime()
-	etag := strconv.FormatInt(modTime.Unix(), 10)
-
-	head := w.Header()
-	head.Set("Cache-Control", "no-cache")
-	head.Set("ETag", etag)
-	http.ServeContent(w, r, path, modTime, file)
 }
 
 // More performant handler for serving file assets. These are immutable, so we
