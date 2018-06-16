@@ -13,6 +13,9 @@ import (
 	"github.com/bakape/hydron/tags"
 )
 
+// Size of page for search query pagination
+const pageSize = 100
+
 type IDAndMD5 struct {
 	ID  int64
 	MD5 string
@@ -20,10 +23,11 @@ type IDAndMD5 struct {
 
 // Searches images by params and executes function on each.
 // Matches all images, if params = "".
-// The returned images will only contain the bare minimum data to render
-// thumbnails.
-func SearchImages(params string, fn func(common.CompactImage) error) (
-	err error,
+// The images will only contain the bare minimum data to render thumbnails.
+// Returns number of total pages and any error.
+// TODO: This pagination will get really slow over time. Some kind of cache?
+func SearchImages(params string, page int, fn func(common.CompactImage) error) (
+	pages int, err error,
 ) {
 	var (
 		split  = strings.Split(params, " ")
@@ -103,29 +107,39 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 		}
 	}
 
-	// Build query
+	// Build queries
+
 	q := sq.Select("sha1", "type", "thumb_is_png", "thumb_width",
 		"thumb_height",
 	).
 		From("images as  i")
+	count := sq.Select("count(*)").From("images as  i")
+
+	// Apply where modification to both the select and count query
+	apply := func(format string, args ...interface{}) {
+		s := fmt.Sprintf(format, args...)
+		q = q.Where(s)
+		count = count.Where(s)
+	}
+
 	if len(pos) != 0 {
-		q = q.Where(fmt.Sprintf(
+		apply(
 			`id in (
 				select image_id from image_tags
 				where tag_id in %s
 				group by image_id
 				having count(*) = %d)`,
 			formatSet(pos), len(pos),
-		))
+		)
 	}
 	if len(neg) != 0 {
-		q = q.Where(fmt.Sprintf(
+		apply(
 			`not exists (
 				select 1
 				from image_tags
 				where image_id = id and tag_id in %s)`,
 			formatSet(neg),
-		))
+		)
 	}
 	for _, s := range system {
 		var p string
@@ -143,15 +157,19 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 				from image_tags as it
 				where it.image_id = i.id)`
 		}
-		q = q.Where(fmt.Sprintf("%s %s %d", p, s.Comparator, s.Value))
+		apply("%s %s %d", p, s.Comparator, s.Value)
 	}
-	if order.Type != tags.None {
+
+	{
 		var by string
 		mode := "asc"
 		if order.Reverse {
 			mode = "desc"
 		}
 		switch order.Type {
+		// SQLite does not guarantee any order without an ORDER BY statement
+		case tags.None:
+			by = "i.id"
 		case tags.BySize:
 			by = "size"
 		case tags.ByWidth:
@@ -169,7 +187,11 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 		}
 		q = q.OrderBy(fmt.Sprintf("%s %s", by, mode))
 	}
-	if limit != 0 {
+
+	if limit == 0 || limit > pageSize {
+		limit = pageSize
+		q = q.Limit(limit).Offset(uint64(page * pageSize))
+	} else {
 		q = q.Limit(limit)
 	}
 
@@ -191,7 +213,23 @@ func SearchImages(params string, fn func(common.CompactImage) error) (
 			return
 		}
 	}
-	return r.Err()
+	err = r.Err()
+	if err != nil {
+		return
+	}
+
+	// Read total match count
+	var total int
+	err = count.QueryRow().Scan(&total)
+	if err != nil {
+		return
+	}
+	pages = total / pageSize
+	if total%pageSize != 0 {
+		pages++
+	}
+
+	return
 }
 
 // Format SQL set

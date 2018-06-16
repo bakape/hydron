@@ -3,7 +3,6 @@
 @selected: #81a2be;
 
 #top-banner {
-	width: 100%;
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -12,8 +11,18 @@
     background-color: @inner-bg;
 	border: @border;
 	padding: 0.3em;
+	width: calc(100vw - 0.6em - 2px);
+	display: flex;
+	flex-wrap: nowrap;
+	form {
+		flex-grow: 2;
+		flex-basis: 20em;
+	}
 	input[type=search] {
-		width: calc(100% - 2*0.3em - 4px);
+		width: 100%;
+	}
+	span {
+		margin: 0 0.5em;
 	}
 }
 
@@ -61,4 +70,13 @@ figure {
 
 input[type=checkbox]:checked + .background {
 	background-color: @selected;
+}
+
+.spaced > *:before {
+	content: ' ';
+}
+
+a {
+	text-decoration: none !important;
+	color: @selected;
 }

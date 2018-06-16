@@ -1,8 +1,10 @@
 {% import "github.com/bakape/hydron/common" %}
 {% import "github.com/bakape/hydron/files" %}
 {% import "strconv" %}
+{% import "net/url" %}
+{% import "strings" %}
 
-{% func Browser(params string, imgs []common.CompactImage) %}{% stripspace %}
+{% func Browser(params string, page, totalPages int, imgs []common.CompactImage) %}{% stripspace %}
 	{% code title := params %}
 	{% if title == "" %}
 		{% code title = "hydron" %}
@@ -13,6 +15,7 @@
 			<form method="get">
 				<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q">
 			</form>
+			{%= pagination(page, totalPages, params) %}
 		</nav>
 		<div id="overlay"></div>
 		<section id="browser">
@@ -30,4 +33,45 @@
 			{% endfor %}
 		</section>
 	</body>
+{% endstripspace %}{% endfunc %}
+
+Links to different pages on a search page
+{% func pagination(page, total int, params string) %}{% stripspace %}
+	{% code val := url.Values{
+		"q": strings.Split(params, " "),
+	} %}
+	<span class="spaced">
+		{% if page != 0 %}
+			{% if page-1 != 0 %}
+				{%= pageLink(val, 0, "<<") %}
+			{% endif %}
+			{%= pageLink(val, page-1, "<") %}
+		{% endif %}
+		{% code count := 0 %}
+		{% for i := page-5; i < total && count < 10; i++ %}
+			{% if i < 0 %}
+				{% continue %}
+			{% endif %}
+			{% code count++ %}
+			{% if i != page %}
+				{%= pageLink(val, i, strconv.Itoa(i+1)) %}
+			{% else %}
+				<b>{%d i+1 %}</b>
+			{% endif %}
+		{% endfor %}
+		{% if page != total-1 %}
+			{%= pageLink(val, page+1, ">") %}
+			{% if page+1 != total-1 %}
+				{%= pageLink(val, total-1, ">>") %}
+			{% endif %}
+		{% endif %}
+	</span>
+{% endstripspace %}{% endfunc %}
+
+Link to a different paginated search page
+{% func pageLink(values url.Values, page int, text string) %}{% stripspace %}
+	{% code values.Set("page", strconv.Itoa(page)) %}
+	<a href="?{%s= values.Encode() %}">
+		{%s= text %}
+	</a>
 {% endstripspace %}{% endfunc %}

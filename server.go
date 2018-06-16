@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -72,16 +71,9 @@ func startServer(addr string) error {
 	api.GET("/complete_tag/:prefix", completeTagHTTP)
 
 	images := api.NewGroup("/images")
-	images.GET("/", serveEverything) // Dumps everything
+	images.GET("/", serveSearch) // Dumps everything
 	images.POST("/", importUpload)
-
-	search := images.NewGroup("/search")
-	search.GET("/", serveEverything)
-	search.GET("/:tags", func(w http.ResponseWriter, r *http.Request) {
-		q := html.UnescapeString(extractParam(r, "tags"))
-		q = strings.Replace(q, ",", " ", -1)
-		serveSearch(w, r, q)
-	})
+	images.GET("/search", serveSearch)
 
 	images.GET("/:id", serveByID)
 	images.DELETE("/:id", removeFileHTTP)
@@ -98,7 +90,8 @@ func selectiveCompression(h http.Handler) http.Handler {
 	comp := handlers.CompressHandler(h)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch w.Header().Get("Content-Type") {
-		case "text/html", "application/json":
+		case "text/html", "application/json", "application/javascript",
+			"text/css":
 			comp.ServeHTTP(w, r)
 		default:
 			h.ServeHTTP(w, r)
@@ -158,17 +151,38 @@ func serveFiles(w http.ResponseWriter, r *http.Request, root string) {
 	http.ServeContent(w, r, extractParam(r, "path"), time.Time{}, file)
 }
 
-// Dump all images as JSON
-func serveEverything(w http.ResponseWriter, r *http.Request) {
-	serveSearch(w, r, "")
+// If ok = false, caller should return too
+func processSearch(w http.ResponseWriter, r *http.Request,
+	fn func(common.CompactImage) error,
+) (params string, page, totalPages int, ok bool) {
+	if s := r.URL.Query().Get("page"); s != "" {
+		page, _ = strconv.Atoi(s)
+		if page < 0 {
+			page = 0
+		}
+	}
+	params = strings.Join(r.URL.Query()["q"], " ")
+
+	totalPages, err := db.SearchImages(params, page, fn)
+	switch err.(type) {
+	case nil:
+		ok = true
+		return
+	case tags.SyntaxError:
+		sendError(w, 400, err)
+		return
+	default:
+		send500(w, r, err)
+		return
+	}
 }
 
 // Serve a tag search result as JSON
-func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
+func serveSearch(w http.ResponseWriter, r *http.Request) {
 	var jw jwriter.Writer
 	jw.RawByte('[')
 	first := true
-	err := db.SearchImages(params, func(rec common.CompactImage) error {
+	_, _, _, ok := processSearch(w, r, func(rec common.CompactImage) error {
 		if first {
 			first = false
 		} else {
@@ -177,13 +191,7 @@ func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
 		rec.MarshalEasyJSON(&jw)
 		return nil
 	})
-	switch err.(type) {
-	case nil:
-	case tags.SyntaxError:
-		sendError(w, 400, err)
-		return
-	default:
-		send500(w, r, err)
+	if !ok {
 		return
 	}
 	jw.RawByte(']')
@@ -198,18 +206,13 @@ func serveSearch(w http.ResponseWriter, r *http.Request, params string) {
 
 func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
 	images := make([]common.CompactImage, 0, 1<<10)
-	params := strings.Join(r.URL.Query()["q"], " ")
-	err := db.SearchImages(params, func(rec common.CompactImage) error {
-		images = append(images, rec)
-		return nil
-	})
-	switch err.(type) {
-	case nil:
-		serveHTML(w, r, templates.Browser(params, images))
-	case tags.SyntaxError:
-		sendError(w, 400, err)
-	default:
-		send500(w, r, err)
+	params, page, pages, ok := processSearch(w, r,
+		func(rec common.CompactImage) error {
+			images = append(images, rec)
+			return nil
+		})
+	if ok {
+		serveHTML(w, r, templates.Browser(params, page, pages, images))
 	}
 }
 
