@@ -99,11 +99,6 @@ var (
 			"NB: This will notably slow down importing large amounts of files.\n"+
 			"Consider using import, followed by fetch_tags!",
 	)
-	returnRandom = modeFlags["search"].Bool(
-		"r",
-		false,
-		"return only one random matched file",
-	)
 	address = modeFlags["serve"].String(
 		"a",
 		defaultAddress,
@@ -161,8 +156,7 @@ func main() {
 	case "fetch_tags":
 		err = fetchAllTags()
 	case "search":
-		err = searchImages(strings.Join(fl.Args(), " "), int(*page),
-			*returnRandom)
+		err = searchImages(strings.Join(fl.Args(), " "), int(*page))
 	case "complete_tag":
 		assertArgCount(3)
 		var suggests []string
