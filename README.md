@@ -8,13 +8,12 @@ Platforms: Linux, OSX, Win64
 
 ## Running
 
-1. Start the `hydron` server. See `hydron -h` for more options.
+1. `hydron` to start the server. See `hydron -h` for more options.
 2. Navigate to "http://localhost:8010" in a web browser
 
 ### Runtime dependecies
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
-* Qt5 >= 5.10
 
 ## Building
 
