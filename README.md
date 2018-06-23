@@ -13,7 +13,7 @@ Platforms: Linux, OSX, Win64
 
 ### Runtime dependecies
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
-* GraphicsMagick
+* GraphicsMagick++
 
 ## Building
 
@@ -21,8 +21,8 @@ Platforms: Linux, OSX, Win64
 
 ### Build dependencies
 * [Go](https://golang.org/doc/install) >= 1.10
-* GCC or Clang
+* C11 and C++17 compilers
 * pkg-config
 * pthread
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
-* GraphicsMagick
+* GraphicsMagick++
