@@ -18,6 +18,7 @@ MXE_ROOT=$(HOME)/src/mxe/usr
 MXE_TARGET=x86_64-w64-mingw32.static
 
 all: client generate
+	go build
 
 client: css js
 	go-embed --input www --output assets/assets.go

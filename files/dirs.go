@@ -2,8 +2,10 @@ package files
 
 import (
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/util"
@@ -66,6 +68,7 @@ func Traverse(paths []string) (files []string, err error) {
 		return nil
 	}
 
+	var home string
 	for _, p := range paths {
 		// Don't walk network paths
 		if util.IsFetchable(p) {
@@ -73,6 +76,23 @@ func Traverse(paths []string) (files []string, err error) {
 			continue
 		}
 
+		// Expand home directory token
+		if strings.HasPrefix(p, "~/") {
+			if home == "" {
+				var u *user.User
+				u, err = user.Current()
+				if err != nil {
+					return
+				}
+				home = u.HomeDir
+			}
+			p = filepath.Join(home, p[2:])
+		}
+
+		p, err = filepath.Abs(p)
+		if err != nil {
+			return
+		}
 		err = filepath.Walk(p, visit)
 		if err != nil {
 			return
