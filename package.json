@@ -9,7 +9,6 @@
   "author": "bakape <scorpid33@gmail.com> (https://github.com/bakape)",
   "dependencies": {
     "less": "^3.0.4",
-    "less-plugin-clean-css": "^1.5.1",
-    "uglify-js": "^3.4.0"
+    "less-plugin-clean-css": "^1.5.1"
   }
 }

@@ -17,17 +17,15 @@ endif
 MXE_ROOT=$(HOME)/src/mxe/usr
 MXE_TARGET=x86_64-w64-mingw32.static
 
+.PHONY: client
+
 all: client generate
 	go build
 
-client: css js
-	go-embed --input www --output assets/assets.go
-
-css:
+client:
+	cp client/main.js www/main.js
 	node_modules/.bin/lessc --clean-css client/main.less www/main.css
-
-js:
-	node_modules/.bin/uglifyjs client/main.js -o www/main.js
+	go-embed --input www --output assets/assets.go
 
 generate:
 	go generate ./templates

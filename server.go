@@ -30,6 +30,8 @@ var fileHeaders = map[string]string{
 	"X-Frame-Options": "sameorigin",
 	// Fake E-tag, because all files are immutable
 	"ETag": "0",
+	// To make files downloadable from web browser any page
+	"Access-Control-Allow-Origin": "*",
 }
 
 func startServer(addr string) error {
