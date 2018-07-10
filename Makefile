@@ -40,6 +40,7 @@ generate:
 cross_compile_windows:
 	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
 	CC=$(MXE_ROOT)/bin/$(MXE_TARGET)-gcc \
+	CXX=$(MXE_ROOT)/bin/$(MXE_TARGET)-g++ \
 	PKG_CONFIG=$(MXE_ROOT)/bin/$(MXE_TARGET)-pkg-config \
 	PKG_CONFIG_LIBDIR=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
 	PKG_CONFIG_PATH=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
