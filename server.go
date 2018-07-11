@@ -225,6 +225,12 @@ func serveByID(w http.ResponseWriter, r *http.Request) {
 
 // Download and import a file from the client
 func importUpload(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(0)
+	if err != nil {
+		sendError(w, 400, err)
+		return
+	}
+
 	f, _, err := r.FormFile("file")
 	if err != nil {
 		sendError(w, 400, err)

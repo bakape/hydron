@@ -12,15 +12,20 @@
 	{%= head(title) %}
 	<body>
 		<nav id="top-banner">
-			<form method="get">
-				<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q" autofocus autocomplete="off" list="search-suggestions">
-				<script>
-					var el = document.getElementById("search");
-					el.selectionStart = el.selectionEnd = el.value.length;
-				</script>
-				<datalist id="search-suggestions"></datalist>
-			</form>
-			{%= pagination(page, totalPages, params) %}
+			<div style="display: flex;">
+				<form method="get">
+					<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q" autofocus autocomplete="off" list="search-suggestions">
+					<script>
+						var el = document.getElementById("search");
+						el.selectionStart = el.selectionEnd = el.value.length;
+					</script>
+					<datalist id="search-suggestions"></datalist>
+				</form>
+				{%= pagination(page, totalPages, params) %}
+			</div>
+			<div style="width: 100%; height: 0.3em;">
+				<div id="progress-bar"></div>
+			</div>
 		</nav>
 		<div id="overlay"></div>
 		<section id="browser">

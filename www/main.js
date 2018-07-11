@@ -8,33 +8,37 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 		return;
 	}
 
-	search.addEventListener("input", e => {
-		const text = search.value;
+	search.addEventListener("input", async e => {
+		let text = search.value;
 		if (!text.length || text[text.length - 1] == " ") {
 			sugg.innerHTML = "";
 			return;
 		}
 
-		const i = text.lastIndexOf(" ");
-		fetch(`/api/complete_tag/${i === -1 ? text : text.slice(i + 1)}`)
-			.then(r => r.json())
-			.then(tags => {
-				let text = search.value;
-				let i = text.lastIndexOf(" ");
-				if (i == -1) {
-					i = 0;
-				}
-				text = text.slice(0, i);
-				if (i) {
-					text += " ";
-				}
-				let s = "";
-				for (const tag of tags) {
-					s += `<option value="${text} ${tag}">`;
-				}
-				sugg.innerHTML = s;
-			})
-			.catch(alert);
+		try {
+			let i = text.lastIndexOf(" ");
+			const r = await fetch("/api/complete_tag/"
+				+ (i === -1 ? text : text.slice(i + 1)));
+			if (r.status !== 200) {
+				throw await r.text();
+			}
+
+			const tags = await r.json();
+			if (i === -1) {
+				i = 0;
+			}
+			text = text.slice(0, i);
+			if (i) {
+				text += " ";
+			}
+			let s = "";
+			for (const tag of tags) {
+				s += `<option value="${text} ${tag}">`;
+			}
+			sugg.innerHTML = s;
+		} catch (err) {
+			alert(err);
+		}
 	}, { passive: true });
 })();
 
@@ -70,12 +74,44 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 		selectImage(el);
 	});
 
+	document.addEventListener("drop", e => {
+		const { files } = e.dataTransfer;
+		if (!files.length || isFileInput(e.target)) {
+			return;
+		}
+		e.stopPropagation();
+		e.preventDefault();
+
+		const browser = document.getElementById("browser");
+		let done = 0;
+		browser.innerHTML = "";
+		for (const f of files) {
+			process(f).catch(alert);
+		}
+
+		async function process(f) {
+			const body = new FormData();
+			body.append("file", f);
+			body.append("fetch_tags", "true");
+			const r = await fetch("/api/images/", { body, method: "POST" });
+			if (r.status !== 200) {
+				throw await r.text();
+			}
+			const ch = renderThumbnail(await r.json());
+			browser.appendChild(ch);
+			renderProgress(++done / files.length);
+		}
+	});
+
 	function stopDefault(e) {
-		const el = e.target;
-		if (!(el.tagName === "INPUT" && el.getAttribute("type") === "file")) {
+		if (!isFileInput(e.target)) {
 			e.stopPropagation();
 			e.preventDefault();
 		}
+	}
+
+	function isFileInput(el) {
+		return el.tagName === "INPUT" && el.getAttribute("type") === "file";
 	}
 
 	function selectImage(el) {
@@ -86,3 +122,24 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 		sel.addRange(r);
 	}
 })();
+
+function renderThumbnail({ sha1, type, thumb: { width, height, is_png } }) {
+	const cont = document.createElement("div");
+	cont.innerHTML = `<label data-type="${type}" data-sha1="${sha1}">
+	<input type="checkbox" name="img:${sha1}">
+	<div class="background"></div>
+	<img width="${width}" height="${height}" src="${thumbPath(sha1, is_png)}">
+</label>`;
+	return cont.firstChild;
+}
+
+function thumbPath(sha1, is_png) {
+	return `/thumbs/${sha1}.${is_png ? "png" : "jpg"}`;
+}
+
+function renderProgress(val) {
+	if (val === 1) {
+		val = 0;
+	}
+	document.getElementById("progress-bar").style.width = val * 100 + "%";
+}

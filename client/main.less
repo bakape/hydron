@@ -10,11 +10,12 @@
 	z-index: 100;
     background-color: @inner-bg;
 	border: @border;
-	padding: 0.3em;
+	padding: 0.3em 0.3em 0 0.3em;
 	width: calc(100vw - 0.6em - 2px);
 	display: flex;
 	flex-wrap: nowrap;
 	user-select: none;
+	flex-direction: column;
 	form {
 		flex-grow: 2;
 		flex-basis: 20em;
@@ -25,6 +26,12 @@
 	span {
 		margin: 0 0.5em;
 	}
+}
+
+#progress-bar {
+	width: 0;
+	height: 100%;
+	background: @selected;
 }
 
 body {
