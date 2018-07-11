@@ -75,11 +75,19 @@ func StreamBrowser(qw422016 *qt422016.Writer, params string, page, totalPages in
 		//line browser.qtpl:36
 		qw422016.N().S(strconv.FormatUint(img.Thumb.Width, 10))
 		//line browser.qtpl:36
-		qw422016.N().S(`"height="`)
+		qw422016.N().S(`"`)
+		//line browser.qtpl:36
+		qw422016.N().S(` `)
+		//line browser.qtpl:36
+		qw422016.N().S(`height="`)
 		//line browser.qtpl:37
 		qw422016.N().S(strconv.FormatUint(img.Thumb.Height, 10))
 		//line browser.qtpl:37
-		qw422016.N().S(`"src="`)
+		qw422016.N().S(`"`)
+		//line browser.qtpl:37
+		qw422016.N().S(` `)
+		//line browser.qtpl:37
+		qw422016.N().S(`src="`)
 		//line browser.qtpl:38
 		qw422016.N().S(files.NetThumbPath(img.SHA1, img.Thumb.IsPNG))
 		//line browser.qtpl:38

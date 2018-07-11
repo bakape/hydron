@@ -28,12 +28,12 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 				i = 0;
 			}
 			text = text.slice(0, i);
-			if (i) {
+			if (text.length) {
 				text += " ";
 			}
 			let s = "";
 			for (const tag of tags) {
-				s += `<option value="${text} ${tag}">`;
+				s += `<option value="${text}${tag}">`;
 			}
 			sugg.innerHTML = s;
 		} catch (err) {
