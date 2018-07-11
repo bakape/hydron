@@ -21,7 +21,7 @@ import (
 
 // Common errors
 var (
-	ErrUnsupportedFile = errors.New("usuported file type")
+	ErrUnsupportedFile = errors.New("unsupported file type")
 	ErrImported        = errors.New("already imported")
 	importFile         = make(chan request)
 )

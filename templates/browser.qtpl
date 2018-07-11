@@ -33,8 +33,8 @@
 				<label data-type="{%d int(img.Type) %}" data-sha1="{%s= img.SHA1 %}">
 					<input type="checkbox" name="img:{%s= img.SHA1 %}">
 					<div class="background"></div>
-					<img width="{%s= strconv.FormatUint(img.Thumb.Width, 10) %}"
-						height="{%s= strconv.FormatUint(img.Thumb.Height, 10) %}"
+					<img width="{%s= strconv.FormatUint(img.Thumb.Width, 10) %}" {% space %}
+						height="{%s= strconv.FormatUint(img.Thumb.Height, 10) %}" {% space %}
 						src="{%s= files.NetThumbPath(img.SHA1, img.Thumb.IsPNG) %}"
 					>
 				</label>
