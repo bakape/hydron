@@ -1,3 +1,5 @@
+<p align="center"><img src="logo/Hydron.png" alt="Hydron" height="150px"></p>
+
 # hydron
 Media tagger and organizer backend and GUI frontend.
 Hydron aims to be a much faster alternative to the
