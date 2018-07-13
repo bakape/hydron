@@ -1,6 +1,6 @@
-<p align="center"><img src="logo/Hydron.png" alt="Hydron" height="150px"></p>
-
-# hydron
+<h1> 
+   <img src="logo/Hydron.png" alt="Hydron" height="25px"> hydron
+</h1>
 Media tagger and organizer backend and GUI frontend.
 Hydron aims to be a much faster alternative to the
 [Hydrus Network](https://github.com/hydrusnetwork/hydrus) and is currently in
