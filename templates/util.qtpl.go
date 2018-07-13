@@ -24,32 +24,32 @@ func streamhead(qw422016 *qt422016.Writer, title string) {
 	//line util.qtpl:6
 	qw422016.E().S(title)
 	//line util.qtpl:6
-	qw422016.N().S(`</title><link rel="stylesheet" href="/assets/main.css"></head>`)
-//line util.qtpl:9
+	qw422016.N().S(`</title><link rel="stylesheet" href="/assets/main.css"><link type="image/x-icon" rel="shortcut icon" href="/assets/favicon.ico"></head>`)
+//line util.qtpl:10
 }
 
-//line util.qtpl:9
+//line util.qtpl:10
 func writehead(qq422016 qtio422016.Writer, title string) {
-	//line util.qtpl:9
+	//line util.qtpl:10
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line util.qtpl:9
+	//line util.qtpl:10
 	streamhead(qw422016, title)
-	//line util.qtpl:9
+	//line util.qtpl:10
 	qt422016.ReleaseWriter(qw422016)
-//line util.qtpl:9
+//line util.qtpl:10
 }
 
-//line util.qtpl:9
+//line util.qtpl:10
 func head(title string) string {
-	//line util.qtpl:9
+	//line util.qtpl:10
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line util.qtpl:9
+	//line util.qtpl:10
 	writehead(qb422016, title)
-	//line util.qtpl:9
+	//line util.qtpl:10
 	qs422016 := string(qb422016.B)
-	//line util.qtpl:9
+	//line util.qtpl:10
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line util.qtpl:9
+	//line util.qtpl:10
 	return qs422016
-//line util.qtpl:9
+//line util.qtpl:10
 }
