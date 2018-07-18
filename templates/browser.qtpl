@@ -1,5 +1,4 @@
 {% import "github.com/bakape/hydron/common" %}
-{% import "github.com/bakape/hydron/files" %}
 {% import "strconv" %}
 {% import "net/url" %}
 {% import "strings" %}
@@ -27,17 +26,10 @@
 				<div id="progress-bar"></div>
 			</div>
 		</nav>
-		<div id="overlay"></div>
+		<div id="image-view"></div>
 		<section id="browser">
 			{% for _, img := range imgs %}
-				<label data-type="{%d int(img.Type) %}" data-sha1="{%s= img.SHA1 %}">
-					<input type="checkbox" name="img:{%s= img.SHA1 %}">
-					<div class="background"></div>
-					<img width="{%s= strconv.FormatUint(img.Thumb.Width, 10) %}" {% space %}
-						height="{%s= strconv.FormatUint(img.Thumb.Height, 10) %}" {% space %}
-						src="{%s= files.NetThumbPath(img.SHA1, img.Thumb.IsPNG) %}"
-					>
-				</label>
+				{%= Thumbnail(img) %}
 			{% endfor %}
 		</section>
 		<script src="/assets/main.js" async></script>

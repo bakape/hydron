@@ -82,6 +82,10 @@ func startServer(addr string) error {
 	tags.PATCH("/", addTagsHTTP)
 	tags.DELETE("/", removeTagsHTTP)
 
+	ajax := r.NewGroup("/ajax")
+	ajax.GET("/thumbnail/:id", serveThumbnail)
+	ajax.GET("/image-view/:id", serveImageView)
+
 	return http.ListenAndServe(addr, selectiveCompression(r))
 }
 
@@ -213,14 +217,9 @@ func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
 // Serve single image data by ID
 func serveByID(w http.ResponseWriter, r *http.Request) {
 	img, err := db.GetImage(extractParam(r, "id"))
-	switch err {
-	case nil:
+	passQueryError(w, r, err, func() {
 		serveJSON(w, r, img)
-	case sql.ErrNoRows:
-		send404(w)
-	default:
-		send500(w, r, err)
-	}
+	})
 }
 
 // Download and import a file from the client

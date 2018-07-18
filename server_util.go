@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/md5"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -79,4 +80,18 @@ func serveData(w http.ResponseWriter, r *http.Request,
 
 func serveHTML(w http.ResponseWriter, r *http.Request, html string) {
 	serveData(w, r, htmlHeaders, []byte(html))
+}
+
+// Pass any DB query error to client or run onSuccess()
+func passQueryError(w http.ResponseWriter, r *http.Request, err error,
+	onSuccess func(),
+) {
+	switch err {
+	case nil:
+		onSuccess()
+	case sql.ErrNoRows:
+		send404(w)
+	default:
+		send500(w, r, err)
+	}
 }

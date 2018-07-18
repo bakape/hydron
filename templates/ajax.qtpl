@@ -1,0 +1,60 @@
+Various AJAX-rendered HTML
+
+{% import "github.com/bakape/hydron/common" %}
+{% import "github.com/bakape/hydron/files" %}
+{% import "net/url" %}
+{% import "strconv" %}
+
+{% func Thumbnail(img common.CompactImage) %}{% stripspace %}
+	<figure data-type="{%d int(img.Type) %}" data-sha1="{%s= img.SHA1 %}">
+		<input type="checkbox" name="img:{%s= img.SHA1 %}">
+		<div class="background"></div>
+		<img width="{%s= strconv.FormatUint(img.Thumb.Width, 10) %}"{% space %}
+			height="{%s= strconv.FormatUint(img.Thumb.Height, 10) %}"{% space %}
+			src="{%s= files.NetThumbPath(img.SHA1, img.Thumb.IsPNG) %}"
+		>
+	</figure>
+{% endstripspace %}{% endfunc %}
+
+{% func ImageView(img common.Image, query string) %}{% stripspace %}
+	{% code org := organizeTags(img.Tags) %}
+	<section id="tags">
+		{%= renderTags(org[common.Character], query) %}
+		{%= renderTags(org[common.Series], query) %}
+		{%= renderTags(org[common.Author], query) %}
+		{%= renderTags(org[common.Rating], query) %}
+		{%= renderTags(org[common.Undefined], query) %}
+	</section>
+	{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
+	{% switch common.GetMediaType(img.Type) %}
+	{% case common.MediaImage %}
+		<img src="{%s= src %}">
+	{% case common.MediaVideo %}
+		<video src="{%s= src %}" autoplay loop controls>
+	{% default %}
+		<b>Preview not supported for this format</b>
+	{% endswitch %}
+{% endstripspace %}{% endfunc %}
+
+{% func renderTags(tags []common.Tag, query string) %}{% stripspace %}
+	{% code var typ string %}
+	{% if len(tags) != 0 %}
+		{% code typ = stringifyTagType(tags[0].Type) %}
+	{% endif %}
+	{% for _, t  := range tags %}
+		<span class="spaced tag-{%s= typ %}">
+			<a href="/search?{%s= addToQuery(query, t, false) %}" title="Add to search">
+				+
+			</a>
+			<a href="/search?{%s= addToQuery(query, t, true) %}" title="Remove from search">
+				-
+			</a>
+			<a href="/search?{%s= url.Values{"q": []string{t.Tag}}.Encode() %}" title="Search for tag">
+				{% if t.Type == common.Rating %}
+					rating:{% space %}
+				{% endif %}
+				{%s t.Tag %}
+			</a>
+		</span>
+	{% endfor %}
+{% endstripspace %}{% endfunc %}

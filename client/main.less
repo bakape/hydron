@@ -1,6 +1,8 @@
 @inner-bg: #282a2e;
 @border: 1px solid #282a2e;
 @selected: #81a2be;
+@body-text: #c5c8c6;
+@body-bg: #1d1f21;
 
 #top-banner {
 	position: fixed;
@@ -35,21 +37,26 @@
 }
 
 body {
-	background: #1d1f21;
-	color: #c5c8c6;
+	background: @body-bg;
+	color: @body-text;
 }
 
 #browser {
 	display: flex;
 	flex-wrap: wrap;
 	padding-top: 1.7em;
-	label {
+	figure {
 		padding: 0;
 		display: flex;
 		margin: 5px;
 		position: relative;
 		input[type=checkbox] {
-			display: none;
+			position: absolute;
+			left: 0;
+			top: 0;
+			z-index: 10;
+			margin: 0.5em;
+			transform: scale(1.3);
 		}
 	}
 	img {
@@ -73,6 +80,55 @@ body {
 
 input[type=checkbox]:checked + .background {
 	background-color: @selected;
+}
+
+#image-view {
+	position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+	pointer-events: none;
+	z-index: 100;
+	display: flex;
+	background: @body-bg;
+	&:empty {
+		display: none;
+	}
+	& > * {
+		pointer-events: all;
+	}
+	& > img, & > video, & > b {
+		max-height: 100%;
+		max-width: 100%;
+		margin: auto auto;
+		object-fit: contain;
+	}
+}
+
+#tags {
+	display: flex;
+	flex-direction: column;
+    flex-shrink: 0;
+    padding: 0.2em;
+    overflow-y: auto;
+	max-height: 100vh;
+}
+
+.tag-undefined a {
+	color: @selected;
+}
+.tag-character a {
+	color: #0A0;
+}
+.tag-author a {
+	color: #A00;
+}
+.tag-series a {
+	color: #A0A;
+}
+.tag-rating a {
+	color: @body-text;
 }
 
 .spaced > *:before {

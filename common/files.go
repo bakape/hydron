@@ -22,6 +22,15 @@ const (
 	FLV
 )
 
+type MediaType uint8
+
+// File type media container types
+const (
+	MediaImage MediaType = iota
+	MediaVideo
+	MediaOther
+)
+
 var (
 	// Map of MIME types to the constants used internally
 	MimeTypes = map[string]FileType{
@@ -103,3 +112,15 @@ var (
 		"flv":  FLV,
 	}
 )
+
+// Map file type to media container type
+func GetMediaType(t FileType) MediaType {
+	switch t {
+	case JPEG, PNG, GIF, WEBP, BMP, TIFF:
+		return MediaImage
+	case WEBM, OGG, MKV, MP4, AVI, MOV, WMV:
+		return MediaVideo
+	default:
+		return MediaOther
+	}
+}

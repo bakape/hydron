@@ -1,4 +1,5 @@
-const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "ogg", "webm", "mkv", "mp4", "avi", "mov", "wmv", "flv"];
+const browser = document.getElementById("browser");
+const imageView = document.getElementById("image-view");
 
 // Search suggestions
 (() => {
@@ -44,34 +45,39 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 
 // Drag and drop
 (() => {
+	const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd",
+		"tiff", "ogg", "webm", "mkv", "mp4", "avi", "mov", "wmv", "flv"];
+
 	// Prevent defaults
 	for (const e of ["dragenter", "dragexit", "dragover"]) {
 		document.addEventListener(e, stopDefault);
 	}
-	const cont = document.getElementById("browser");
 
 	// Set drag contents to seleceted images
-	cont.addEventListener("dragstart", e => {
+	browser.addEventListener("dragstart", e => {
 		let el = e.target;
-		if (!el.closest || !(el = el.closest("label"))) {
+		if (!el.closest || !(el = el.closest("figure"))) {
 			return;
 		}
-
-		const url = location.origin
+		e.dataTransfer.setData("text/uri-list", location.origin
 			+ "/files/"
 			+ el.getAttribute("data-sha1")
 			+ "."
-			+ extensions[parseInt(el.getAttribute("data-type"))];
-		e.dataTransfer.setData("text/uri-list", url);
-		console.log(url);
+			+ extensions[parseInt(el.getAttribute("data-type"))]);
 	});
 
-	cont.addEventListener("mousedown", e => {
+	browser.addEventListener("mousedown", e => {
 		let el = e.target;
-		if (!el.closest || !(el = el.closest("label"))) {
+		if (!el.closest || !(el = el.closest("figure"))) {
 			return;
 		}
-		selectImage(el);
+
+		// Select image
+		const sel = window.getSelection();
+		sel.removeAllRanges();
+		const r = document.createRange();
+		r.selectNodeContents(el);
+		sel.addRange(r);
 	});
 
 	document.addEventListener("drop", e => {
@@ -82,7 +88,6 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 		e.stopPropagation();
 		e.preventDefault();
 
-		const browser = document.getElementById("browser");
 		let done = 0;
 		browser.innerHTML = "";
 		for (const f of files) {
@@ -93,12 +98,18 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 			const body = new FormData();
 			body.append("file", f);
 			body.append("fetch_tags", "true");
-			const r = await fetch("/api/images/", { body, method: "POST" });
+			let r = await fetch("/api/images/", { body, method: "POST" });
 			if (r.status !== 200) {
 				throw await r.text();
 			}
-			const ch = renderThumbnail(await r.json());
-			browser.appendChild(ch);
+
+			r = await fetch(`/ajax/thumbnail/${(await r.json()).sha1}`)
+			if (r.status !== 200) {
+				throw await r.text();
+			}
+			const cont = document.createElement("div");
+			cont.innerHTML = await r.text();
+			browser.appendChild(cont.firstChild);
 			renderProgress(++done / files.length);
 		}
 	});
@@ -113,33 +124,45 @@ const extensions = ["jpg", "png", "gif", "webp", "pdf", "bmp", "psd", "tiff", "o
 	function isFileInput(el) {
 		return el.tagName === "INPUT" && el.getAttribute("type") === "file";
 	}
-
-	function selectImage(el) {
-		const sel = window.getSelection();
-		sel.removeAllRanges();
-		const r = document.createRange();
-		r.selectNodeContents(el);
-		sel.addRange(r);
-	}
 })();
 
-function renderThumbnail({ sha1, type, thumb: { width, height, is_png } }) {
-	const cont = document.createElement("div");
-	cont.innerHTML = `<label data-type="${type}" data-sha1="${sha1}">
-	<input type="checkbox" name="img:${sha1}">
-	<div class="background"></div>
-	<img width="${width}" height="${height}" src="${thumbPath(sha1, is_png)}">
-</label>`;
-	return cont.firstChild;
+window.onhashchange = e =>
+	loadHash(e.newURL);
+loadHash(location.toString(), true); // On page load
+
+function loadHash(url, firstLoad) {
+	const hash = new URL(url).hash;
+	if (hash.startsWith("#img:")) {
+		viewImage(hash.slice(5));
+	} else {
+		imageView.innerHTML = "";
+	}
 }
 
-function thumbPath(sha1, is_png) {
-	return `/thumbs/${sha1}.${is_png ? "png" : "jpg"}`;
-}
+browser.addEventListener("click", e => {
+	if (e.target.closest && e.target.tagName !== "INPUT") {
+		viewImage(e.target.closest("figure").getAttribute("data-sha1"));
+	}
+}, { passive: true });
+
+document.addEventListener("keydown", e => {
+	if (e.key === "Escape" && imageView.innerHTML !== "") {
+		history.back();
+	}
+}, { passive: true });
 
 function renderProgress(val) {
 	if (val === 1) {
 		val = 0;
 	}
 	document.getElementById("progress-bar").style.width = val * 100 + "%";
+}
+
+async function viewImage(sha1) {
+	const r = await fetch(`/ajax/image-view/${sha1}${location.search}`);
+	if (r.status !== 200) {
+		alert(await r.text());
+	}
+	location.hash = `#img:${sha1}`;
+	imageView.innerHTML = await r.text();
 }
