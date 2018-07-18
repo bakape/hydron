@@ -201,7 +201,7 @@ func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, query string
 		//line ajax.qtpl:49
 		qw422016.N().S(`" title="Remove from search">-</a><a href="/search?`)
 		//line ajax.qtpl:52
-		qw422016.N().S(url.Values{"q": []string{t.Tag}}.Encode())
+		qw422016.N().S(url.Values{"q": []string{t.String()}}.Encode())
 		//line ajax.qtpl:52
 		qw422016.N().S(`" title="Search for tag">`)
 		//line ajax.qtpl:53

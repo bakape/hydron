@@ -49,7 +49,7 @@ Various AJAX-rendered HTML
 			<a href="/search?{%s= addToQuery(query, t, true) %}" title="Remove from search">
 				-
 			</a>
-			<a href="/search?{%s= url.Values{"q": []string{t.Tag}}.Encode() %}" title="Search for tag">
+			<a href="/search?{%s= url.Values{"q": []string{t.String()}}.Encode() %}" title="Search for tag">
 				{% if t.Type == common.Rating %}
 					rating:{% space %}
 				{% endif %}

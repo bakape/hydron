@@ -74,7 +74,9 @@ func stringifyTagType(t common.TagType) string {
 // Add a tag to search query and output query string
 func addToQuery(query string, tag common.Tag, substract bool) string {
 	buf := bytes.NewBufferString(query)
-	buf.WriteByte(' ')
+	if buf.Len() != 0 {
+		buf.WriteByte(' ')
+	}
 	if substract {
 		buf.WriteByte('-')
 	}
