@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"strings"
-	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/bakape/hydron/common"
@@ -13,11 +12,10 @@ import (
 Add tags to an image. All tags must be of same TagSource.
 imageID: internal ID of image
 tags: tags to add
-lastChange: last tag modification time to write
 */
-func AddTags(imageID int64, tags []common.Tag, lastChange time.Time) error {
+func AddTags(imageID int64, tags []common.Tag) error {
 	return InTransaction(func(tx *sql.Tx) (err error) {
-		return AddTagsTx(tx, imageID, tags, lastChange)
+		return AddTagsTx(tx, imageID, tags)
 	})
 }
 
@@ -27,10 +25,8 @@ TagSource.
 tx: transaction to use
 imageID: internal ID of image
 tags: tags to add
-lastChange: last tag modification time to write
 */
-func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag,
-	lastChange time.Time) (
+func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 	err error,
 ) {
 	getID := lazyPrepare(tx, `select id from tags where tag = ? and type = ?`)
@@ -38,13 +34,9 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag,
 	insertRelation := lazyPrepare(tx,
 		`insert or ignore into image_tags (image_id, tag_id, source)
 		values (?, ?, ?)`)
-	writeLastChange := lazyPrepare(tx,
-		`insert or replace into last_change (source, image_id, time)
-		values (?, ?, ?)`)
 	var (
-		tagID    int64
-		res      sql.Result
-		affected = make(map[common.TagSource]bool, 4)
+		tagID int64
+		res   sql.Result
 	)
 	for _, t := range tags {
 		err = getID.QueryRow(t.Tag, t.Type).Scan(&tagID)
@@ -65,17 +57,6 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag,
 		}
 
 		_, err = insertRelation.Exec(imageID, tagID, t.Source)
-		if err != nil {
-			return
-		}
-
-		affected[t.Source] = true
-	}
-
-	// Write last change timestamps
-	unix := lastChange.Unix()
-	for s := range affected {
-		_, err = writeLastChange.Exec(s, imageID, unix)
 		if err != nil {
 			return
 		}
@@ -132,39 +113,11 @@ func CompleTag(s string) (tags []string, err error) {
 	return
 }
 
-// Get time of last change for fetched tag resources
-func getLastChange(tx *sql.Tx, imageID int64, source common.TagSource) (
-	time.Time, error,
-) {
-	var t uint64
-	err := withTransaction(tx, sq.
-		Select("time").
-		From("last_change").
-		Where(squirrel.Eq{
-			"source":   source,
-			"image_id": imageID,
-		}),
-	).
-		QueryRow().
-		Scan(&t)
-	if err == sql.ErrNoRows {
-		err = nil
-	}
-	return time.Unix(int64(t), 0), err
-}
-
 // Update tags for a given image and TagSource.
 // All tags must be of same TagSource.
-// Tags are only updated, if the change timestamp is newer than the last.
 func UpdateTags(imageID int64, tags []common.Tag, source common.TagSource,
-	timeStamp time.Time,
 ) error {
 	return InTransaction(func(tx *sql.Tx) (err error) {
-		lastChange, err := getLastChange(tx, imageID, source)
-		if err != nil || !lastChange.Before(timeStamp) {
-			return
-		}
-
 		// Remove old tags
 		_, err = withTransaction(tx, sq.
 			Delete("image_tags").
@@ -178,7 +131,7 @@ func UpdateTags(imageID int64, tags []common.Tag, source common.TagSource,
 			return
 		}
 
-		err = AddTagsTx(tx, imageID, tags, timeStamp)
+		err = AddTagsTx(tx, imageID, tags)
 		return
 	})
 }

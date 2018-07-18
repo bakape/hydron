@@ -24,11 +24,11 @@ func fetchAllTags() error {
 	for i := 0; i < fetch.FetcherCount; i++ {
 		go func() {
 			for img := range passAll {
-				tags, changed, err := fetch.FetchTags(img.MD5)
+				tags, err := fetch.FetchTags(img.MD5)
 				if err != nil {
 					goto end
 				}
-				err = db.UpdateTags(img.ID, tags, common.Gelbooru, changed)
+				err = db.UpdateTags(img.ID, tags, common.Gelbooru)
 			end:
 				ch <- err
 			}

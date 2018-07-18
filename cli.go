@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/tags"
@@ -25,7 +23,7 @@ func addTags(sha1 string, tagStr string) error {
 	if err != nil {
 		return err
 	}
-	return db.AddTags(id, tags.FromString(tagStr, common.User), time.Now())
+	return db.AddTags(id, tags.FromString(tagStr, common.User))
 }
 
 // Remove tags from the target file from the CLI

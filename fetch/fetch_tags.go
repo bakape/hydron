@@ -1,20 +1,18 @@
 package fetch
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/tags"
+	"golang.org/x/net/html"
 )
 
 var fetchTags = make(chan request)
 
 // Number of parallel fetch workers
-const FetcherCount = 8
+const FetcherCount = 16
 
 type request struct {
 	md5 string
@@ -22,18 +20,122 @@ type request struct {
 }
 
 type response struct {
-	lastChange int64
-	tags       []common.Tag
-	err        error
+	tags []common.Tag
+	err  error
+}
+
+// Spawn 8 goroutines to perform parallel fetches
+func init() {
+	for i := 0; i < FetcherCount; i++ {
+		go func() {
+			for {
+				req := <-fetchTags
+				tags, err := fetchFromGelbooru(req.md5)
+				req.res <- response{
+					tags: tags,
+					err:  err,
+				}
+			}
+		}()
+	}
+}
+
+// Find the tag list in the document using depth-first recursion
+func findTags(n *html.Node) *html.Node {
+	if n.Type == html.ElementNode && n.Data == "div" {
+		for _, attr := range n.Attr {
+			if attr.Key == "id" && attr.Val == "searchTags" {
+				return n
+			}
+		}
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		found := findTags(c)
+		if found != nil {
+			return found
+		}
+	}
+
+	return nil
+}
+
+func scrapeTags(n *html.Node, t *[]common.Tag) {
+	for n := n.FirstChild; n != nil; n = n.NextSibling {
+		if n.Type != html.ElementNode || n.Data != "li" {
+			continue
+		}
+		class := ""
+		for _, attr := range n.Attr {
+			if attr.Key == "class" && strings.HasPrefix(attr.Val, "tag-type-") {
+				class = attr.Val
+				break
+			}
+		}
+		if class == "" {
+			continue
+		}
+
+		// Get last <a> child
+		var lastA *html.Node
+		for n := n.FirstChild; n != nil; n = n.NextSibling {
+			if n.Type == html.ElementNode && n.Data == "a" {
+				lastA = n
+			}
+		}
+		if lastA == nil {
+			continue
+		}
+
+		text := lastA.FirstChild
+		if text == nil || text.Type != html.TextNode || text.Data == "" {
+			continue
+		}
+		tag := tags.Normalize(text.Data, common.Gelbooru)
+		switch class {
+		case "tag-type-artist":
+			tag.Type = common.Author
+		case "tag-type-character":
+			tag.Type = common.Character
+		case "tag-type-copyright":
+			tag.Type = common.Series
+		default:
+			tag.Type = common.Undefined
+		}
+		*t = append(*t, tag)
+	}
+}
+
+func fetchFromGelbooru(md5 string) (tags []common.Tag, err error) {
+	r, err := http.Get(
+		"https://gelbooru.com/index.php?page=post&s=list&tags=md5:" + md5)
+	if err != nil {
+		return
+	}
+	defer r.Body.Close()
+
+	doc, err := html.Parse(r.Body)
+	if err != nil {
+		return
+	}
+	tagList := findTags(doc)
+	if tagList == nil {
+		return
+	}
+
+	tags = make([]common.Tag, 0, 64)
+	scrapeTags(tagList, &tags)
+
+	return
 }
 
 // Fetch tags from gelbooru for a given MD5 hash.
 // Return tags and last change time.
-func FetchTags(md5 string) ([]common.Tag, time.Time, error) {
+func FetchTags(md5 string) ([]common.Tag, error) {
 	ch := make(chan response)
 	fetchTags <- request{md5, ch}
 	res := <-ch
-	return res.tags, time.Unix(res.lastChange, 0), res.err
+	return res.tags, res.err
 }
 
 // Return, if fileType can possibly have tags fetched
@@ -44,61 +146,4 @@ func CanFetchTags(t common.FileType) bool {
 	default:
 		return false
 	}
-}
-
-// Spawn 8 goroutines to perform parallel fetches
-func init() {
-	for i := 0; i < FetcherCount; i++ {
-		go func() {
-			for {
-				req := <-fetchTags
-				tags, lastChange, err := fetchFromGelbooru(req.md5)
-				req.res <- response{
-					tags:       tags,
-					lastChange: lastChange,
-					err:        err,
-				}
-			}
-		}()
-	}
-}
-
-func fetchFromGelbooru(md5 string) (
-	re []common.Tag, lastChange int64, err error,
-) {
-	url := fmt.Sprintf(
-		"http://gelbooru.com/index.php?page=dapi&s=post&q=index&tags=md5:%s&json=1",
-		md5)
-	r, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	defer r.Body.Close()
-
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil || len(buf) == 0 {
-		return
-	}
-
-	type Data []struct {
-		Change       uint64
-		Rating, Tags string
-	}
-	var data Data
-	err = json.Unmarshal(buf, &data)
-	if err != nil {
-		return
-	}
-
-	if len(data) == 0 {
-		return
-	}
-	d := data[0]
-	if len(d.Tags) == 0 {
-		return
-	}
-
-	re = tags.FromString(d.Tags+" rating:"+d.Rating, common.Gelbooru)
-	lastChange = int64(d.Change)
-	return
 }

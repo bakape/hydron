@@ -68,6 +68,11 @@ var migrations = []func(*sql.Tx) error{
 			`create index i_image_duration on images(duration)`,
 		)
 	},
+	func(tx *sql.Tx) (err error) {
+		log.Printf(
+			"please run `hydron fetch_tags` to fetch scoped tags from Gelbooru")
+		return execAll(tx, `drop table last_change`)
+	},
 }
 
 // Run migrations from version `from`to version `to`

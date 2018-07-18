@@ -160,7 +160,7 @@ func writeFile(path string, buf []byte) (err error) {
 
 /*
 Attempt to import any readable stream
-f: strem to read
+f: stream to read
 addTags: Add a list of tags to all images
 fetchTags: fetch tags from gelbooru
 */
@@ -177,15 +177,12 @@ func ImportFile(f io.Reader, addTags string, fetchTags bool) (
 	}
 
 	if fetchTags && fetch.CanFetchTags(r.Type) {
-		var (
-			fetched    []common.Tag
-			changeTime time.Time
-		)
-		fetched, changeTime, err = fetch.FetchTags(r.MD5)
+		var fetched []common.Tag
+		fetched, err = fetch.FetchTags(r.MD5)
 		if err != nil {
 			return
 		}
-		err = db.AddTags(r.ID, fetched, changeTime)
+		err = db.AddTags(r.ID, fetched)
 		if err != nil {
 			return
 		}

@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/files"
@@ -406,7 +405,7 @@ func WriteImage(i common.Image) (id int64, err error) {
 			return
 		}
 
-		err = AddTagsTx(tx, id, i.Tags, time.Now())
+		err = AddTagsTx(tx, id, i.Tags)
 		return
 	})
 	return
