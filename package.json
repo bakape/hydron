@@ -2,6 +2,7 @@
   "name": "hydron",
   "version": "1.0.0",
   "description": "",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bakape/hydron.git"
