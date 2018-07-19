@@ -17,7 +17,7 @@ endif
 MXE_ROOT=$(HOME)/src/mxe/usr
 MXE_TARGET=x86_64-w64-mingw32.static
 
-.PHONY: client
+.PHONY: client all generate
 
 all: client generate
 	go build

@@ -7,6 +7,9 @@ import (
 
 var version = len(migrations)
 
+// Different keyword for different RDBMS
+var autoIncrement string
+
 var migrations = []func(*sql.Tx) error{
 	func(tx *sql.Tx) (err error) {
 		// Initialize DB
@@ -16,16 +19,16 @@ var migrations = []func(*sql.Tx) error{
 				val text not null
 			)`,
 			`create table tags (
-				id INTEGER PRIMARY KEY,
-				type tinyint not null,
+				id `+autoIncrement+`,
+				type smallint not null,
 				tag text not null
 			)`,
 			`create unique index i_tag_type on tags(type, tag)`,
 			// Enables prefix search optimization for LIKE queries
 			`create index i_tags on tags(tag)`,
 			`create table images (
-				id INTEGER PRIMARY KEY,
-				type tinyint not null,
+				id `+autoIncrement+`,
+				type smallint not null,
 				width int not null,
 				height int not null,
 				import_time int not null,
@@ -35,14 +38,14 @@ var migrations = []func(*sql.Tx) error{
 				sha1 text not null,
 				thumb_width int not null,
 				thumb_height int not null,
-				thumb_is_png tinyint not null
+				thumb_is_png boolean not null
 			)`,
 			`create unique index i_image_sha1 on images(sha1)`,
 			`create unique index i_image_md5 on images(md5)`,
 			`create table image_tags (
 				image_id int not null references images on delete cascade,
 				tag_id int not null references tags,
-				source tinyint not null
+				source smallint not null
 			)`,
 			`create index i_image_tags on image_tags(image_id)`,
 			`create index i_tag_images on image_tags(tag_id)`,
@@ -52,7 +55,7 @@ var migrations = []func(*sql.Tx) error{
 	func(tx *sql.Tx) (err error) {
 		return execAll(tx,
 			`create table last_change (
-				source tinyint not null,
+				source smallint not null,
 				image_id int not null references images on delete cascade,
 				time bigint not null,
 				primary key (source, image_id)
@@ -69,14 +72,21 @@ var migrations = []func(*sql.Tx) error{
 		)
 	},
 	func(tx *sql.Tx) (err error) {
-		log.Printf(
-			"please run `hydron fetch_tags` to fetch scoped tags from Gelbooru")
 		return execAll(tx, `drop table last_change`)
 	},
 }
 
 // Run migrations from version `from`to version `to`
 func runMigrations(from, to int) (err error) {
+	switch driver {
+	case "postgres":
+		autoIncrement = "serial primary key"
+	case "mysql":
+		autoIncrement = "integer primary key auto_increment"
+	case "sqlite3":
+		autoIncrement = "integer primary key autoincrement"
+	}
+
 	var tx *sql.Tx
 	for i := from; i < to; i++ {
 		log.Printf("upgrading database to version %d\n", i+1)
@@ -91,10 +101,10 @@ func runMigrations(from, to int) (err error) {
 		}
 
 		// Write new version number
-		_, err = tx.Exec(
-			`update main set val = $1 where id = 'version'`,
-			i+1,
-		)
+		_, err = withTransaction(tx, sq.Update("main").
+			Set("val", i+1).
+			Where("id = 'version'")).
+			Exec()
 		if err != nil {
 			return rollBack(tx, err)
 		}

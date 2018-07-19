@@ -1,4 +1,4 @@
-<h1> 
+<h1>
    <img src="logo/Hydron.png" alt="Hydron" height="25px"> hydron
 </h1>
 Media tagger and organizer backend and GUI frontend.
@@ -16,6 +16,13 @@ Platforms: Linux, OSX, Win64
 ### Runtime dependecies
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick++
+
+### DBMS settings
+
+By default hydron uses SQLite3 but you might want to switch to a diffrent
+DBMS like PostgreSQL for performance reasons. To do this copy the sample config
+file `docs/db_conf.json` into either `~/.hydron/` or `%APPDATA%\hydron`,
+depending on your OS, and configure appropriately.
 
 ## Building
 

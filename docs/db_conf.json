@@ -1,0 +1,4 @@
+{
+	"driver": "postgres",
+	"connection": "user=hydron password=hydron dbname=hydron sslmode=disable"
+}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/tags"
@@ -18,6 +19,10 @@ const pageSize = 100
 type IDAndMD5 struct {
 	ID  int64
 	MD5 string
+}
+
+func selectTagID() squirrel.SelectBuilder {
+	return sq.Select("id").From("tags")
 }
 
 // Searches images by params and executes function on each.
@@ -45,18 +50,6 @@ func SearchImages(params string, page int, fn func(common.CompactImage) error) (
 		// Get tag IDs for all tag params
 		if len(split) != 0 {
 			err = InTransaction(func(tx *sql.Tx) (err error) {
-				qWithType := lazyPrepare(tx,
-					`select id from tags
-					where type = ? and tag = ?`)
-				// Undefined tag type matches the first tag type available.
-				// User should be specific about tag types, when matching by
-				// artist, character, series, etc.
-				qAnyType := lazyPrepare(tx,
-					`select id from tags
-					where tag = ?
-					order by type asc
-					limit 1`)
-
 				var id int64
 				for _, s := range split {
 					isNeg := false
@@ -68,9 +61,18 @@ func SearchImages(params string, page int, fn func(common.CompactImage) error) (
 
 					var rs rowScanner
 					if t.Type == common.Undefined {
-						rs = qAnyType.QueryRow(t.Tag)
+						// Undefined tag type matches the first tag type
+						// available. User should be specific about tag types,
+						// when matching by artist, character, series, etc.
+						rs = withTransaction(tx, selectTagID().
+							Where("tag = ?", t.Tag).
+							OrderBy("type asc").
+							Limit(1)).
+							QueryRow()
 					} else {
-						rs = qWithType.QueryRow(t.Type, t.Tag)
+						rs = withTransaction(tx, selectTagID().
+							Where("type = ? and tag = ?", t.Type, t.Tag)).
+							QueryRow()
 					}
 					err = rs.Scan(&id)
 					switch err {
@@ -375,10 +377,14 @@ func GetGelbooruTaggable() (pairs []IDAndMD5, err error) {
 
 // Return, if images is already imported into the database
 func IsImported(sha1 string) (imported bool, err error) {
-	err = db.QueryRow(
-		`select exists (select 1 from images where sha1 = ?)`,
-		sha1,
-	).
+	inner, args, err := sq.Select("1").
+		From("images").
+		Where("sha1 = ?", sha1).
+		ToSql()
+	if err != nil {
+		return
+	}
+	err = db.QueryRow(fmt.Sprintf("select exists (%s)", inner), args...).
 		Scan(&imported)
 	return
 }
@@ -395,12 +401,7 @@ func WriteImage(i common.Image) (id int64, err error) {
 				i.Type, i.Width, i.Height, i.ImportTime, i.Size, i.Duration,
 				i.MD5, i.SHA1, i.Thumb.Width, i.Thumb.Height, i.Thumb.IsPNG,
 			)
-		var res sql.Result
-		res, err = withTransaction(tx, q).Exec()
-		if err != nil {
-			return
-		}
-		id, err = res.LastInsertId()
+		id, err = getLastID(tx, q)
 		if err != nil {
 			return
 		}

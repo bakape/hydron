@@ -118,62 +118,22 @@ func (e wrappedError) Error() string {
 	return text
 }
 
-// Helper for lazily preparing statement
-type preparedStatement struct {
-	str   string
-	tx    *sql.Tx
-	query *sql.Stmt
-	err   error
-	row   *sql.Row
-}
-
-// Lazily prepare a statement for transaction
-func lazyPrepare(tx *sql.Tx, query string) preparedStatement {
-	return preparedStatement{
-		str: query,
-		tx:  tx,
-	}
-}
-
-func (p *preparedStatement) prepare() {
-	if p.query != nil || p.err != nil {
+// PostgreSQL does not support LastInsertId() and needs some modifications for
+// getting it
+func getLastID(tx *sql.Tx, q squirrel.InsertBuilder) (id int64, err error) {
+	switch driver {
+	case "postgres":
+		err = withTransaction(tx, q.Suffix("returning id")).
+			QueryRow().
+			Scan(&id)
+		return
+	default:
+		var res sql.Result
+		res, err = withTransaction(tx, q).Exec()
+		if err != nil {
+			return
+		}
+		id, err = res.LastInsertId()
 		return
 	}
-	p.query, p.err = p.tx.Prepare(p.str)
-}
-
-func (p *preparedStatement) Exec(args ...interface{}) (sql.Result, error) {
-	p.prepare()
-	if p.err != nil {
-		return nil, p.err
-	}
-	var res sql.Result
-	res, p.err = p.query.Exec(args...)
-	return res, p.err
-}
-
-func (p *preparedStatement) Query(args ...interface{}) (tableScanner, error) {
-	p.prepare()
-	if p.err != nil {
-		return nil, p.err
-	}
-	var tb tableScanner
-	tb, p.err = p.query.Query(args...)
-	return tb, p.err
-}
-
-func (p *preparedStatement) QueryRow(args ...interface{}) rowScanner {
-	p.prepare()
-	if p.err != nil {
-		return p
-	}
-	p.row = p.query.QueryRow(args...)
-	return p
-}
-
-func (p *preparedStatement) Scan(dest ...interface{}) error {
-	if p.err != nil {
-		return p.err
-	}
-	return p.row.Scan(dest...)
 }

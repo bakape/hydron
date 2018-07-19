@@ -29,26 +29,27 @@ tags: tags to add
 func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 	err error,
 ) {
-	getID := lazyPrepare(tx, `select id from tags where tag = ? and type = ?`)
-	insertTag := lazyPrepare(tx, `insert into tags (tag, type) values (?, ?)`)
-	insertRelation := lazyPrepare(tx,
-		`insert or ignore into image_tags (image_id, tag_id, source)
-		values (?, ?, ?)`)
-	var (
-		tagID int64
-		res   sql.Result
-	)
+	if driver == "postgres" {
+		// Because SERIAL tag IDs can collide
+		_, err = tx.Exec("lock table tags")
+		if err != nil {
+			return
+		}
+	}
+	var tagID int64
 	for _, t := range tags {
-		err = getID.QueryRow(t.Tag, t.Type).Scan(&tagID)
+		err = withTransaction(tx, selectTagID().
+			Where("tag = ? and type = ?", t.Tag, t.Type)).
+			QueryRow().
+			Scan(&tagID)
 		switch err {
 		case nil:
 		case sql.ErrNoRows:
 			err = nil
-			res, err = insertTag.Exec(t.Tag, t.Type)
-			if err != nil {
-				return
-			}
-			tagID, err = res.LastInsertId()
+			tagID, err = getLastID(tx, sq.
+				Insert("tags").
+				Columns("tag", "type").
+				Values(t.Tag, t.Type))
 			if err != nil {
 				return
 			}
@@ -56,7 +57,11 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 			return
 		}
 
-		_, err = insertRelation.Exec(imageID, tagID, t.Source)
+		_, err = withTransaction(tx, sq.
+			Insert("image_tags").
+			Columns("image_id", "tag_id", "source").
+			Values(imageID, tagID, t.Source)).
+			Exec()
 		if err != nil {
 			return
 		}
@@ -68,15 +73,18 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 // Remove specific tags from an image
 func RemoveTags(imageID int64, tags []common.Tag) error {
 	return InTransaction(func(tx *sql.Tx) (err error) {
-		q := lazyPrepare(tx,
-			`delete from image_tags
-			where image_id = ?
-				and source = ?
-				and tag_id = (
-					select id from tags
-					where tag = ? and type = ?)`)
 		for _, t := range tags {
-			_, err = q.Exec(imageID, t.Source, t.Tag, t.Type)
+			_, err = withTransaction(tx, sq.
+				Delete("image_tags").
+				Where(
+					`image_id = ?
+					and source = ?
+					and tag_id = (
+						select id from tags
+						where tag = ? and type = ?)`,
+					imageID, t.Source, t.Tag, t.Type,
+				)).
+				Exec()
 			if err != nil {
 				return
 			}

@@ -2,28 +2,60 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/bakape/hydron/files"
+	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
-	db *sql.DB
-	sq squirrel.StatementBuilderType
+	db     *sql.DB
+	sq     squirrel.StatementBuilderType
+	driver string
 )
 
 func Open() (err error) {
-	db, err = sql.Open("sqlite3", filepath.Join(files.RootPath, "db.db"))
+	// Read config file, if any
+	var conf struct {
+		Driver, Connection string
+	}
+	buf, err := ioutil.ReadFile(filepath.Join(files.RootPath, "db_conf.json"))
+	switch {
+	case os.IsNotExist(err):
+		err = nil
+	case err == nil:
+		err = json.Unmarshal(buf, &conf)
+		if err != nil {
+			return
+		}
+	default:
+		return
+	}
+	if conf.Driver == "" || conf.Connection == "" {
+		conf.Driver = "sqlite3"
+		conf.Connection = filepath.Join(files.RootPath, "db.db")
+	}
+	driver = conf.Driver
+
+	db, err = sql.Open(conf.Driver, conf.Connection)
 	if err != nil {
 		return
 	}
-	// To avoid locking "database locked" errors. Hard limitation of SQLite,
-	// when used from multiple threads.
-	db.SetMaxOpenConns(1)
 	sq = squirrel.StatementBuilder.RunWith(squirrel.NewStmtCacheProxy(db))
+	switch conf.Driver {
+	case "sqlite3":
+		// To avoid locking "database locked" errors. Hard limitation of SQLite,
+		// when used from multiple threads.
+		db.SetMaxOpenConns(1)
+	case "postgres":
+		sq = sq.PlaceholderFormat(squirrel.Dollar)
+	}
 
 	var currentVersion int
 	err = sq.Select("val").
@@ -32,7 +64,8 @@ func Open() (err error) {
 		QueryRow().
 		Scan(&currentVersion)
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "no such table") {
+		if s := err.Error(); strings.HasPrefix(s, "no such table") ||
+			s == `pq: relation "main" does not exist` {
 			err = nil
 		} else {
 			return
