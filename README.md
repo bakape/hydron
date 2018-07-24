@@ -35,3 +35,7 @@ depending on your OS, and configure appropriately.
 * pthread
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
+* Git
+
+On Debian-based systems these can be installed with the following or similar:
+`apt-get install -y build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev libavformat-dev libswscale-dev libgraphicsmagick1-dev ghostscript git golang`
