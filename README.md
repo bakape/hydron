@@ -15,7 +15,7 @@ Platforms: Linux, OSX, Win64
 
 ### Runtime dependecies
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
-* GraphicsMagick++
+* GraphicsMagick
 
 ### DBMS settings
 
@@ -30,8 +30,8 @@ depending on your OS, and configure appropriately.
 
 ### Build dependencies
 * [Go](https://golang.org/doc/install) >= 1.10
-* C11 and C++17 compilers
+* C11 compiler
 * pkg-config
 * pthread
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
-* GraphicsMagick++
+* GraphicsMagick
