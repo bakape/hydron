@@ -1,6 +1,7 @@
 version_base=$(shell git describe --tags)
 version=$(version_base)
 binary=hydron
+WIN_ARCH=amd64
 ifeq ($(OS), Windows_NT)
 	version:=win_x86_64-$(version)
 	export GOPATH=$(HOME)/go
@@ -37,7 +38,7 @@ generate:
 # 	mxe-x86-64-w64-mingw32.static-ffmpeg
 #   mxe-x86-64-w64-mingw32.static-graphicsmagick
 cross_compile_windows:
-	CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
+	CGO_ENABLED=1 GOOS=windows GOARCH=$(WIN_ARCH) \
 	CC=$(MXE_ROOT)/bin/$(MXE_TARGET)-gcc \
 	CXX=$(MXE_ROOT)/bin/$(MXE_TARGET)-g++ \
 	PKG_CONFIG=$(MXE_ROOT)/bin/$(MXE_TARGET)-pkg-config \
@@ -46,28 +47,8 @@ cross_compile_windows:
 	CGO_LDFLAGS_ALLOW='-mconsole' \
 	go build -v -a -o hydron.exe --ldflags '-extldflags "-static"'
 
-cross_package_windows: client cross_compile_windows
-	zip -r -9 hydron-win_x86_64-$(version_base).zip hydron.exe
+cross_package_windows: cross_compile_windows
+	zip -r -9 hydron-win_$(WIN_ARCH)-$(version_base).zip hydron.exe
 
 clean:
 	rm -rf hydron hydron.exe hydron-*.zip
-
-# all: cli qt
-
-# package: all
-# 	zip -9 hydron-$(version).zip build/*
-
-# setup_mingw:
-# 	pacman -Su --noconfirm --needed mingw-w64-x86_64-qt-creator mingw-w64-x86_64-qt5-static mingw-w64-x86_64-gcc mingw-w64-x86_64-pkg-config mingw-w64-x86_64-ffmpeg-static mingw-w64-x86_64-graphicsmagick-static zip
-# 	pacman -Scc --noconfirm
-
-# cli:
-# 	go build -v
-# 	mkdir -p build
-# 	cp -f $(binary) build
-
-# qt:
-# 	cd hydron-qt && qmake "CONFIG+=c++17 qtquickcompiler static reduce-relocations ltcg"
-# 	$(MAKE) -C hydron-qt
-# 	mkdir -p build
-# 	cp -f hydron-qt/hydron-qt build
