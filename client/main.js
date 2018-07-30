@@ -1,9 +1,10 @@
 const browser = document.getElementById("browser");
 const imageView = document.getElementById("image-view");
+const search = document.getElementById("search");
+const figureWidth = 200 + 4; // With marging
 
 // Search suggestions
 (() => {
-	const search = document.getElementById("search");
 	const sugg = document.getElementById("search-suggestions");
 	if (!search) {
 		return;
@@ -85,11 +86,10 @@ const imageView = document.getElementById("image-view");
 		if (!files.length || isFileInput(e.target)) {
 			return;
 		}
-		e.stopPropagation();
-		e.preventDefault();
+		preventDefault(e);
 
 		let done = 0;
-		browser.innerHTML = "";
+		browser.innerHTML = search.value = "";
 		for (const f of files) {
 			process(f).catch(alert);
 		}
@@ -111,13 +111,15 @@ const imageView = document.getElementById("image-view");
 			cont.innerHTML = await r.text();
 			browser.appendChild(cont.firstChild);
 			renderProgress(++done / files.length);
+			if (done === 1) {
+				setHighlight(browser.querySelector("figure"));
+			}
 		}
 	});
 
 	function stopDefault(e) {
 		if (!isFileInput(e.target)) {
-			e.stopPropagation();
-			e.preventDefault();
+			preventDefault(e);
 		}
 	}
 
@@ -130,6 +132,70 @@ window.onhashchange = e =>
 	loadHash(e.newURL);
 loadHash(location.toString(), true); // On page load
 
+browser.addEventListener("click", e => {
+	if (!e.target.closest || e.target.tagName === "INPUT") {
+		return;
+	}
+	viewImage(e.target.closest("figure").getAttribute("data-sha1"));
+	setHighlight(e.target);
+}, { passive: true });
+
+browser.addEventListener("keydown", e => {
+	let matched = true;
+	let h;
+	switch (e.key) {
+		case "ArrowDown":
+			moveHighlight(0, +1);
+			break;
+		case "ArrowUp":
+			moveHighlight(0, -1);
+			break;
+		case "ArrowRight":
+			moveHighlight(+1, 0);
+			break;
+		case "ArrowLeft":
+			moveHighlight(-1, 0);
+			break;
+		case " ": // SpaceBar
+			h = getHighlighted();
+			if (h) {
+				const chb = h.querySelector("input[type=checkbox]")
+				chb.checked = !chb.checked;
+			}
+			break;
+		case "Enter":
+			h = getHighlighted();
+			if (h) {
+				viewImage(h.getAttribute("data-sha1"));
+			}
+			break;
+		case "PageDown":
+			moveHighlight(0, +browserWidth());
+			break;
+		case "PageUp":
+			moveHighlight(0, -browserWidth());
+			break;
+		case "Home":
+			setHighlight(browser.querySelector("figure"));
+			break;
+		case "End":
+			setHighlight(browser.querySelector("figure:last-child"));
+			break;
+		default:
+			matched = false;
+	}
+	if (matched) {
+		preventDefault(e);
+	}
+});
+
+imageView.addEventListener("keydown", e => {
+	if (e.key === "Escape" && imageView.innerHTML !== "") {
+		history.back();
+		browser.focus();
+	}
+}, { passive: true });
+
 function loadHash(url, firstLoad) {
 	const hash = new URL(url).hash;
 	if (hash.startsWith("#img:")) {
@@ -139,17 +205,19 @@ function loadHash(url, firstLoad) {
 	}
 }
 
-browser.addEventListener("click", e => {
-	if (e.target.closest && e.target.tagName !== "INPUT") {
-		viewImage(e.target.closest("figure").getAttribute("data-sha1"));
-	}
-}, { passive: true });
+// Return function, that prevents default behavior, when fn() returns true
+function maybePreventDefault(fn) {
+	return e => {
+		if (fn()) {
+			preventDefault(e);
+		}
+	};
+}
 
-document.addEventListener("keydown", e => {
-	if (e.key === "Escape" && imageView.innerHTML !== "") {
-		history.back();
-	}
-}, { passive: true });
+function preventDefault(e) {
+	e.stopPropagation();
+	e.preventDefault();
+}
 
 function renderProgress(val) {
 	if (val === 1) {
@@ -165,4 +233,78 @@ async function viewImage(sha1) {
 	}
 	location.hash = `#img:${sha1}`;
 	imageView.innerHTML = await r.text();
+	imageView.focus();
+}
+
+function browserWidth() {
+	return Math.floor(browser.offsetWidth / figureWidth);
+}
+
+function browserHeight() {
+	return Math.floor(browser.offsetHeight / figureWidth);
+}
+
+// Returns browser grid as 2D array and the position of the highlighted figure
+function browserGrid() {
+	const colums = browserWidth();
+	const grid = [];
+	let c = 0;
+	let highlighted;
+	for (const f of browser.querySelectorAll("figure")) {
+		if (!grid[c]) {
+			grid[c] = [];
+		}
+		if (f.classList.contains("highlight")) {
+			highlighted = { x: grid[c].length, y: c };
+		}
+		grid[c].push(f);
+		if (grid[c].length === colums) {
+			c++;
+		}
+	}
+	return { grid, highlighted };
+}
+
+function moveHighlight(xMove, yMove) {
+	let { grid, highlighted: { x, y } } = browserGrid();
+	x += xMove;
+	y += yMove;
+
+	// Wrap around rows
+	const bw = browserWidth();
+	if (x < 0) {
+		y--;
+		x += bw;
+	} else if (x >= bw) {
+		y++;
+		x -= bw;
+	}
+
+	if (!grid[y]) {
+		return;
+	}
+	const h = grid[y][x];
+	if (!h) {
+		return;
+	}
+	setHighlight(h);
+}
+
+function getHighlighted() {
+	return browser.querySelector("figure.highlight");
+}
+
+function setHighlight(target) {
+	if (!target || !target.closest || !(target = target.closest("figure"))) {
+		return;
+	}
+	const h = getHighlighted();
+	if (h) {
+		h.classList.remove("highlight");
+	}
+	target.classList.add("highlight");
+	target.scrollIntoView({
+		behavior: "smooth",
+		block: "center",
+	});
 }

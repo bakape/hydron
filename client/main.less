@@ -4,6 +4,17 @@
 @body-text: #c5c8c6;
 @body-bg: #1d1f21;
 
+
+.round-corners() {
+	border-radius: 0.2em;
+}
+
+.hide-selection() {
+	&::selection {
+		color: rgba(0, 0, 0, 0);
+	}
+}
+
 #top-banner {
 	position: fixed;
 	top: 0;
@@ -24,6 +35,7 @@
 	}
 	input[type=search] {
 		width: 100%;
+		.round-corners();
 	}
 	span {
 		margin: 0 0.5em;
@@ -45,26 +57,30 @@ body {
 	display: flex;
 	flex-wrap: wrap;
 	padding-top: 1.7em;
+	&, * {
+		.hide-selection();
+	}
 	figure {
 		padding: 0;
 		display: flex;
-		margin: 5px;
+		margin: 2px;
 		position: relative;
+		width: 200px;
+		height: 200px;
 		input[type=checkbox] {
 			position: absolute;
 			left: 0;
 			top: 0;
 			z-index: 10;
 			margin: 0.5em;
-			transform: scale(1.3);
+			transform: scale(1.5);
+			user-select: none;
 		}
 	}
 	img {
-		border-radius: 1em;
+		border-radius: 0.1em;
 		margin: auto;
-		&::selection {
-			color: rgba(0, 0, 0, 0);
-		}
+		.round-corners();
 	}
 }
 
@@ -74,12 +90,11 @@ body {
 	left: 0;
 	width: 100%;
 	height: 100%;
-	border-radius: 1em;
+	.round-corners();
 	opacity: 0.4;
-}
-
-input[type=checkbox]:checked + .background {
-	background-color: @selected;
+	figure.highlight & {
+		background-color: rgba(red(@selected), green(@selected), blue(@selected), 0.7);
+	}
 }
 
 #image-view {
@@ -92,6 +107,7 @@ input[type=checkbox]:checked + .background {
 	z-index: 100;
 	display: flex;
 	background: @body-bg;
+	.hide-selection();
 	&:empty {
 		display: none;
 	}
@@ -113,6 +129,7 @@ input[type=checkbox]:checked + .background {
     padding: 0.2em;
     overflow-y: auto;
 	max-height: 100vh;
+	.hide-selection();
 }
 
 .tag-undefined a {

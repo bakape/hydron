@@ -52,11 +52,11 @@ func StreamBrowser(qw422016 *qt422016.Writer, params string, page, totalPages in
 	//line browser.qtpl:23
 	streampagination(qw422016, page, totalPages, params)
 	//line browser.qtpl:23
-	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><div id="image-view"></div><section id="browser">`)
+	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><div id="image-view" tabindex="-1"></div><section id="browser" tabindex="1">`)
 	//line browser.qtpl:31
-	for _, img := range imgs {
+	for i, img := range imgs {
 		//line browser.qtpl:32
-		StreamThumbnail(qw422016, img)
+		StreamThumbnail(qw422016, img, i == 0)
 		//line browser.qtpl:33
 	}
 	//line browser.qtpl:33
@@ -198,7 +198,7 @@ func streampageLink(qw422016 *qt422016.Writer, values url.Values, page int, text
 	//line browser.qtpl:75
 	qw422016.N().S(values.Encode())
 	//line browser.qtpl:75
-	qw422016.N().S(`">`)
+	qw422016.N().S(`" tabindex="2">`)
 	//line browser.qtpl:76
 	qw422016.N().S(text)
 	//line browser.qtpl:76

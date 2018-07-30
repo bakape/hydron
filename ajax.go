@@ -12,7 +12,7 @@ import (
 func serveThumbnail(w http.ResponseWriter, r *http.Request) {
 	img, err := db.GetImage(extractParam(r, "id"))
 	passQueryError(w, r, err, func() {
-		serveHTML(w, r, templates.Thumbnail(img.CompactImage))
+		serveHTML(w, r, templates.Thumbnail(img.CompactImage, false))
 	})
 }
 

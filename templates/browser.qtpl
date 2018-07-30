@@ -26,10 +26,10 @@
 				<div id="progress-bar"></div>
 			</div>
 		</nav>
-		<div id="image-view"></div>
-		<section id="browser">
-			{% for _, img := range imgs %}
-				{%= Thumbnail(img) %}
+		<div id="image-view" tabindex="-1"></div>
+		<section id="browser" tabindex="1">
+			{% for i, img := range imgs %}
+				{%= Thumbnail(img, i == 0) %}
 			{% endfor %}
 		</section>
 		<script src="/assets/main.js" async></script>
@@ -72,7 +72,7 @@ Links to different pages on a search page
 Link to a different paginated search page
 {% func pageLink(values url.Values, page int, text string) %}{% stripspace %}
 	{% code values.Set("page", strconv.Itoa(page)) %}
-	<a href="?{%s= values.Encode() %}">
+	<a href="?{%s= values.Encode() %}" tabindex="2">
 		{%s= text %}
 	</a>
 {% endstripspace %}{% endfunc %}

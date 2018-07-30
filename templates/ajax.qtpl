@@ -5,8 +5,13 @@ Various AJAX-rendered HTML
 {% import "net/url" %}
 {% import "strconv" %}
 
-{% func Thumbnail(img common.CompactImage) %}{% stripspace %}
-	<figure data-type="{%d int(img.Type) %}" data-sha1="{%s= img.SHA1 %}">
+{% func Thumbnail(img common.CompactImage, highlight bool) %}{% stripspace %}
+	<figure data-type="{%d int(img.Type) %}"{% space %}
+		data-sha1="{%s= img.SHA1 %}"
+		{% if highlight %}
+			{% space %}class="highlight"
+		{% endif %}
+	>
 		<input type="checkbox" name="img:{%s= img.SHA1 %}">
 		<div class="background"></div>
 		<img width="{%s= strconv.FormatUint(img.Thumb.Width, 10) %}"{% space %}
