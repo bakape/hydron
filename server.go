@@ -237,7 +237,13 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	img, err := imp.ImportFile(f, r.Form.Get("tags"),
+	size, err := strconv.ParseUint(r.Header.Get("Content-Length"), 10, 64)
+	if err != nil {
+		sendError(w, 400, err)
+		return
+	}
+
+	img, err := imp.ImportFile(f, int(size), r.Form.Get("tags"),
 		r.Form.Get("fetch_tags") == "true")
 	switch err {
 	case nil:

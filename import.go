@@ -34,33 +34,7 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 	for i := 0; i < n; i++ {
 		go func() {
 			for p := range passPaths {
-				f, err := os.Open(p)
-				if err != nil {
-					goto end
-				}
-
-				_, err = imp.ImportFile(f, tagStr, fetchTags)
-				switch err {
-				case nil:
-				case imp.ErrImported:
-					err = nil
-				default:
-					err = fmt.Errorf("%s: %s", p, err)
-					goto end
-				}
-
-				if del {
-					// Close file before removing
-					f.Close()
-					f = nil
-					err = os.Remove(p)
-				}
-
-			end:
-				if f != nil {
-					f.Close()
-				}
-				ch <- err
+				ch <- importPath(p, del, fetchTags, tagStr)
 			}
 		}()
 	}
@@ -85,4 +59,34 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 	p.Close()
 
 	return nil
+}
+
+func importPath(p string, del, fetchTags bool, tagStr string) (err error) {
+	f, err := os.Open(p)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return
+	}
+
+	_, err = imp.ImportFile(f, int(info.Size()), tagStr, fetchTags)
+	switch err {
+	case nil:
+	case imp.ErrImported:
+		err = nil
+	default:
+		err = fmt.Errorf("%s: %s", p, err)
+		return
+	}
+
+	if del {
+		// Close file before removing
+		f.Close()
+		f = nil
+		err = os.Remove(p)
+	}
+	return
 }

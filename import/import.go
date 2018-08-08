@@ -1,7 +1,6 @@
 package imp
 
 import (
-	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
@@ -37,6 +36,7 @@ var thumbnailerOpts = thumbnailer.Options{
 
 type request struct {
 	f       io.Reader
+	size    int
 	addTags string
 	res     chan<- response
 }
@@ -53,7 +53,7 @@ func init() {
 		go func() {
 			for {
 				req := <-importFile
-				img, err := doImport(req.f, req.addTags)
+				img, err := doImport(req.f, req.size, req.addTags)
 				req.res <- response{
 					Image: img,
 					err:   err,
@@ -64,16 +64,14 @@ func init() {
 }
 
 // Worker function for file importing
-func doImport(f io.Reader, addTags string) (r common.Image, err error) {
-	srcBuf := bytes.NewBuffer(thumbnailer.GetBuffer())
-	defer func() {
-		thumbnailer.ReturnBuffer(srcBuf.Bytes())
-	}()
-	_, err = srcBuf.ReadFrom(f)
+func doImport(f io.Reader, size int, addTags string,
+) (r common.Image, err error) {
+	srcBuf, err := thumbnailer.ReadInto(thumbnailer.GetBufferCap(size), f)
 	if err != nil {
 		return
 	}
-	sHash := sha1.Sum(srcBuf.Bytes())
+	defer thumbnailer.ReturnBuffer(srcBuf)
+	sHash := sha1.Sum(srcBuf)
 	r.SHA1 = hex.EncodeToString(sHash[:])
 
 	// Check, if not already in the database
@@ -86,8 +84,7 @@ func doImport(f io.Reader, addTags string) (r common.Image, err error) {
 		return
 	}
 
-	src, thumb, err := thumbnailer.ProcessBuffer(srcBuf.Bytes(),
-		thumbnailerOpts)
+	src, thumb, err := thumbnailer.ProcessBuffer(srcBuf, thumbnailerOpts)
 	switch err {
 	case nil:
 	case thumbnailer.ErrNoStreams:
@@ -101,7 +98,7 @@ func doImport(f io.Reader, addTags string) (r common.Image, err error) {
 	}
 	defer thumbnailer.ReturnBuffer(thumb.Data)
 
-	mHash := md5.Sum(srcBuf.Bytes())
+	mHash := md5.Sum(srcBuf)
 	r = common.Image{
 		CompactImage: common.CompactImage{
 			Type: common.MimeTypes[src.Mime],
@@ -131,7 +128,7 @@ func doImport(f io.Reader, addTags string) (r common.Image, err error) {
 	go func() {
 		errCh <- writeFile(files.ThumbPath(r.SHA1, thumb.IsPNG), thumb.Data)
 	}()
-	err = writeFile(files.SourcePath(r.SHA1, r.Type), srcBuf.Bytes())
+	err = writeFile(files.SourcePath(r.SHA1, r.Type), srcBuf)
 	if err != nil {
 		return
 	}
@@ -161,14 +158,15 @@ func writeFile(path string, buf []byte) (err error) {
 /*
 Attempt to import any readable stream
 f: stream to read
+size: estimated file size
 addTags: Add a list of tags to all images
 fetchTags: fetch tags from gelbooru
 */
-func ImportFile(f io.Reader, addTags string, fetchTags bool) (
+func ImportFile(f io.Reader, size int, addTags string, fetchTags bool) (
 	r common.Image, err error,
 ) {
 	ch := make(chan response)
-	importFile <- request{f, addTags, ch}
+	importFile <- request{f, size, addTags, ch}
 	res := <-ch
 	r = res.Image
 	err = res.err
