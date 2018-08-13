@@ -141,6 +141,9 @@ browser.addEventListener("click", e => {
 }, { passive: true });
 
 browser.addEventListener("keydown", e => {
+	if (e.getModifierState("Alt")) {
+		return;
+	}
 	let matched = true;
 	let h;
 	switch (e.key) {
