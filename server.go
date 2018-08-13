@@ -15,7 +15,6 @@ import (
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/files"
-	"github.com/bakape/hydron/import"
 	"github.com/bakape/hydron/tags"
 	"github.com/bakape/hydron/templates"
 	"github.com/dimfeld/httptreemux"
@@ -240,49 +239,6 @@ func serveByID(w http.ResponseWriter, r *http.Request) {
 	passQueryError(w, r, err, func() {
 		serveJSON(w, r, img)
 	})
-}
-
-// Download and import a file from the client
-func importUpload(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(0)
-	if err != nil {
-		sendError(w, 400, err)
-		return
-	}
-
-	f, _, err := r.FormFile("file")
-	if err != nil {
-		sendError(w, 400, err)
-		return
-	}
-	defer f.Close()
-
-	size, err := strconv.ParseUint(r.Header.Get("Content-Length"), 10, 64)
-	if err != nil {
-		sendError(w, 400, err)
-		return
-	}
-
-	img, err := imp.ImportFile(f, int(size), r.Form.Get("tags"),
-		r.Form.Get("fetch_tags") == "true")
-	switch err {
-	case nil:
-	case imp.ErrImported:
-		// Still return the JSON, if already imported
-		img, err = db.GetImage(img.SHA1)
-		if err != nil {
-			send500(w, r, err)
-			return
-		}
-	case imp.ErrUnsupportedFile:
-		sendError(w, 415, err)
-		return
-	default:
-		send500(w, r, err)
-		return
-	}
-
-	serveJSON(w, r, img)
 }
 
 // Remove files from the database by ID

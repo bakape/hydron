@@ -35,7 +35,7 @@ var thumbnailerOpts = thumbnailer.Options{
 }
 
 type request struct {
-	f       io.Reader
+	f       io.ReadSeeker
 	size    int
 	addTags string
 	res     chan<- response
@@ -64,15 +64,38 @@ func init() {
 }
 
 // Worker function for file importing
-func doImport(f io.Reader, size int, addTags string,
+func doImport(f io.ReadSeeker, size int, addTags string,
 ) (r common.Image, err error) {
+	// Generate SHA1 hash while streaming file to reduce memory allocations in
+	// case of file already existing in the DB. Introduces a small overhead, if
+	// the file is not already imported, but that is mostly mitigated by the
+	// drive cache.
+	var (
+		digest = sha1.New()
+		buf    [512]byte
+		n      int
+	)
+	for {
+		n, err = f.Read(buf[:])
+		switch err {
+		case nil:
+			if n > 0 {
+				digest.Write(buf[0:n])
+			}
+		case io.EOF:
+			r.SHA1 = hex.EncodeToString(digest.Sum(nil))
+			goto process
+		default:
+			return
+		}
+	}
+
+process:
 	srcBuf, err := thumbnailer.ReadInto(thumbnailer.GetBufferCap(size), f)
 	if err != nil {
 		return
 	}
 	defer thumbnailer.ReturnBuffer(srcBuf)
-	sHash := sha1.Sum(srcBuf)
-	r.SHA1 = hex.EncodeToString(sHash[:])
 
 	// Check, if not already in the database
 	isImported, err := db.IsImported(r.SHA1)
@@ -122,17 +145,11 @@ func doImport(f io.Reader, size int, addTags string,
 		Tags:       tags.FromString(addTags, common.User),
 	}
 
-	// Write files in parallel.
-	// Buffered to prevent goroutine leaks on early return.
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- writeFile(files.ThumbPath(r.SHA1, thumb.IsPNG), thumb.Data)
-	}()
-	err = writeFile(files.SourcePath(r.SHA1, r.Type), srcBuf)
+	err = writeFile(files.ThumbPath(r.SHA1, thumb.IsPNG), thumb.Data)
 	if err != nil {
 		return
 	}
-	err = <-errCh
+	err = writeFile(files.SourcePath(r.SHA1, r.Type), srcBuf)
 	if err != nil {
 		return
 	}
@@ -162,9 +179,8 @@ size: estimated file size
 addTags: Add a list of tags to all images
 fetchTags: fetch tags from gelbooru
 */
-func ImportFile(f io.Reader, size int, addTags string, fetchTags bool) (
-	r common.Image, err error,
-) {
+func ImportFile(f io.ReadSeeker, size int, addTags string, fetchTags bool,
+) (r common.Image, err error) {
 	ch := make(chan response)
 	importFile <- request{f, size, addTags, ch}
 	res := <-ch
