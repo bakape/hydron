@@ -3,8 +3,8 @@
 {% import "net/url" %}
 {% import "strings" %}
 
-{% func Browser(params string, page, totalPages int, imgs []common.CompactImage) %}{% stripspace %}
-	{% code title := params %}
+{% func Browser(imgs []common.CompactImage, page common.Page) %}{% stripspace %}
+	{% code title := page.SearchParams %}
 	{% if title == "" %}
 		{% code title = "hydron" %}
 	{% endif %}
@@ -13,20 +13,32 @@
 		<nav id="top-banner">
 			<div style="display: flex;">
 				<form method="get">
-					<input type="search" id="search" placeholder="Search" value="{%s params %}" name="q" autofocus autocomplete="off" list="search-suggestions">
+					<input type="search" id="search" placeholder="Search" value="{%s page.SearchParams %}" name="q" autocomplete="off" list="search-suggestions"
+						{% if page.Viewing == nil %}
+							{% space %}autofocus
+						{% endif %}
+					>
 					<script>
 						var el = document.getElementById("search");
 						el.selectionStart = el.selectionEnd = el.value.length;
 					</script>
 					<datalist id="search-suggestions"></datalist>
 				</form>
-				{%= pagination(page, totalPages, params) %}
+				{%= pagination(page.Page, page.TotalPages, page.SearchParams) %}
 			</div>
 			<div style="width: 100%; height: 0.3em;">
 				<div id="progress-bar"></div>
 			</div>
 		</nav>
-		<div id="image-view" tabindex="-1"></div>
+		<div id="image-view" tabindex="-1"
+			{% if page.Viewing != nil %}
+				{% space %}data-id="{%s= page.Viewing.SHA1 %}" autofocus
+			{% endif %}
+		>
+			{% if page.Viewing != nil %}
+				{%= ImageView(*page.Viewing, page.SearchParams) %}
+			{% endif %}
+		</div>
 		<section id="browser" tabindex="1">
 			{% for i, img := range imgs %}
 				{%= Thumbnail(img, i == 0) %}

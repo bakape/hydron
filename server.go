@@ -203,15 +203,35 @@ func serveSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
-	images := make([]common.CompactImage, 0, 1<<10)
-	params, page, pages, ok := processSearch(w, r,
+	images := make([]common.CompactImage, 0, db.PageSize)
+	var (
+		page common.Page
+		ok   bool
+	)
+	page.SearchParams, page.Page, page.TotalPages, ok = processSearch(w, r,
 		func(rec common.CompactImage) error {
 			images = append(images, rec)
 			return nil
 		})
-	if ok {
-		serveHTML(w, r, templates.Browser(params, page, pages, images))
+	if !ok {
+		return
 	}
+
+	if sha1 := r.URL.Query().Get("img"); sha1 != "" {
+		img, err := db.GetImage(sha1)
+		switch err {
+		case nil:
+			page.Viewing = &img
+		case sql.ErrNoRows:
+			send404(w)
+			return
+		default:
+			send500(w, r, err)
+			return
+		}
+	}
+
+	serveHTML(w, r, templates.Browser(images, page))
 }
 
 // Serve single image data by ID

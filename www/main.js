@@ -128,9 +128,19 @@ const figureWidth = 200 + 4; // With marging
 	}
 })();
 
-window.onhashchange = e =>
-	loadHash(e.newURL);
-loadHash(location.toString(), true); // On page load
+window.onpopstate = () => {
+	const img = new URL(location.toString()).searchParams.get("img");
+	if (img && imageView.getAttribute("data-id") !== img) {
+		viewImage(img);
+	} else {
+		setImageView("", "");
+	}
+};
+
+// On page load
+if (imageView.innerHTML) {
+	imageView.focus();
+}
 
 browser.addEventListener("click", e => {
 	if (!e.target.closest || e.target.tagName === "INPUT") {
@@ -194,19 +204,10 @@ browser.addEventListener("keydown", e => {
 
 imageView.addEventListener("keydown", e => {
 	if (e.key === "Escape" && imageView.innerHTML !== "") {
-		history.back();
-		browser.focus();
+		setImageView("", "");
+		pushPage(null);
 	}
 }, { passive: true });
-
-function loadHash(url, firstLoad) {
-	const hash = new URL(url).hash;
-	if (hash.startsWith("#img:")) {
-		viewImage(hash.slice(5));
-	} else {
-		imageView.innerHTML = "";
-	}
-}
 
 // Return function, that prevents default behavior, when fn() returns true
 function maybePreventDefault(fn) {
@@ -234,9 +235,50 @@ async function viewImage(sha1) {
 	if (r.status !== 200) {
 		alert(await r.text());
 	}
-	location.hash = `#img:${sha1}`;
-	imageView.innerHTML = await r.text();
-	imageView.focus();
+	setImageView(sha1, await r.text());
+	pushPage(sha1);
+}
+
+function setImageView(sha1, html) {
+	imageView.setAttribute("data-id", sha1);
+	imageView.innerHTML = html;
+	if (sha1) {
+		imageView.focus();
+	} else {
+		browser.focus();
+	}
+}
+
+// Regenerate page url with sha1 as the viewed image (if any) and push it to
+// history
+function pushPage(sha1) {
+	// Remove any existing img query param
+	const u = new URL(location.toString());
+	let q = "";
+	for (const { k, v } of u.searchParams.entries()) {
+		if (k && v && k !== "img") {
+			appendQuery(k, v);
+		}
+	}
+	if (sha1) {
+		appendQuery("img", sha1);
+	}
+	if (q) {
+		q = "?" + q;
+	}
+	u.search = q;
+
+	const next = u.toString();
+	if (location.toString() !== next) {
+		history.pushState(null, null, next);
+	}
+
+	function appendQuery(k, v) {
+		if (q) {
+			q += "&";
+		}
+		q += `${k}=${v}`;
+	}
 }
 
 function browserWidth() {

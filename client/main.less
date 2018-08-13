@@ -103,16 +103,13 @@ body {
     height: 100%;
     top: 0;
     left: 0;
-	pointer-events: none;
 	z-index: 100;
 	display: flex;
 	background: @body-bg;
 	.hide-selection();
 	&:empty {
 		display: none;
-	}
-	& > * {
-		pointer-events: all;
+		pointer-events: none;
 	}
 	& > img, & > video, & > b {
 		max-height: 100%;

@@ -14,7 +14,7 @@ import (
 )
 
 // Size of page for search query pagination
-const pageSize = 100
+const PageSize = 100
 
 type IDAndMD5 struct {
 	ID  int64
@@ -189,9 +189,9 @@ func SearchImages(params string, page int, fn func(common.CompactImage) error) (
 		q = q.OrderBy(fmt.Sprintf("%s %s", by, mode))
 	}
 
-	if limit == 0 || limit > pageSize {
-		limit = pageSize
-		q = q.Limit(limit).Offset(uint64(page * pageSize))
+	if limit == 0 || limit > PageSize {
+		limit = PageSize
+		q = q.Limit(limit).Offset(uint64(page * PageSize))
 	} else {
 		q = q.Limit(limit)
 	}
@@ -225,8 +225,8 @@ func SearchImages(params string, page int, fn func(common.CompactImage) error) (
 	if err != nil {
 		return
 	}
-	pages = total / pageSize
-	if total%pageSize != 0 {
+	pages = total / PageSize
+	if total%PageSize != 0 {
 		pages++
 	}
 
