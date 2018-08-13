@@ -5,5 +5,5 @@ RUN mkdir -p /go/src/github.com/bakape/hydron
 WORKDIR /go/src/github.com/bakape/hydron
 COPY . .
 RUN npm install
-RUN go get .
+RUN go get -v ./...
 RUN make all

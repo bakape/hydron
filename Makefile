@@ -20,7 +20,7 @@ MXE_TARGET=x86_64-w64-mingw32.static
 
 .PHONY: client all generate
 
-all: client generate
+all: generate client
 	go build
 
 client:
@@ -29,6 +29,7 @@ client:
 	go-embed --input www --output assets/assets.go
 
 generate:
+	go get github.com/pyros2097/go-embed github.com/valyala/quicktemplate/qtc
 	go generate ./templates
 
 # Cross-compile from Unix into a Windows x86_64 static binary
