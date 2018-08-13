@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -162,9 +163,14 @@ process:
 // write or something, overwrite it.
 func writeFile(path string, buf []byte) (err error) {
 	const flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+openFile:
 	f, err := os.OpenFile(path, flags, 0660)
 	if err != nil {
-		return
+		if err = os.MkdirAll(filepath.Dir(path), 0660); err != nil {
+			return
+		}
+
+		goto openFile
 	}
 	defer f.Close()
 
