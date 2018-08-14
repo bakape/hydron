@@ -92,6 +92,10 @@ func doImport(f io.ReadSeeker, size int, addTags string,
 	}
 
 process:
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		return
+	}
 	srcBuf, err := thumbnailer.ReadInto(thumbnailer.GetBufferCap(size), f)
 	if err != nil {
 		return
