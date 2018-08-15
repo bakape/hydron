@@ -27,7 +27,7 @@ func Asset(base, path string) ([]byte, string, string, error) {
 	case "/main.css":
 		return _MainCSS, "ffb8944d56d11dd121e9cfbe9c2499e0", "text/css; charset=utf-8", nil
 	case "/main.js":
-		return _MainJS, "8f51e8642057be743267aa78959eb03c", "application/javascript", nil
+		return _MainJS, "8f51e8642057be743267aa78959eb03c", "application/x-javascript", nil
 	default:
 		return nil, "", "", ErrAssetFileNotFound
 	}
