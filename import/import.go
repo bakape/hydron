@@ -170,7 +170,7 @@ func writeFile(path string, buf []byte) (err error) {
 openFile:
 	f, err := os.OpenFile(path, flags, 0660)
 	if err != nil {
-		if err = os.MkdirAll(filepath.Dir(path), 0660); err != nil {
+		if err = os.MkdirAll(filepath.Dir(path), 0760); err != nil {
 			return
 		}
 
