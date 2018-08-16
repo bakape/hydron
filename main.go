@@ -81,6 +81,11 @@ var (
 			"",
 			"Print the contents of the database for debuging purposes.",
 		},
+		{
+			"set_name",
+			"ID NAME",
+			"Set name of file specified by hex-encoded SHA1 hash ID.",
+		},
 	}
 	deleteImported = modeFlags["import"].Bool(
 		"d",
@@ -168,6 +173,9 @@ func main() {
 	case "remove_tags":
 		assertArgCount(4)
 		err = removeTags(os.Args[2], strings.Join(os.Args[3:], " "))
+	case "set_name":
+		assertArgCount(4)
+		err = setImageName(os.Args[2], os.Args[3])
 	default:
 		printHelp()
 	}

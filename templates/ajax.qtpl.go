@@ -117,146 +117,156 @@ func StreamImageView(qw422016 *qt422016.Writer, img common.Image, query string) 
 	org := organizeTags(img.Tags)
 
 	//line ajax.qtpl:25
-	qw422016.N().S(`<section id="tags">`)
-	//line ajax.qtpl:27
-	streamrenderTags(qw422016, org[common.Character], query)
+	qw422016.N().S(`<section id="tags"><span class="spaced image-name"><a href="/search?q=`)
 	//line ajax.qtpl:28
-	streamrenderTags(qw422016, org[common.Series], query)
+	qw422016.N().S(img.Name)
+	//line ajax.qtpl:28
+	qw422016.N().S(`" title="Search for name">Name:`)
 	//line ajax.qtpl:29
-	streamrenderTags(qw422016, org[common.Author], query)
-	//line ajax.qtpl:30
-	streamrenderTags(qw422016, org[common.Rating], query)
-	//line ajax.qtpl:31
-	streamrenderTags(qw422016, org[common.Undefined], query)
-	//line ajax.qtpl:31
-	qw422016.N().S(`</section>`)
+	qw422016.N().S(` `)
+	//line ajax.qtpl:29
+	qw422016.E().S(img.Name)
+	//line ajax.qtpl:29
+	qw422016.N().S(`</a></span>`)
+	//line ajax.qtpl:32
+	streamrenderTags(qw422016, org[common.Character], query)
 	//line ajax.qtpl:33
+	streamrenderTags(qw422016, org[common.Series], query)
+	//line ajax.qtpl:34
+	streamrenderTags(qw422016, org[common.Author], query)
+	//line ajax.qtpl:35
+	streamrenderTags(qw422016, org[common.Rating], query)
+	//line ajax.qtpl:36
+	streamrenderTags(qw422016, org[common.Undefined], query)
+	//line ajax.qtpl:36
+	qw422016.N().S(`</section>`)
+	//line ajax.qtpl:38
 	src := files.NetSourcePath(img.SHA1, img.Type)
 
-	//line ajax.qtpl:34
-	switch common.GetMediaType(img.Type) {
-	//line ajax.qtpl:35
-	case common.MediaImage:
-		//line ajax.qtpl:35
-		qw422016.N().S(`<img src="`)
-		//line ajax.qtpl:36
-		qw422016.N().S(src)
-		//line ajax.qtpl:36
-		qw422016.N().S(`">`)
-	//line ajax.qtpl:37
-	case common.MediaVideo:
-		//line ajax.qtpl:37
-		qw422016.N().S(`<video src="`)
-		//line ajax.qtpl:38
-		qw422016.N().S(src)
-		//line ajax.qtpl:38
-		qw422016.N().S(`" autoplay loop controls>`)
 	//line ajax.qtpl:39
-	default:
-		//line ajax.qtpl:39
-		qw422016.N().S(`<b>Preview not supported for this format</b>`)
+	switch common.GetMediaType(img.Type) {
+	//line ajax.qtpl:40
+	case common.MediaImage:
+		//line ajax.qtpl:40
+		qw422016.N().S(`<img src="`)
 		//line ajax.qtpl:41
+		qw422016.N().S(src)
+		//line ajax.qtpl:41
+		qw422016.N().S(`">`)
+	//line ajax.qtpl:42
+	case common.MediaVideo:
+		//line ajax.qtpl:42
+		qw422016.N().S(`<video src="`)
+		//line ajax.qtpl:43
+		qw422016.N().S(src)
+		//line ajax.qtpl:43
+		qw422016.N().S(`" autoplay loop controls>`)
+	//line ajax.qtpl:44
+	default:
+		//line ajax.qtpl:44
+		qw422016.N().S(`<b>Preview not supported for this format</b>`)
+		//line ajax.qtpl:46
 	}
-//line ajax.qtpl:42
+//line ajax.qtpl:47
 }
 
-//line ajax.qtpl:42
+//line ajax.qtpl:47
 func WriteImageView(qq422016 qtio422016.Writer, img common.Image, query string) {
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	StreamImageView(qw422016, img, query)
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	qt422016.ReleaseWriter(qw422016)
-//line ajax.qtpl:42
+//line ajax.qtpl:47
 }
 
-//line ajax.qtpl:42
+//line ajax.qtpl:47
 func ImageView(img common.Image, query string) string {
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	WriteImageView(qb422016, img, query)
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	qs422016 := string(qb422016.B)
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line ajax.qtpl:42
+	//line ajax.qtpl:47
 	return qs422016
-//line ajax.qtpl:42
+//line ajax.qtpl:47
 }
 
-//line ajax.qtpl:44
+//line ajax.qtpl:49
 func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, query string) {
-	//line ajax.qtpl:45
+	//line ajax.qtpl:50
 	var typ string
 
-	//line ajax.qtpl:46
+	//line ajax.qtpl:51
 	if len(tags) != 0 {
-		//line ajax.qtpl:47
+		//line ajax.qtpl:52
 		typ = stringifyTagType(tags[0].Type)
 
-		//line ajax.qtpl:48
+		//line ajax.qtpl:53
 	}
-	//line ajax.qtpl:49
+	//line ajax.qtpl:54
 	for _, t := range tags {
-		//line ajax.qtpl:49
+		//line ajax.qtpl:54
 		qw422016.N().S(`<span class="spaced tag-`)
-		//line ajax.qtpl:50
+		//line ajax.qtpl:55
 		qw422016.N().S(typ)
-		//line ajax.qtpl:50
+		//line ajax.qtpl:55
 		qw422016.N().S(`"><a href="/search?`)
-		//line ajax.qtpl:51
+		//line ajax.qtpl:56
 		qw422016.N().S(addToQuery(query, t, false))
-		//line ajax.qtpl:51
+		//line ajax.qtpl:56
 		qw422016.N().S(`" title="Add to search">+</a><a href="/search?`)
-		//line ajax.qtpl:54
+		//line ajax.qtpl:59
 		qw422016.N().S(addToQuery(query, t, true))
-		//line ajax.qtpl:54
+		//line ajax.qtpl:59
 		qw422016.N().S(`" title="Remove from search">-</a><a href="/search?`)
-		//line ajax.qtpl:57
+		//line ajax.qtpl:62
 		qw422016.N().S(url.Values{"q": []string{t.String()}}.Encode())
-		//line ajax.qtpl:57
+		//line ajax.qtpl:62
 		qw422016.N().S(`" title="Search for tag">`)
-		//line ajax.qtpl:58
+		//line ajax.qtpl:63
 		if t.Type == common.Rating {
-			//line ajax.qtpl:58
+			//line ajax.qtpl:63
 			qw422016.N().S(`rating:`)
-			//line ajax.qtpl:59
+			//line ajax.qtpl:64
 			qw422016.N().S(` `)
-			//line ajax.qtpl:60
+			//line ajax.qtpl:65
 		}
-		//line ajax.qtpl:61
+		//line ajax.qtpl:66
 		qw422016.E().S(t.Tag)
-		//line ajax.qtpl:61
+		//line ajax.qtpl:66
 		qw422016.N().S(`</a></span>`)
-		//line ajax.qtpl:64
+		//line ajax.qtpl:69
 	}
-//line ajax.qtpl:65
+//line ajax.qtpl:70
 }
 
-//line ajax.qtpl:65
+//line ajax.qtpl:70
 func writerenderTags(qq422016 qtio422016.Writer, tags []common.Tag, query string) {
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	streamrenderTags(qw422016, tags, query)
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	qt422016.ReleaseWriter(qw422016)
-//line ajax.qtpl:65
+//line ajax.qtpl:70
 }
 
-//line ajax.qtpl:65
+//line ajax.qtpl:70
 func renderTags(tags []common.Tag, query string) string {
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	writerenderTags(qb422016, tags, query)
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	qs422016 := string(qb422016.B)
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line ajax.qtpl:65
+	//line ajax.qtpl:70
 	return qs422016
-//line ajax.qtpl:65
+//line ajax.qtpl:70
 }

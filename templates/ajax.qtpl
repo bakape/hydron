@@ -24,6 +24,11 @@ Various AJAX-rendered HTML
 {% func ImageView(img common.Image, query string) %}{% stripspace %}
 	{% code org := organizeTags(img.Tags) %}
 	<section id="tags">
+		<span class="spaced image-name">
+			<a href="/search?q={%s= img.Name %}" title="Search for name">
+				Name:{% space %}{%s img.Name %}
+			</a>
+		</span>
 		{%= renderTags(org[common.Character], query) %}
 		{%= renderTags(org[common.Series], query) %}
 		{%= renderTags(org[common.Author], query) %}
