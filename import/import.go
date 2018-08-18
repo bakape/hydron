@@ -200,8 +200,8 @@ func ImportFile(f io.ReadSeeker, size int, name string, addTags string, fetchTag
 		return
 	}
 
-	if len(name) > 128 {
-		name = name[0:128]
+	if len(name) > 200 {
+		name = name[0:200]
 	}
 
 	err = db.SetName(r.ID, name)

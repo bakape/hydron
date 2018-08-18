@@ -307,8 +307,8 @@ func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		sendError(w, 400, err)
-	} else if len(bytes) > 128 {
-		bytes = bytes[0:128]
+	} else if len(bytes) > 200 {
+		bytes = bytes[0:200]
 	}
 
 	err = setImageName(extractParam(r, "id"), string(bytes))
