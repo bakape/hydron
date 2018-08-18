@@ -6,6 +6,8 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
+	"path/filepath"
 
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/files"
@@ -75,7 +77,15 @@ func importPath(p string, del, fetchTags bool, tagStr string) (err error) {
 		return
 	}
 
-	_, err = imp.ImportFile(f, int(info.Size()), tagStr, fetchTags)
+	name := info.Name()
+	_, err = imp.ImportFile(
+		f,
+		int(info.Size()),
+		strings.TrimSuffix(name, filepath.Ext(name)),
+		tagStr,
+		fetchTags,
+	)
+
 	switch err {
 	case nil:
 	case imp.ErrImported:
@@ -102,7 +112,7 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f, _, err := r.FormFile("file")
+	f, info, err := r.FormFile("file")
 	if err != nil {
 		sendError(w, 400, err)
 		return
@@ -115,8 +125,14 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img, err := imp.ImportFile(f, int(size), r.Form.Get("tags"),
-		r.Form.Get("fetch_tags") == "true")
+	img, err := imp.ImportFile(
+		f,
+		int(size),
+		strings.TrimSuffix(info.Filename, filepath.Ext(info.Filename)),
+		r.Form.Get("tags"),
+		r.Form.Get("fetch_tags") == "true",
+	)
+	
 	switch err {
 	case nil:
 	case imp.ErrImported:

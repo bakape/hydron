@@ -303,7 +303,7 @@ func GetImage(sha1 string) (img common.Image, err error) {
 	err = InTransaction(func(tx *sql.Tx) (err error) {
 		q := sq.Select(
 			"type", "sha1", "thumb_is_png", "thumb_width", "thumb_height",
-			"width", "height", "import_time", "size", "duration", "md5", "id",
+			"width", "height", "import_time", "size", "duration", "md5", "id", "name",
 		).
 			From("images").
 			Where("sha1 = ?", sha1)
@@ -311,7 +311,7 @@ func GetImage(sha1 string) (img common.Image, err error) {
 			&img.Type, &img.SHA1, &img.Thumb.IsPNG, &img.Thumb.Width,
 			&img.Thumb.Height,
 			&img.Width, &img.Height, &img.ImportTime, &img.Size,
-			&img.Duration, &img.MD5, &img.ID,
+			&img.Duration, &img.MD5, &img.ID, &img.Name,
 		)
 		if err != nil {
 			return
@@ -395,11 +395,11 @@ func WriteImage(i common.Image) (id int64, err error) {
 		q := sq.Insert("images").
 			Columns(
 				"type", "width", "height", "import_time", "size", "duration",
-				"md5", "sha1", "thumb_width", "thumb_height", "thumb_is_png",
+				"md5", "sha1", "thumb_width", "thumb_height", "thumb_is_png", "name",
 			).
 			Values(
 				i.Type, i.Width, i.Height, i.ImportTime, i.Size, i.Duration,
-				i.MD5, i.SHA1, i.Thumb.Width, i.Thumb.Height, i.Thumb.IsPNG,
+				i.MD5, i.SHA1, i.Thumb.Width, i.Thumb.Height, i.Thumb.IsPNG, i.Name,
 			)
 		id, err = getLastID(tx, q)
 		if err != nil {
@@ -410,4 +410,14 @@ func WriteImage(i common.Image) (id int64, err error) {
 		return
 	})
 	return
+}
+
+// SetName sets an image's name
+func SetName(id int64, name string) error {
+	_, err := sq.Update("images").
+		Set("name", name).
+		Where("id = ?", id).
+		Exec()
+	
+	return err
 }

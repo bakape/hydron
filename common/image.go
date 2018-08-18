@@ -62,6 +62,7 @@ type Image struct {
 	Size       int    `json:"size"`
 	Duration   uint64 `json:"duration,omitempty"`
 	MD5        string `json:"md5"`
+	Name       string `json:"name"`
 	// Not always defined for performance reasons
 	Tags []Tag `json:"tags,omitempty"`
 }

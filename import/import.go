@@ -189,7 +189,7 @@ size: estimated file size
 addTags: Add a list of tags to all images
 fetchTags: fetch tags from gelbooru
 */
-func ImportFile(f io.ReadSeeker, size int, addTags string, fetchTags bool,
+func ImportFile(f io.ReadSeeker, size int, name string, addTags string, fetchTags bool,
 ) (r common.Image, err error) {
 	ch := make(chan response)
 	importFile <- request{f, size, addTags, ch}
@@ -199,6 +199,18 @@ func ImportFile(f io.ReadSeeker, size int, addTags string, fetchTags bool,
 	if err != nil {
 		return
 	}
+
+	if len(name) > 200 {
+		name = name[0:200]
+	}
+
+	err = db.SetName(r.ID, name)
+	
+	if err != nil {
+		return
+	}
+
+	r.Name = name
 
 	if fetchTags && fetch.CanFetchTags(r.Type) {
 		var fetched []common.Tag

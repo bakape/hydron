@@ -74,6 +74,11 @@ var migrations = []func(*sql.Tx) error{
 	func(tx *sql.Tx) (err error) {
 		return execAll(tx, `drop table last_change`)
 	},
+	func(tx *sql.Tx) (err error) {
+		return execAll(tx,
+			`alter table images add column name text ""`,
+		)
+	},
 }
 
 // Run migrations from version `from`to version `to`

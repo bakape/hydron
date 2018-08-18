@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -68,6 +69,7 @@ func startServer(addr string) error {
 	// Image API
 	api := r.NewGroup("/api")
 	api.GET("/complete_tag/:prefix", completeTagHTTP)
+	api.POST("/images/:id/name", setImageNameHTTP)
 
 	images := api.NewGroup("/images")
 	images.GET("/", serveSearch) // Dumps everything
@@ -297,4 +299,25 @@ func modTagsHTTP(w http.ResponseWriter, r *http.Request,
 // Remove tags from a specific file
 func removeTagsHTTP(w http.ResponseWriter, r *http.Request) {
 	modTagsHTTP(w, r, removeTags)
+}
+
+// Set the target file's name
+func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		sendError(w, 400, err)
+	} else if len(bytes) > 200 {
+		bytes = bytes[0:200]
+	}
+
+	err = setImageName(extractParam(r, "id"), string(bytes))
+
+	switch err {
+	case nil:
+	case sql.ErrNoRows:
+		sendError(w, 400, err)
+	default:
+		send500(w, r, err)
+	}
 }
