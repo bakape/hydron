@@ -24,11 +24,13 @@ Various AJAX-rendered HTML
 	{% code img := page.Viewing %}
 	{% code org := organizeTags(img.Tags) %}
 	<section id="tags">
-		<span class="spaced image-name">
-			<a href="/search?q={%s= img.Name %}" title="Search for name">
-				Name:{% space %}{%s img.Name %}
-			</a>
-		</span>
+		{% if img.Name != "" %}
+			<span class="spaced image-name">
+				<a href="/search?q={%s img.Name %}" title="Search for name">
+					Name:{% space %}{%s img.Name %}
+				</a>
+			</span>
+		{% endif %}
 		{%= renderTags(org[common.Character], page) %}
 		{%= renderTags(org[common.Series], page) %}
 		{%= renderTags(org[common.Author], page) %}

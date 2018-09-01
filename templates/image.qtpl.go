@@ -117,178 +117,184 @@ func StreamImageView(qw422016 *qt422016.Writer, page common.Page) {
 	org := organizeTags(img.Tags)
 
 	//line image.qtpl:25
-	qw422016.N().S(`<section id="tags"><span class="spaced image-name"><a href="/search?q=`)
-	//line image.qtpl:28
-	qw422016.N().S(img.Name)
-	//line image.qtpl:28
-	qw422016.N().S(`" title="Search for name">Name:`)
-	//line image.qtpl:29
-	qw422016.N().S(` `)
-	//line image.qtpl:29
-	qw422016.E().S(img.Name)
-	//line image.qtpl:29
-	qw422016.N().S(`</a></span>`)
-	//line image.qtpl:32
-	streamrenderTags(qw422016, org[common.Character], page)
-	//line image.qtpl:33
-	streamrenderTags(qw422016, org[common.Series], page)
+	qw422016.N().S(`<section id="tags">`)
+	//line image.qtpl:27
+	if img.Name != "" {
+		//line image.qtpl:27
+		qw422016.N().S(`<span class="spaced image-name"><a href="/search?q=`)
+		//line image.qtpl:29
+		qw422016.N().S(img.Name)
+		//line image.qtpl:29
+		qw422016.N().S(`" title="Search for name">Name:`)
+		//line image.qtpl:30
+		qw422016.N().S(` `)
+		//line image.qtpl:30
+		qw422016.E().S(img.Name)
+		//line image.qtpl:30
+		qw422016.N().S(`</a></span>`)
+		//line image.qtpl:33
+	}
 	//line image.qtpl:34
-	streamrenderTags(qw422016, org[common.Author], page)
+	streamrenderTags(qw422016, org[common.Character], page)
 	//line image.qtpl:35
+	streamrenderTags(qw422016, org[common.Series], page)
+	//line image.qtpl:36
+	streamrenderTags(qw422016, org[common.Author], page)
+	//line image.qtpl:37
 	streamrenderTags(qw422016, org[common.Rating], page)
-	//line image.qtpl:36
-	streamrenderTags(qw422016, org[common.Undefined], page)
-	//line image.qtpl:36
-	qw422016.N().S(`</section>`)
 	//line image.qtpl:38
+	streamrenderTags(qw422016, org[common.Undefined], page)
+	//line image.qtpl:38
+	qw422016.N().S(`</section>`)
+	//line image.qtpl:40
 	src := files.NetSourcePath(img.SHA1, img.Type)
 
-	//line image.qtpl:39
+	//line image.qtpl:41
 	switch common.GetMediaType(img.Type) {
-	//line image.qtpl:40
-	case common.MediaImage:
-		//line image.qtpl:40
-		qw422016.N().S(`<img src="`)
-		//line image.qtpl:41
-		qw422016.N().S(src)
-		//line image.qtpl:41
-		qw422016.N().S(`">`)
 	//line image.qtpl:42
-	case common.MediaVideo:
+	case common.MediaImage:
 		//line image.qtpl:42
-		qw422016.N().S(`<video src="`)
+		qw422016.N().S(`<img src="`)
 		//line image.qtpl:43
 		qw422016.N().S(src)
 		//line image.qtpl:43
-		qw422016.N().S(`" autoplay loop controls>`)
+		qw422016.N().S(`">`)
 	//line image.qtpl:44
-	default:
+	case common.MediaVideo:
 		//line image.qtpl:44
-		qw422016.N().S(`<b>Preview not supported for this format</b>`)
+		qw422016.N().S(`<video src="`)
+		//line image.qtpl:45
+		qw422016.N().S(src)
+		//line image.qtpl:45
+		qw422016.N().S(`" autoplay loop controls>`)
+	//line image.qtpl:46
+	default:
 		//line image.qtpl:46
+		qw422016.N().S(`<b>Preview not supported for this format</b>`)
+		//line image.qtpl:48
 	}
-//line image.qtpl:47
+//line image.qtpl:49
 }
 
-//line image.qtpl:47
+//line image.qtpl:49
 func WriteImageView(qq422016 qtio422016.Writer, page common.Page) {
-	//line image.qtpl:47
+	//line image.qtpl:49
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line image.qtpl:47
+	//line image.qtpl:49
 	StreamImageView(qw422016, page)
-	//line image.qtpl:47
+	//line image.qtpl:49
 	qt422016.ReleaseWriter(qw422016)
-//line image.qtpl:47
+//line image.qtpl:49
 }
 
-//line image.qtpl:47
+//line image.qtpl:49
 func ImageView(page common.Page) string {
-	//line image.qtpl:47
+	//line image.qtpl:49
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line image.qtpl:47
+	//line image.qtpl:49
 	WriteImageView(qb422016, page)
-	//line image.qtpl:47
+	//line image.qtpl:49
 	qs422016 := string(qb422016.B)
-	//line image.qtpl:47
+	//line image.qtpl:49
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line image.qtpl:47
+	//line image.qtpl:49
 	return qs422016
-//line image.qtpl:47
+//line image.qtpl:49
 }
 
 // Reender tag adition and direct tag query links
 
-//line image.qtpl:50
+//line image.qtpl:52
 func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, page common.Page) {
-	//line image.qtpl:51
+	//line image.qtpl:53
 	page.Page = 0
 
-	//line image.qtpl:52
+	//line image.qtpl:54
 	page.Viewing = nil
 
-	//line image.qtpl:53
+	//line image.qtpl:55
 	init := page.Filters
 
-	//line image.qtpl:54
+	//line image.qtpl:56
 	for _, t := range tags {
-		//line image.qtpl:55
+		//line image.qtpl:57
 		page.Filters = init
 
-		//line image.qtpl:56
+		//line image.qtpl:58
 		filter := common.TagFilter{TagBase: t.TagBase}
 
-		//line image.qtpl:57
+		//line image.qtpl:59
 		page.Filters.Tag = append(page.Filters.Tag, filter)
 
-		//line image.qtpl:57
+		//line image.qtpl:59
 		qw422016.N().S(`<span class="spaced tag-`)
-		//line image.qtpl:58
+		//line image.qtpl:60
 		qw422016.N().Z(common.BufferWriter(t.Type))
-		//line image.qtpl:58
+		//line image.qtpl:60
 		qw422016.N().S(`"><a href="`)
-		//line image.qtpl:59
+		//line image.qtpl:61
 		qw422016.N().S(page.URL())
-		//line image.qtpl:59
+		//line image.qtpl:61
 		qw422016.N().S(`" title="Add to search">+</a>`)
-		//line image.qtpl:62
+		//line image.qtpl:64
 		page.Filters.Tag[len(page.Filters.Tag)-1].Negative = true
 
-		//line image.qtpl:62
+		//line image.qtpl:64
 		qw422016.N().S(`<a href="`)
-		//line image.qtpl:63
+		//line image.qtpl:65
 		qw422016.N().S(page.URL())
-		//line image.qtpl:63
+		//line image.qtpl:65
 		qw422016.N().S(`" title="Remove from search">-</a>`)
-		//line image.qtpl:66
+		//line image.qtpl:68
 		page.Filters = common.FilterSet{
 			Tag: []common.TagFilter{filter},
 		}
 
-		//line image.qtpl:68
-		qw422016.N().S(`<a href="`)
-		//line image.qtpl:69
-		qw422016.N().S(page.URL())
-		//line image.qtpl:69
-		qw422016.N().S(`" title="Search for tag">`)
 		//line image.qtpl:70
+		qw422016.N().S(`<a href="`)
+		//line image.qtpl:71
+		qw422016.N().S(page.URL())
+		//line image.qtpl:71
+		qw422016.N().S(`" title="Search for tag">`)
+		//line image.qtpl:72
 		if t.Type == common.Rating {
-			//line image.qtpl:70
-			qw422016.N().S(`rating:`)
-			//line image.qtpl:71
-			qw422016.N().S(` `)
 			//line image.qtpl:72
+			qw422016.N().S(`rating:`)
+			//line image.qtpl:73
+			qw422016.N().S(` `)
+			//line image.qtpl:74
 		}
-		//line image.qtpl:73
+		//line image.qtpl:75
 		qw422016.E().S(t.Tag)
-		//line image.qtpl:73
+		//line image.qtpl:75
 		qw422016.N().S(`</a></span>`)
-		//line image.qtpl:76
+		//line image.qtpl:78
 	}
-//line image.qtpl:77
+//line image.qtpl:79
 }
 
-//line image.qtpl:77
+//line image.qtpl:79
 func writerenderTags(qq422016 qtio422016.Writer, tags []common.Tag, page common.Page) {
-	//line image.qtpl:77
+	//line image.qtpl:79
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line image.qtpl:77
+	//line image.qtpl:79
 	streamrenderTags(qw422016, tags, page)
-	//line image.qtpl:77
+	//line image.qtpl:79
 	qt422016.ReleaseWriter(qw422016)
-//line image.qtpl:77
+//line image.qtpl:79
 }
 
-//line image.qtpl:77
+//line image.qtpl:79
 func renderTags(tags []common.Tag, page common.Page) string {
-	//line image.qtpl:77
+	//line image.qtpl:79
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line image.qtpl:77
+	//line image.qtpl:79
 	writerenderTags(qb422016, tags, page)
-	//line image.qtpl:77
+	//line image.qtpl:79
 	qs422016 := string(qb422016.B)
-	//line image.qtpl:77
+	//line image.qtpl:79
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line image.qtpl:77
+	//line image.qtpl:79
 	return qs422016
-//line image.qtpl:77
+//line image.qtpl:79
 }

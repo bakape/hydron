@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/bakape/hydron/common"
-
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/templates"
 )
