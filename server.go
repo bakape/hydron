@@ -174,48 +174,37 @@ func getRequestPage(r *http.Request) (page common.Page, err error) {
 
 // Serve a tag search result as JSON
 func serveSearch(w http.ResponseWriter, r *http.Request) {
-	// Stream the respone as it is being encoded
-	enc := json.NewEncoder(w)
-	comma := json.RawMessage{','}
-	first := true
-	var page common.Page
-
 	err := func() (err error) {
-		page, err = getRequestPage(r)
+		page, err := getRequestPage(r)
 		if err != nil {
 			return
 		}
-		err = db.SearchImages(&page, true,
-			func(rec common.CompactImage) (err error) {
-				if first {
-					setHeaders(w, jsonHeaders)
-					err = enc.Encode(json.RawMessage{'['})
-					if err != nil {
-						return
-					}
-					first = false
-				} else {
-					err = enc.Encode(comma)
-					if err != nil {
-						return
-					}
-				}
-				return enc.Encode(rec)
-			})
+		imgs, err := readSearchImages(&page)
 		if err != nil {
 			return
 		}
-		return enc.Encode(json.RawMessage{']'})
+
+		// Stream the respone as it is being encoded
+		setHeaders(w, jsonHeaders)
+		enc := json.NewEncoder(w)
+		return enc.Encode(imgs)
 	}()
 	if err != nil {
 		httpError(w, r, err)
 	}
 }
 
-func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
-	var page common.Page
-	images := make([]common.CompactImage, 0, common.PageSize)
+func readSearchImages(page *common.Page,
+) (images []common.CompactImage, err error) {
+	images = make([]common.CompactImage, 0, common.PageSize)
+	err = db.SearchImages(page, true, func(rec common.CompactImage) error {
+		images = append(images, rec)
+		return nil
+	})
+	return
+}
 
+func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
 	page, err := getRequestPage(r)
 	if err != nil {
 		httpError(w, r, err)
@@ -229,10 +218,7 @@ func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.SearchImages(&page, true, func(rec common.CompactImage) error {
-		images = append(images, rec)
-		return nil
-	})
+	images, err := readSearchImages(&page)
 	if err != nil {
 		httpError(w, r, err)
 		return
