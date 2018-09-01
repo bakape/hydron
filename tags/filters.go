@@ -100,6 +100,7 @@ func parseSystemTag(arg string) (sys common.SystemTag, err error) {
 func isNegative(s *string) bool {
 	if (*s)[0] == '-' {
 		*s = (*s)[1:]
+		return true
 	}
 	return false
 }
