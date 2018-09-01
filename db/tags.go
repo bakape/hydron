@@ -94,21 +94,25 @@ func RemoveTags(imageID int64, tags []common.Tag) error {
 }
 
 // Attempt to complete a tag by suggesting up to 10 possible tags for a prefix
-func CompleTag(s string) (tags []string, err error) {
+func CompleteTag(s string) (tags []string, err error) {
+	const maxCap = 20
+	tags = make([]string, 0, maxCap)
+
+	// TODO: Inject system tags into array
+
 	r, err := sq.Select("tag").
 		Distinct().
 		From("tags").
 		Where("tag like ? || '%' escape '$'", // Escape underscores
 			strings.Replace(s, "_", "$_", -1)).
 		OrderBy("tag").
-		Limit(10).
+		Limit(maxCap).
 		Query()
 	if err != nil {
 		return
 	}
 	defer r.Close()
 
-	tags = make([]string, 0, 10)
 	var tag string
 	for r.Next() {
 		err = r.Scan(&tag)
@@ -116,6 +120,9 @@ func CompleTag(s string) (tags []string, err error) {
 			return
 		}
 		tags = append(tags, tag)
+		if len(tags) == maxCap {
+			break
+		}
 	}
 	err = r.Err()
 	return

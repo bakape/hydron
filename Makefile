@@ -26,10 +26,11 @@ all: generate client
 client:
 	cp client/main.js www/main.js
 	node_modules/.bin/lessc --clean-css client/main.less www/main.css
+	go get github.com/pyros2097/go-embed
 	go-embed --input www --output assets/assets.go
 
 generate:
-	go get github.com/pyros2097/go-embed github.com/valyala/quicktemplate/qtc
+	go get github.com/valyala/quicktemplate/qtc
 	go generate ./templates
 
 # Cross-compile from Unix into a Windows x86_64 static binary

@@ -1,10 +1,9 @@
 {% import "github.com/bakape/hydron/common" %}
 {% import "strconv" %}
-{% import "net/url" %}
-{% import "strings" %}
 
-{% func Browser(imgs []common.CompactImage, page common.Page) %}{% stripspace %}
-	{% code title := page.SearchParams %}
+{% func Browser(page common.Page, imgs []common.CompactImage) %}{% stripspace %}
+	{% code filters := page.Filters.String() %}
+	{% code title := filters %}
 	{% if title == "" %}
 		{% code title = "hydron" %}
 	{% endif %}
@@ -13,18 +12,23 @@
 		<nav id="top-banner">
 			<div style="display: flex;">
 				<form method="get">
-					<input type="search" id="search" placeholder="Search" value="{%s page.SearchParams %}" name="q" autocomplete="off" list="search-suggestions"
-						{% if page.Viewing == nil %}
-							{% space %}autofocus
-						{% endif %}
-					>
+					<input type="search" id="search" placeholder="Search" value="{%s filters %}" name="q" autofocus autocomplete="off" list="search-suggestions">
 					<script>
 						var el = document.getElementById("search");
 						el.selectionStart = el.selectionEnd = el.value.length;
 					</script>
 					<datalist id="search-suggestions"></datalist>
+					<input type="checkbox" name="reverse" title="Reverse order"{% if page.Order.Reverse %}{% space %}checked{% endif %}>
+					<select name="order" title="Order by">
+						{% for i := common.None; i <= common.Random; i++ %}
+							<option value="{%d int(i) %}"{% if i == page.Order.Type %}{% space %}selected{% endif %}>
+								{%s= orderLabels[int(i)] %}
+							</option>
+						{% endfor %}
+					</select>
+					<input type="submit" value="🔍">
 				</form>
-				{%= pagination(page.Page, page.TotalPages, page.SearchParams) %}
+				{%= pagination(page) %}
 			</div>
 			<div style="width: 100%; height: 0.3em;">
 				<div id="progress-bar"></div>
@@ -36,7 +40,7 @@
 			{% endif %}
 		>
 			{% if page.Viewing != nil %}
-				{%= ImageView(*page.Viewing, page.SearchParams) %}
+				{%= ImageView(page) %}
 			{% endif %}
 		</div>
 		<section id="browser" tabindex="1">
@@ -49,42 +53,41 @@
 {% endstripspace %}{% endfunc %}
 
 Links to different pages on a search page
-{% func pagination(page, total int, params string) %}{% stripspace %}
-	{% code val := url.Values{
-		"q": strings.Split(params, " "),
-	} %}
+{% func pagination(page common.Page) %}{% stripspace %}
 	<span class="spaced">
-		{% if page != 0 %}
-			{% if page-1 != 0 %}
-				{%= pageLink(val, 0, "<<") %}
+		{% code current := int(page.Page) %}
+		{% code total := int(page.PageTotal) %}
+		{% if current != 0 %}
+			{% if current-1 != 0 %}
+				{%= pageLink(page, 0, "<<") %}
 			{% endif %}
-			{%= pageLink(val, page-1, "<") %}
+			{%= pageLink(page, current-1, "<") %}
 		{% endif %}
 		{% code count := 0 %}
-		{% for i := page-5; i < total && count < 10; i++ %}
+		{% for i := current-5; i < total && count < 10; i++ %}
 			{% if i < 0 %}
 				{% continue %}
 			{% endif %}
 			{% code count++ %}
-			{% if i != page %}
-				{%= pageLink(val, i, strconv.Itoa(i+1)) %}
+			{% if i != current %}
+				{%= pageLink(page, i, strconv.Itoa(i+1)) %}
 			{% else %}
 				<b>{%d i+1 %}</b>
 			{% endif %}
 		{% endfor %}
-		{% if page != total-1 %}
-			{%= pageLink(val, page+1, ">") %}
-			{% if page+1 != total-1 %}
-				{%= pageLink(val, total-1, ">>") %}
+		{% if current != total-1 %}
+			{%= pageLink(page, current+1, ">") %}
+			{% if current+1 != total-1 %}
+				{%= pageLink(page, total-1, ">>") %}
 			{% endif %}
 		{% endif %}
 	</span>
 {% endstripspace %}{% endfunc %}
 
 Link to a different paginated search page
-{% func pageLink(values url.Values, page int, text string) %}{% stripspace %}
-	{% code values.Set("page", strconv.Itoa(page)) %}
-	<a href="?{%s= values.Encode() %}" tabindex="2">
+{% func pageLink(page common.Page, i int, text string) %}{% stripspace %}
+	{% code page.Page = uint(i)  %}
+	<a href="{%s= page.URL() %}" tabindex="2">
 		{%s= text %}
 	</a>
 {% endstripspace %}{% endfunc %}

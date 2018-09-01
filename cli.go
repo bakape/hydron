@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
+	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/tags"
 )
 
@@ -44,4 +47,17 @@ func setImageName(sha1 string, name string) error {
 	}
 
 	return db.SetName(id, name)
+}
+
+// Returns file paths that match params and print to console
+func searchImages(params string) (err error) {
+	var page common.Page
+	err = tags.ParseFilters(params, &page)
+	if err != nil {
+		return
+	}
+	return db.SearchImages(&page, true, func(i common.CompactImage) error {
+		fmt.Println(files.SourcePath(i.SHA1, i.Type))
+		return nil
+	})
 }

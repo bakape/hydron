@@ -24,6 +24,32 @@ var htmlHeaders = map[string]string{
 	"Content-Type":  "text/html",
 }
 
+// Error with an attached HTTP status code
+type StatusError interface {
+	error
+	Status() int
+}
+
+// Handle error and devulge code from error type or value
+func httpError(w http.ResponseWriter, r *http.Request, err error) {
+	code := 500
+	switch err.(type) {
+	case StatusError:
+		code = err.(StatusError).Status()
+	case *strconv.NumError:
+		code = 400
+	default:
+		if err == sql.ErrNoRows {
+			code = 404
+		}
+	}
+
+	http.Error(w, fmt.Sprintf("%d %s", code, err), code)
+	if code >= 500 && code < 600 {
+		stderr.Printf("server: %s: %s", r.RemoteAddr, err)
+	}
+}
+
 func sendError(w http.ResponseWriter, code int, err error) {
 	http.Error(w, fmt.Sprintf("%d %s", code, err), code)
 }
@@ -76,22 +102,4 @@ func serveData(w http.ResponseWriter, r *http.Request,
 	w.Header().Set("ETag", etag)
 	w.Header().Set("Content-Length", strconv.Itoa(len(buf)))
 	w.Write(buf)
-}
-
-func serveHTML(w http.ResponseWriter, r *http.Request, html string) {
-	serveData(w, r, htmlHeaders, []byte(html))
-}
-
-// Pass any DB query error to client or run onSuccess()
-func passQueryError(w http.ResponseWriter, r *http.Request, err error,
-	onSuccess func(),
-) {
-	switch err {
-	case nil:
-		onSuccess()
-	case sql.ErrNoRows:
-		send404(w)
-	default:
-		send500(w, r, err)
-	}
 }

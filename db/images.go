@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/files"
-	"github.com/bakape/hydron/tags"
 )
 
 // Size of page for search query pagination
@@ -26,85 +24,66 @@ func selectTagID() squirrel.SelectBuilder {
 }
 
 // Searches images by params and executes function on each.
-// Matches all images, if params = "".
+// Matches all images, if page.Filters is empty.
 // The images will only contain the bare minimum data to render thumbnails.
-// Returns number of total pages and any error.
-// TODO: This pagination will get really slow over time. Some kind of cache?
-func SearchImages(params string, page int, fn func(common.CompactImage) error) (
-	pages int, err error,
-) {
+func SearchImages(page *common.Page, ignoreLimit bool,
+	fn func(common.CompactImage) error,
+) (err error) {
 	var (
-		split  = strings.Split(params, " ")
-		pos    []int64 // Must all match
-		neg    []int64 // Must not match any
-		system []tags.SystemTag
-		order  tags.Ordering
-		limit  uint64
+		pos []int64 // Must all match
+		neg []int64 // Must not match any
 	)
-	if len(split) != 0 {
-		system, order, limit, err = tags.ExtractInternal(&split)
-		if err != nil {
-			return
-		}
 
-		// Get tag IDs for all tag params
-		if len(split) != 0 {
-			err = InTransaction(func(tx *sql.Tx) (err error) {
-				var id int64
-				for _, s := range split {
-					isNeg := false
-					if s[0] == '-' {
-						isNeg = true
-						s = s[1:]
-					}
-					t := tags.Normalize(s, common.User)
-
-					var rs rowScanner
-					if t.Type == common.Undefined {
-						// Undefined tag type matches the first tag type
-						// available. User should be specific about tag types,
-						// when matching by artist, character, series, etc.
-						rs = withTransaction(tx, selectTagID().
-							Where("tag = ?", t.Tag).
-							OrderBy("type asc").
-							Limit(1)).
-							QueryRow()
-					} else {
-						rs = withTransaction(tx, selectTagID().
-							Where("type = ? and tag = ?", t.Type, t.Tag)).
-							QueryRow()
-					}
-					err = rs.Scan(&id)
-					switch err {
-					case nil:
-					case sql.ErrNoRows:
-						// Missing negations can be ignored
-						if isNeg {
-							err = nil
-							continue
-						}
-						// But missing positives would result in matching
-						// nothing anyway
-						return
-					default:
-						return
-					}
-					if !isNeg {
-						pos = append(pos, id)
-					} else {
-						neg = append(neg, id)
-					}
+	// Get tag IDs for all tag params
+	if len(page.Filters.Tag) != 0 {
+		err = InTransaction(func(tx *sql.Tx) (err error) {
+			var id int64
+			for _, t := range page.Filters.Tag {
+				var rs rowScanner
+				if t.Type == common.Undefined {
+					// Undefined tag type matches the first tag type
+					// available. User should be specific about tag types,
+					// when matching by artist, character, series, etc.
+					rs = withTransaction(tx, selectTagID().
+						Where("tag = ?", t.Tag).
+						OrderBy("type asc").
+						Limit(1)).
+						QueryRow()
+				} else {
+					rs = withTransaction(tx, selectTagID().
+						Where("type = ? and tag = ?", t.Type, t.Tag)).
+						QueryRow()
 				}
-				return
-			})
-			switch err {
-			case nil:
-			case sql.ErrNoRows:
-				err = nil
-				return
-			default:
-				return
+				err = rs.Scan(&id)
+				switch err {
+				case nil:
+				case sql.ErrNoRows:
+					// Missing negations can be ignored
+					if t.Negative {
+						err = nil
+						continue
+					}
+					// But missing positives would result in matching
+					// nothing anyway
+					return
+				default:
+					return
+				}
+				if t.Negative {
+					neg = append(neg, id)
+				} else {
+					pos = append(pos, id)
+				}
 			}
+			return
+		})
+		switch err {
+		case nil:
+		case sql.ErrNoRows:
+			err = nil
+			return
+		default:
+			return
 		}
 	}
 
@@ -142,18 +121,18 @@ func SearchImages(params string, page int, fn func(common.CompactImage) error) (
 			formatSet(neg),
 		)
 	}
-	for _, s := range system {
+	for _, s := range page.Filters.System {
 		var p string
 		switch s.Type {
-		case tags.Size:
+		case common.Size:
 			p = "size"
-		case tags.Width:
+		case common.Width:
 			p = "width"
-		case tags.Height:
+		case common.Height:
 			p = "height"
-		case tags.Duration:
+		case common.Duration:
 			p = "duration"
-		case tags.TagCount:
+		case common.TagCount:
 			p = `(select count(*)
 				from image_tags as it
 				where it.image_id = i.id)`
@@ -164,36 +143,38 @@ func SearchImages(params string, page int, fn func(common.CompactImage) error) (
 	{
 		var by string
 		mode := "asc"
-		if order.Reverse {
+		if page.Order.Reverse {
 			mode = "desc"
 		}
-		switch order.Type {
+		switch page.Order.Type {
 		// SQLite does not guarantee any order without an ORDER BY statement
-		case tags.None:
+		case common.None:
 			by = "i.id"
-		case tags.BySize:
+		case common.BySize:
 			by = "size"
-		case tags.ByWidth:
+		case common.ByWidth:
 			by = "width"
-		case tags.ByHeight:
+		case common.ByHeight:
 			by = "height"
-		case tags.ByDuration:
+		case common.ByDuration:
 			by = "duration"
-		case tags.ByTagCount:
+		case common.ByTagCount:
 			by = `(select count(*)
 				from image_tags as it
 				where it.image_id = i.id)`
-		case tags.Random:
+		case common.Random:
 			by = "random()"
 		}
 		q = q.OrderBy(fmt.Sprintf("%s %s", by, mode))
 	}
 
-	if limit == 0 || limit > PageSize {
-		limit = PageSize
-		q = q.Limit(limit).Offset(uint64(page * PageSize))
-	} else {
-		q = q.Limit(limit)
+	if !ignoreLimit {
+		if page.Limit == 0 || page.Limit > PageSize {
+			page.Limit = PageSize
+			q = q.Limit(uint64(page.Limit)).Offset(uint64(page.Page * PageSize))
+		} else {
+			q = q.Limit(uint64(page.Limit))
+		}
 	}
 
 	// Read all matched rows
@@ -220,14 +201,14 @@ func SearchImages(params string, page int, fn func(common.CompactImage) error) (
 	}
 
 	// Read total match count
-	var total int
+	var total uint
 	err = count.QueryRow().Scan(&total)
 	if err != nil {
 		return
 	}
-	pages = total / PageSize
+	page.PageTotal = total / PageSize
 	if total%PageSize != 0 {
-		pages++
+		page.PageTotal++
 	}
 
 	return
@@ -418,6 +399,6 @@ func SetName(id int64, name string) error {
 		Set("name", name).
 		Where("id = ?", id).
 		Exec()
-	
+
 	return err
 }

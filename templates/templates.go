@@ -3,12 +3,14 @@
 package templates
 
 import (
-	"bytes"
-	"net/url"
 	"sort"
 
 	"github.com/bakape/hydron/common"
 )
+
+// Human-readable labels fo``r image ordering types
+var orderLabels = [...]string{"None", "Size", "Width", "Height", "Duration",
+	"Tag count", "Random"}
 
 type tagSorter []common.Tag
 
@@ -54,38 +56,4 @@ func organizeTags(src []common.Tag) map[common.TagType][]common.Tag {
 		out[typ] = []common.Tag(sorted)
 	}
 	return out
-}
-
-func stringifyTagType(t common.TagType) string {
-	switch t {
-	case common.Author:
-		return "author"
-	case common.Character:
-		return "character"
-	case common.Series:
-		return "series"
-	case common.Rating:
-		return "rating"
-	default:
-		return "undefined"
-	}
-}
-
-// Add a tag to search query and output query string
-func addToQuery(query string, tag common.Tag, substract bool) string {
-	buf := bytes.NewBufferString(query)
-	if buf.Len() != 0 {
-		buf.WriteByte(' ')
-	}
-	if substract {
-		buf.WriteByte('-')
-	}
-	if tag.Type != common.Undefined {
-		buf.WriteString(stringifyTagType(tag.Type))
-		buf.WriteByte(':')
-	}
-	buf.WriteString(tag.Tag)
-	return url.Values{
-		"q": []string{buf.String()},
-	}.Encode()
 }

@@ -109,11 +109,6 @@ var (
 		defaultAddress,
 		"address to listen on for requests",
 	)
-	page = modeFlags["search"].Uint64(
-		"p",
-		0,
-		"page of the query to view",
-	)
 )
 
 func main() {
@@ -161,11 +156,11 @@ func main() {
 	case "fetch_tags":
 		err = fetchAllTags()
 	case "search":
-		err = searchImages(strings.Join(fl.Args(), " "), int(*page))
+		err = searchImages(strings.Join(fl.Args(), " "))
 	case "complete_tag":
 		assertArgCount(3)
 		var suggests []string
-		suggests, err = db.CompleTag(os.Args[2])
+		suggests, err = db.CompleteTag(os.Args[2])
 		fmt.Println(strings.Join(suggests, " "))
 	case "add_tags":
 		assertArgCount(4)

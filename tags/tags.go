@@ -8,26 +8,35 @@ import (
 
 // Convert any externally-input tags to the internal format
 // source: tag source to apply to tag
-func Normalize(s string, source common.TagSource) (
-	tag common.Tag,
-) {
-	tag.Source = source
-
-	i := strings.IndexByte(s, ':')
-	if i != -1 {
-		switch s[:i] {
-		case "artist", "author":
-			tag.Type = common.Author
-		case "series", "copyright":
-			tag.Type = common.Series
-		case "character":
-			tag.Type = common.Character
-		case "rating":
-			tag.Type = common.Rating
-		}
-		s = s[strings.LastIndexByte(s, ':')+1:]
+func Normalize(s string, source common.TagSource) common.Tag {
+	return common.Tag{
+		Source: source,
+		TagBase: common.TagBase{
+			Type: detectTagType(&s),
+			Tag:  normalizeString(s),
+		},
 	}
+}
 
+func detectTagType(s *string) (typ common.TagType) {
+	i := strings.IndexByte(*s, ':')
+	if i != -1 {
+		switch (*s)[:i] {
+		case "artist", "author":
+			typ = common.Author
+		case "series", "copyright":
+			typ = common.Series
+		case "character":
+			typ = common.Character
+		case "rating":
+			typ = common.Rating
+		}
+		*s = (*s)[strings.LastIndexByte(*s, ':')+1:]
+	}
+	return
+}
+
+func normalizeString(s string) string {
 	buf := []byte(s)
 	for i, b := range buf {
 		switch b {
@@ -45,9 +54,7 @@ func Normalize(s string, source common.TagSource) (
 			}
 		}
 	}
-	tag.Tag = string(buf)
-
-	return
+	return string(buf)
 }
 
 // Split a sep-delimited list of tags and normalize each

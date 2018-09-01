@@ -2,7 +2,6 @@ Various AJAX-rendered HTML
 
 {% import "github.com/bakape/hydron/common" %}
 {% import "github.com/bakape/hydron/files" %}
-{% import "net/url" %}
 {% import "strconv" %}
 
 {% func Thumbnail(img common.CompactImage, highlight bool) %}{% stripspace %}
@@ -21,7 +20,8 @@ Various AJAX-rendered HTML
 	</figure>
 {% endstripspace %}{% endfunc %}
 
-{% func ImageView(img common.Image, query string) %}{% stripspace %}
+{% func ImageView(page common.Page) %}{% stripspace %}
+	{% code img := page.Viewing %}
 	{% code org := organizeTags(img.Tags) %}
 	<section id="tags">
 		<span class="spaced image-name">
@@ -29,11 +29,11 @@ Various AJAX-rendered HTML
 				Name:{% space %}{%s img.Name %}
 			</a>
 		</span>
-		{%= renderTags(org[common.Character], query) %}
-		{%= renderTags(org[common.Series], query) %}
-		{%= renderTags(org[common.Author], query) %}
-		{%= renderTags(org[common.Rating], query) %}
-		{%= renderTags(org[common.Undefined], query) %}
+		{%= renderTags(org[common.Character], page) %}
+		{%= renderTags(org[common.Series], page) %}
+		{%= renderTags(org[common.Author], page) %}
+		{%= renderTags(org[common.Rating], page) %}
+		{%= renderTags(org[common.Undefined], page) %}
 	</section>
 	{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
 	{% switch common.GetMediaType(img.Type) %}
@@ -46,20 +46,30 @@ Various AJAX-rendered HTML
 	{% endswitch %}
 {% endstripspace %}{% endfunc %}
 
-{% func renderTags(tags []common.Tag, query string) %}{% stripspace %}
-	{% code var typ string %}
-	{% if len(tags) != 0 %}
-		{% code typ = stringifyTagType(tags[0].Type) %}
-	{% endif %}
+Reender tag adition and direct tag query links
+{% func renderTags(tags []common.Tag, page common.Page) %}{% stripspace %}
+	{% code page.Filters.Tag = append(page.Filters.Tag, common.TagFilter{}) %}
+	{% code page.Page = 0 %}
+	{% code page.Viewing = nil %}
+	{% code last := &page.Filters.Tag[len(page.Filters.Tag)-1] %}
+	{% code init := page.Filters %}
 	{% for _, t  := range tags %}
-		<span class="spaced tag-{%s= typ %}">
-			<a href="/search?{%s= addToQuery(query, t, false) %}" title="Add to search">
+		{% code page.Filters = init %}
+		{% code last.TagBase = t.TagBase %}
+		<span class="spaced tag-{%z= common.BufferWriter(t.Type) %}">
+			<a href="{%s= page.URL() %}" title="Add to search">
 				+
 			</a>
-			<a href="/search?{%s= addToQuery(query, t, true) %}" title="Remove from search">
+			{% code last.Negative = true %}
+			<a href="{%s= page.URL() %}" title="Remove from search">
 				-
 			</a>
-			<a href="/search?{%s= url.Values{"q": []string{t.String()}}.Encode() %}" title="Search for tag">
+			{% code page.Filters = common.FilterSet{
+				Tag: []common.TagFilter{
+					{ TagBase: t.TagBase },
+				},
+			} %}
+			<a href="{%s= page.URL() %}" title="Search for tag">
 				{% if t.Type == common.Rating %}
 					rating:{% space %}
 				{% endif %}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -20,7 +21,6 @@ import (
 	"github.com/bakape/hydron/templates"
 	"github.com/dimfeld/httptreemux"
 	"github.com/gorilla/handlers"
-	"github.com/mailru/easyjson/jwriter"
 )
 
 var fileHeaders = map[string]string{
@@ -150,97 +150,119 @@ func serveFiles(w http.ResponseWriter, r *http.Request, root string) {
 	http.ServeContent(w, r, extractParam(r, "path"), time.Time{}, file)
 }
 
-// If ok = false, caller should return too
-func processSearch(w http.ResponseWriter, r *http.Request,
-	fn func(common.CompactImage) error,
-) (params string, page, totalPages int, ok bool) {
-	if s := r.URL.Query().Get("page"); s != "" {
-		page, _ = strconv.Atoi(s)
-		if page < 0 {
-			page = 0
+// Return data descibing the page the client is requesting
+func getRequestPage(r *http.Request) (page common.Page, err error) {
+	q := r.URL.Query()
+	extractUint := func(key string) uint {
+		if s := q.Get(key); s != "" {
+			i, _ := strconv.ParseUint(s, 10, 64)
+			return uint(i)
 		}
+		return 0
 	}
-	params = strings.Join(r.URL.Query()["q"], " ")
 
-	totalPages, err := db.SearchImages(params, page, fn)
-	switch err.(type) {
-	case nil:
-		ok = true
-		return
-	case tags.SyntaxError:
-		sendError(w, 400, err)
-		return
-	default:
-		send500(w, r, err)
+	page.Page = extractUint("page")
+	page.Limit = extractUint("limit")
+	page.Order.Type = common.OrderType(extractUint("order"))
+	if page.Order.Type > common.Random {
+		page.Order.Type = common.None
+	}
+	page.Order.Reverse = q.Get("reverse") == "on"
+	err = tags.ParseFilters(strings.Join(q["q"], " "), &page)
+	if err != nil {
 		return
 	}
+
+	if sha1 := q.Get("img"); sha1 != "" {
+		var img common.Image
+		img, err = db.GetImage(sha1)
+		if err != nil {
+			return
+		}
+		page.Viewing = &img
+	}
+
+	return
 }
 
 // Serve a tag search result as JSON
 func serveSearch(w http.ResponseWriter, r *http.Request) {
-	var jw jwriter.Writer
-	jw.RawByte('[')
+	// Stream the respone as it is being encoded
+	enc := json.NewEncoder(w)
+	comma := json.RawMessage{','}
 	first := true
-	_, _, _, ok := processSearch(w, r, func(rec common.CompactImage) error {
-		if first {
-			first = false
-		} else {
-			jw.RawByte(',')
-		}
-		rec.MarshalEasyJSON(&jw)
-		return nil
-	})
-	if !ok {
-		return
-	}
-	jw.RawByte(']')
+	var page common.Page
 
-	buf, err := jw.BuildBytes()
+	err := func() (err error) {
+		page, err = getRequestPage(r)
+		if err != nil {
+			return
+		}
+		err = db.SearchImages(&page, false,
+			func(rec common.CompactImage) (err error) {
+				if first {
+					setHeaders(w, jsonHeaders)
+					err = enc.Encode(json.RawMessage{'['})
+					if err != nil {
+						return
+					}
+					first = false
+				} else {
+					err = enc.Encode(comma)
+					if err != nil {
+						return
+					}
+				}
+				return enc.Encode(rec)
+			})
+		if err != nil {
+			return
+		}
+		return enc.Encode(json.RawMessage{']'})
+	}()
 	if err != nil {
-		send500(w, r, err)
-		return
+		httpError(w, r, err)
 	}
-	serveData(w, r, jsonHeaders, buf)
 }
 
 func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
+	var page common.Page
 	images := make([]common.CompactImage, 0, db.PageSize)
-	var (
-		page common.Page
-		ok   bool
-	)
-	page.SearchParams, page.Page, page.TotalPages, ok = processSearch(w, r,
-		func(rec common.CompactImage) error {
-			images = append(images, rec)
-			return nil
-		})
-	if !ok {
+
+	page, err := getRequestPage(r)
+	if err != nil {
+		httpError(w, r, err)
 		return
 	}
 
-	if sha1 := r.URL.Query().Get("img"); sha1 != "" {
-		img, err := db.GetImage(sha1)
-		switch err {
-		case nil:
-			page.Viewing = &img
-		case sql.ErrNoRows:
-			send404(w)
-			return
-		default:
-			send500(w, r, err)
-			return
-		}
+	// Redirect, if URLs don't match because of extra internal tags input in
+	// the search field instead of using the other form input elements
+	if r.URL.RawQuery != page.Query() {
+		http.Redirect(w, r, page.URL(), 301)
+		return
 	}
 
-	serveHTML(w, r, templates.Browser(images, page))
+	err = db.SearchImages(&page, false, func(rec common.CompactImage) error {
+		images = append(images, rec)
+		return nil
+	})
+	if err != nil {
+		httpError(w, r, err)
+		return
+	}
+
+	setHeaders(w, htmlHeaders)
+	templates.WriteBrowser(w, page, images)
 }
 
 // Serve single image data by ID
 func serveByID(w http.ResponseWriter, r *http.Request) {
 	img, err := db.GetImage(extractParam(r, "id"))
-	passQueryError(w, r, err, func() {
-		serveJSON(w, r, img)
-	})
+	if err != nil {
+		httpError(w, r, err)
+		return
+	}
+	serveJSON(w, r, img)
 }
 
 // Remove files from the database by ID
@@ -253,7 +275,7 @@ func removeFileHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Complete a tag by prefix from an HTTP request
 func completeTagHTTP(w http.ResponseWriter, r *http.Request) {
-	tags, err := db.CompleTag(extractParam(r, "prefix"))
+	tags, err := db.CompleteTag(extractParam(r, "prefix"))
 	if err != nil {
 		send500(w, r, err)
 		return
