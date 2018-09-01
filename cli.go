@@ -56,7 +56,7 @@ func searchImages(params string) (err error) {
 	if err != nil {
 		return
 	}
-	return db.SearchImages(&page, true, func(i common.CompactImage) error {
+	return db.SearchImages(&page, false, func(i common.CompactImage) error {
 		fmt.Println(files.SourcePath(i.SHA1, i.Type))
 		return nil
 	})

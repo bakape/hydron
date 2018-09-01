@@ -23,7 +23,7 @@ func selectTagID() squirrel.SelectBuilder {
 // Searches images by params and executes function on each.
 // Matches all images, if page.Filters is empty.
 // The images will only contain the bare minimum data to render thumbnails.
-func SearchImages(page *common.Page, ignoreLimit bool,
+func SearchImages(page *common.Page, paginate bool,
 	fn func(common.CompactImage) error,
 ) (err error) {
 	var (
@@ -165,14 +165,14 @@ func SearchImages(page *common.Page, ignoreLimit bool,
 		q = q.OrderBy(fmt.Sprintf("%s %s", by, mode))
 	}
 
-	if !ignoreLimit {
-		if page.Limit == 0 || page.Limit > common.PageSize {
-			page.Limit = common.PageSize
-			q = q.Limit(uint64(page.Limit)).
-				Offset(uint64(page.Page * common.PageSize))
-		} else {
-			q = q.Limit(uint64(page.Limit))
-		}
+	if paginate && (page.Limit == 0 || page.Limit > common.PageSize) {
+		page.Limit = common.PageSize
+	}
+	if page.Limit != 0 {
+		q = q.Limit(uint64(page.Limit))
+	}
+	if paginate {
+		q = q.Offset(uint64(page.Page * common.PageSize))
 	}
 
 	// Read all matched rows

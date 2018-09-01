@@ -22,12 +22,12 @@ var _MainJS = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff\xa4\x58\x5b\x73\x
 // it is not found
 func Asset(base, path string) ([]byte, string, string, error) {
 	switch path {
-	case "/main.js":
-		return _MainJS, "132c8465a5505fcf95673cf5504f31eb", "application/x-javascript", nil
 	case "/favicon.ico":
 		return _FaviconICO, "f423f5f1b06ee40b4b48a0798e92be71", "image/x-icon", nil
 	case "/main.css":
 		return _MainCSS, "7c49533156beb8a9fdb31c9b25e60c10", "text/css; charset=utf-8", nil
+	case "/main.js":
+		return _MainJS, "132c8465a5505fcf95673cf5504f31eb", "application/x-javascript", nil
 	default:
 		return nil, "", "", ErrAssetFileNotFound
 	}

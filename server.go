@@ -185,7 +185,7 @@ func serveSearch(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-		err = db.SearchImages(&page, false,
+		err = db.SearchImages(&page, true,
 			func(rec common.CompactImage) (err error) {
 				if first {
 					setHeaders(w, jsonHeaders)
@@ -229,7 +229,7 @@ func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.SearchImages(&page, false, func(rec common.CompactImage) error {
+	err = db.SearchImages(&page, true, func(rec common.CompactImage) error {
 		images = append(images, rec)
 		return nil
 	})
