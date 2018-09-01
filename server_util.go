@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/db"
 	"github.com/dimfeld/httptreemux"
 )
 
@@ -102,4 +104,14 @@ func serveData(w http.ResponseWriter, r *http.Request,
 	w.Header().Set("ETag", etag)
 	w.Header().Set("Content-Length", strconv.Itoa(len(buf)))
 	w.Write(buf)
+}
+
+// Set image currently being viewed to page descriptot
+func setViewedImage(sha1 string, page *common.Page) error {
+	img, err := db.GetImage(sha1)
+	if err != nil {
+		return err
+	}
+	page.Viewing = &img
+	return nil
 }

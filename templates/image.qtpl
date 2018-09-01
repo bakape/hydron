@@ -48,26 +48,23 @@ Various AJAX-rendered HTML
 
 Reender tag adition and direct tag query links
 {% func renderTags(tags []common.Tag, page common.Page) %}{% stripspace %}
-	{% code page.Filters.Tag = append(page.Filters.Tag, common.TagFilter{}) %}
 	{% code page.Page = 0 %}
 	{% code page.Viewing = nil %}
-	{% code last := &page.Filters.Tag[len(page.Filters.Tag)-1] %}
 	{% code init := page.Filters %}
 	{% for _, t  := range tags %}
 		{% code page.Filters = init %}
-		{% code last.TagBase = t.TagBase %}
+		{% code filter := common.TagFilter{ TagBase: t.TagBase } %}
+		{% code page.Filters.Tag = append(page.Filters.Tag, filter) %}
 		<span class="spaced tag-{%z= common.BufferWriter(t.Type) %}">
 			<a href="{%s= page.URL() %}" title="Add to search">
 				+
 			</a>
-			{% code last.Negative = true %}
+			{% code page.Filters.Tag[len(page.Filters.Tag)-1].Negative = true %}
 			<a href="{%s= page.URL() %}" title="Remove from search">
 				-
 			</a>
 			{% code page.Filters = common.FilterSet{
-				Tag: []common.TagFilter{
-					{ TagBase: t.TagBase },
-				},
+				Tag: []common.TagFilter{filter},
 			} %}
 			<a href="{%s= page.URL() %}" title="Search for tag">
 				{% if t.Type == common.Rating %}

@@ -174,12 +174,10 @@ func getRequestPage(r *http.Request) (page common.Page, err error) {
 	}
 
 	if sha1 := q.Get("img"); sha1 != "" {
-		var img common.Image
-		img, err = db.GetImage(sha1)
+		err = setViewedImage(sha1, &page)
 		if err != nil {
 			return
 		}
-		page.Viewing = &img
 	}
 
 	return
