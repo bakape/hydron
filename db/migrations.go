@@ -76,7 +76,7 @@ var migrations = []func(*sql.Tx) error{
 	},
 	func(tx *sql.Tx) (err error) {
 		return execAll(tx,
-			`alter table images add column name text ""`,
+			`alter table images add column name text not null`,
 		)
 	},
 }
