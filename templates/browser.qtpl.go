@@ -45,245 +45,245 @@ func StreamBrowser(qw422016 *qt422016.Writer, page common.Page, imgs []common.Co
 	//line browser.qtpl:15
 	qw422016.E().S(filters)
 	//line browser.qtpl:15
-	qw422016.N().S(`" name="q" autofocus autocomplete="off" list="search-suggestions"><script>var el = document.getElementById("search");el.selectionStart = el.selectionEnd = el.value.length;</script><datalist id="search-suggestions"></datalist><input type="checkbox" name="reverse" title="Reverse order"`)
-	//line browser.qtpl:21
-	if page.Order.Reverse {
-		//line browser.qtpl:21
-		qw422016.N().S(` `)
-		//line browser.qtpl:21
-		qw422016.N().S(`checked`)
-		//line browser.qtpl:21
-	}
-	//line browser.qtpl:21
-	qw422016.N().S(`><select name="order" title="Order by">`)
-	//line browser.qtpl:23
+	qw422016.N().S(`" name="q" autofocus autocomplete="off" list="search-suggestions"><script>var el = document.getElementById("search");el.selectionStart = el.selectionEnd = el.value.length;</script><datalist id="search-suggestions"></datalist><select name="order" title="Order by">`)
+	//line browser.qtpl:22
 	for i := common.None; i <= common.Random; i++ {
-		//line browser.qtpl:23
+		//line browser.qtpl:22
 		qw422016.N().S(`<option value="`)
-		//line browser.qtpl:24
+		//line browser.qtpl:23
 		qw422016.N().D(int(i))
-		//line browser.qtpl:24
+		//line browser.qtpl:23
 		qw422016.N().S(`"`)
-		//line browser.qtpl:24
+		//line browser.qtpl:23
 		if i == page.Order.Type {
-			//line browser.qtpl:24
+			//line browser.qtpl:23
 			qw422016.N().S(` `)
-			//line browser.qtpl:24
+			//line browser.qtpl:23
 			qw422016.N().S(`selected`)
-			//line browser.qtpl:24
+			//line browser.qtpl:23
 		}
-		//line browser.qtpl:24
+		//line browser.qtpl:23
 		qw422016.N().S(`>`)
-		//line browser.qtpl:25
+		//line browser.qtpl:24
 		qw422016.N().S(orderLabels[int(i)])
-		//line browser.qtpl:25
+		//line browser.qtpl:24
 		qw422016.N().S(`</option>`)
-		//line browser.qtpl:27
+		//line browser.qtpl:26
 	}
-	//line browser.qtpl:27
-	qw422016.N().S(`</select><input type="submit" value="🔍"></form>`)
-	//line browser.qtpl:31
-	streampagination(qw422016, page)
-	//line browser.qtpl:31
-	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><div id="image-view" tabindex="-1"`)
-	//line browser.qtpl:38
-	if page.Viewing != nil {
-		//line browser.qtpl:39
+	//line browser.qtpl:26
+	qw422016.N().S(`</select><input type="checkbox" name="reverse" title="Reverse order"`)
+	//line browser.qtpl:28
+	if page.Order.Reverse {
+		//line browser.qtpl:28
 		qw422016.N().S(` `)
-		//line browser.qtpl:39
-		qw422016.N().S(`data-id="`)
-		//line browser.qtpl:39
-		qw422016.N().S(page.Viewing.SHA1)
-		//line browser.qtpl:39
-		qw422016.N().S(`" autofocus`)
-		//line browser.qtpl:40
+		//line browser.qtpl:28
+		qw422016.N().S(`checked`)
+		//line browser.qtpl:28
 	}
-	//line browser.qtpl:40
-	qw422016.N().S(`>`)
-	//line browser.qtpl:42
+	//line browser.qtpl:28
+	qw422016.N().S(`></form>`)
+	//line browser.qtpl:30
+	streampagination(qw422016, page)
+	//line browser.qtpl:30
+	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><div id="image-view" tabindex="-1"`)
+	//line browser.qtpl:37
 	if page.Viewing != nil {
-		//line browser.qtpl:43
+		//line browser.qtpl:38
+		qw422016.N().S(` `)
+		//line browser.qtpl:38
+		qw422016.N().S(`data-id="`)
+		//line browser.qtpl:38
+		qw422016.N().S(page.Viewing.SHA1)
+		//line browser.qtpl:38
+		qw422016.N().S(`" autofocus`)
+		//line browser.qtpl:39
+	}
+	//line browser.qtpl:39
+	qw422016.N().S(`>`)
+	//line browser.qtpl:41
+	if page.Viewing != nil {
+		//line browser.qtpl:42
 		StreamImageView(qw422016, page)
-		//line browser.qtpl:44
+		//line browser.qtpl:43
 	}
-	//line browser.qtpl:44
+	//line browser.qtpl:43
 	qw422016.N().S(`</div><section id="browser" tabindex="1">`)
-	//line browser.qtpl:47
+	//line browser.qtpl:46
 	for i, img := range imgs {
-		//line browser.qtpl:48
+		//line browser.qtpl:47
 		StreamThumbnail(qw422016, img, i == 0)
-		//line browser.qtpl:49
+		//line browser.qtpl:48
 	}
-	//line browser.qtpl:49
+	//line browser.qtpl:48
 	qw422016.N().S(`</section><script src="/assets/main.js" async></script></body>`)
-//line browser.qtpl:53
+//line browser.qtpl:52
 }
 
-//line browser.qtpl:53
+//line browser.qtpl:52
 func WriteBrowser(qq422016 qtio422016.Writer, page common.Page, imgs []common.CompactImage) {
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	StreamBrowser(qw422016, page, imgs)
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:53
+//line browser.qtpl:52
 }
 
-//line browser.qtpl:53
+//line browser.qtpl:52
 func Browser(page common.Page, imgs []common.CompactImage) string {
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	WriteBrowser(qb422016, page, imgs)
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	qs422016 := string(qb422016.B)
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line browser.qtpl:53
+	//line browser.qtpl:52
 	return qs422016
-//line browser.qtpl:53
+//line browser.qtpl:52
 }
 
 // Links to different pages on a search page
 
-//line browser.qtpl:56
+//line browser.qtpl:55
 func streampagination(qw422016 *qt422016.Writer, page common.Page) {
-	//line browser.qtpl:56
+	//line browser.qtpl:55
 	qw422016.N().S(`<span class="spaced">`)
-	//line browser.qtpl:58
+	//line browser.qtpl:57
 	current := int(page.Page)
 
-	//line browser.qtpl:59
+	//line browser.qtpl:58
 	total := int(page.PageTotal)
 
-	//line browser.qtpl:60
+	//line browser.qtpl:59
 	if current != 0 {
-		//line browser.qtpl:61
+		//line browser.qtpl:60
 		if current-1 != 0 {
-			//line browser.qtpl:62
+			//line browser.qtpl:61
 			streampageLink(qw422016, page, 0, "<<")
-			//line browser.qtpl:63
+			//line browser.qtpl:62
 		}
-		//line browser.qtpl:64
+		//line browser.qtpl:63
 		streampageLink(qw422016, page, current-1, "<")
-		//line browser.qtpl:65
+		//line browser.qtpl:64
 	}
-	//line browser.qtpl:66
+	//line browser.qtpl:65
 	count := 0
 
-	//line browser.qtpl:67
+	//line browser.qtpl:66
 	for i := current - 5; i < total && count < 10; i++ {
-		//line browser.qtpl:68
+		//line browser.qtpl:67
 		if i < 0 {
-			//line browser.qtpl:69
+			//line browser.qtpl:68
 			continue
-			//line browser.qtpl:70
+			//line browser.qtpl:69
 		}
-		//line browser.qtpl:71
+		//line browser.qtpl:70
 		count++
 
-		//line browser.qtpl:72
+		//line browser.qtpl:71
 		if i != current {
-			//line browser.qtpl:73
+			//line browser.qtpl:72
 			streampageLink(qw422016, page, i, strconv.Itoa(i+1))
-			//line browser.qtpl:74
+			//line browser.qtpl:73
 		} else {
-			//line browser.qtpl:74
+			//line browser.qtpl:73
 			qw422016.N().S(`<b>`)
-			//line browser.qtpl:75
+			//line browser.qtpl:74
 			qw422016.N().D(i + 1)
-			//line browser.qtpl:75
+			//line browser.qtpl:74
 			qw422016.N().S(`</b>`)
-			//line browser.qtpl:76
+			//line browser.qtpl:75
 		}
-		//line browser.qtpl:77
+		//line browser.qtpl:76
 	}
-	//line browser.qtpl:78
+	//line browser.qtpl:77
 	if current != total-1 {
-		//line browser.qtpl:79
+		//line browser.qtpl:78
 		streampageLink(qw422016, page, current+1, ">")
-		//line browser.qtpl:80
+		//line browser.qtpl:79
 		if current+1 != total-1 {
-			//line browser.qtpl:81
+			//line browser.qtpl:80
 			streampageLink(qw422016, page, total-1, ">>")
-			//line browser.qtpl:82
+			//line browser.qtpl:81
 		}
-		//line browser.qtpl:83
+		//line browser.qtpl:82
 	}
-	//line browser.qtpl:83
+	//line browser.qtpl:82
 	qw422016.N().S(`</span>`)
-//line browser.qtpl:85
+//line browser.qtpl:84
 }
 
-//line browser.qtpl:85
+//line browser.qtpl:84
 func writepagination(qq422016 qtio422016.Writer, page common.Page) {
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	streampagination(qw422016, page)
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:85
+//line browser.qtpl:84
 }
 
-//line browser.qtpl:85
+//line browser.qtpl:84
 func pagination(page common.Page) string {
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	writepagination(qb422016, page)
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	qs422016 := string(qb422016.B)
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line browser.qtpl:85
+	//line browser.qtpl:84
 	return qs422016
-//line browser.qtpl:85
+//line browser.qtpl:84
 }
 
 // Link to a different paginated search page
 
-//line browser.qtpl:88
+//line browser.qtpl:87
 func streampageLink(qw422016 *qt422016.Writer, page common.Page, i int, text string) {
-	//line browser.qtpl:89
+	//line browser.qtpl:88
 	page.Page = uint(i)
 
-	//line browser.qtpl:89
+	//line browser.qtpl:88
 	qw422016.N().S(`<a href="`)
-	//line browser.qtpl:90
+	//line browser.qtpl:89
 	qw422016.N().S(page.URL())
-	//line browser.qtpl:90
+	//line browser.qtpl:89
 	qw422016.N().S(`" tabindex="2">`)
-	//line browser.qtpl:91
+	//line browser.qtpl:90
 	qw422016.N().S(text)
-	//line browser.qtpl:91
+	//line browser.qtpl:90
 	qw422016.N().S(`</a>`)
-//line browser.qtpl:93
+//line browser.qtpl:92
 }
 
-//line browser.qtpl:93
+//line browser.qtpl:92
 func writepageLink(qq422016 qtio422016.Writer, page common.Page, i int, text string) {
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	streampageLink(qw422016, page, i, text)
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:93
+//line browser.qtpl:92
 }
 
-//line browser.qtpl:93
+//line browser.qtpl:92
 func pageLink(page common.Page, i int, text string) string {
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	writepageLink(qb422016, page, i, text)
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	qs422016 := string(qb422016.B)
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line browser.qtpl:93
+	//line browser.qtpl:92
 	return qs422016
-//line browser.qtpl:93
+//line browser.qtpl:92
 }

@@ -34,9 +34,11 @@
 		flex-basis: 20em;
 		width: 100%;
 		display: flex;
+		& > * {
+			.round-corners();
+		}
 	}
 	input[type=search] {
-		.round-corners();
 		flex-grow: 2;
 	}
 	span {

@@ -18,7 +18,6 @@
 						el.selectionStart = el.selectionEnd = el.value.length;
 					</script>
 					<datalist id="search-suggestions"></datalist>
-					<input type="checkbox" name="reverse" title="Reverse order"{% if page.Order.Reverse %}{% space %}checked{% endif %}>
 					<select name="order" title="Order by">
 						{% for i := common.None; i <= common.Random; i++ %}
 							<option value="{%d int(i) %}"{% if i == page.Order.Type %}{% space %}selected{% endif %}>
@@ -26,7 +25,7 @@
 							</option>
 						{% endfor %}
 					</select>
-					<input type="submit" value="🔍">
+					<input type="checkbox" name="reverse" title="Reverse order"{% if page.Order.Reverse %}{% space %}checked{% endif %}>
 				</form>
 				{%= pagination(page) %}
 			</div>

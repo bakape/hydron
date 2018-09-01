@@ -3,12 +3,23 @@ const imageView = document.getElementById("image-view");
 const search = document.getElementById("search");
 const figureWidth = 200 + 4; // With marging
 
-// Search suggestions
+// Search bar and suggestions
 (() => {
 	const sugg = document.getElementById("search-suggestions");
 	if (!search) {
 		return;
 	}
+
+	// Autosubmit on order change
+	const form = document.querySelector("#top-banner form")
+	form.addEventListener("change", e => {
+		switch (e.target.getAttribute("name")) {
+			case "order":
+			case "reverse":
+				form.submit();
+		}
+	}, { passive: true });
+
 
 	search.addEventListener("input", async e => {
 		let text = search.value;
