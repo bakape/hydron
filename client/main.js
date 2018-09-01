@@ -157,7 +157,11 @@ browser.addEventListener("click", e => {
 	if (!e.target.closest || e.target.tagName === "INPUT") {
 		return;
 	}
-	viewImage(e.target.closest("figure").getAttribute("data-sha1"));
+	const el = e.target.closest("figure");
+	if (!el) {
+		return;
+	}
+	viewImage(el.getAttribute("data-sha1"));
 	setHighlight(e.target);
 }, { passive: true });
 
@@ -167,46 +171,62 @@ browser.addEventListener("keydown", e => {
 	}
 	let matched = true;
 	let h;
-	switch (e.key) {
-		case "ArrowDown":
-			moveHighlight(0, +1);
-			break;
-		case "ArrowUp":
-			moveHighlight(0, -1);
-			break;
-		case "ArrowRight":
-			moveHighlight(+1, 0);
-			break;
-		case "ArrowLeft":
-			moveHighlight(-1, 0);
-			break;
-		case " ": // SpaceBar
-			h = getHighlighted();
-			if (h) {
-				const chb = h.querySelector("input[type=checkbox]")
-				chb.checked = !chb.checked;
-			}
-			break;
-		case "Enter":
-			h = getHighlighted();
-			if (h) {
-				viewImage(h.getAttribute("data-sha1"));
-			}
-			break;
-		case "PageDown":
-			moveHighlight(0, +browserWidth());
-			break;
-		case "PageUp":
-			moveHighlight(0, -browserWidth());
-			break;
-		case "Home":
-			setHighlight(browser.querySelector("figure"));
-			break;
-		case "End":
-			setHighlight(browser.querySelector("figure:last-child"));
-			break;
-		default:
-			matched = false;
+	if (e.getModifierState("Control")) {
+		switch (e.key) {
+			case "l":
+				search.focus();
+				break;
+			case "a":
+				for (let el of [...browser.children]) {
+					el = el.querySelector("input[type=checkbox]");
+					el.checked = !el.checked;
+				}
+				break;
+			default:
+				matched = false;
+		}
+	} else {
+		switch (e.key) {
+			case "ArrowDown":
+				moveHighlight(0, +1);
+				break;
+			case "ArrowUp":
+				moveHighlight(0, -1);
+				break;
+			case "ArrowRight":
+				moveHighlight(+1, 0);
+				break;
+			case "ArrowLeft":
+				moveHighlight(-1, 0);
+				break;
+			case " ": // SpaceBar
+				h = getHighlighted();
+				if (h) {
+					const chb = h.querySelector("input[type=checkbox]")
+					chb.checked = !chb.checked;
+				}
+				break;
+			case "Enter":
+				h = getHighlighted();
+				if (h) {
+					viewImage(h.getAttribute("data-sha1"));
+				}
+				break;
+			case "PageDown":
+				moveHighlight(0, +browserWidth());
+				break;
+			case "PageUp":
+				moveHighlight(0, -browserWidth());
+				break;
+			case "Home":
+				setHighlight(browser.querySelector("figure"));
+				break;
+			case "End":
+				setHighlight(browser.querySelector("figure:last-child"));
+				break;
+			default:
+				matched = false;
+		}
 	}
 	if (matched) {
 		preventDefault(e);
