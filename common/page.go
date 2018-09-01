@@ -24,7 +24,7 @@ func (p Page) URL() string {
 
 // Returns query string of page without leading '?'
 func (p Page) Query() string {
-	var q url.Values
+	q := make(url.Values, 6)
 	setUint := func(key string, i uint) {
 		q.Set(key, strconv.FormatUint(uint64(i), 10))
 	}
