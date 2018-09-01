@@ -39,7 +39,9 @@ func (p Page) Query() string {
 	if p.Order.Reverse {
 		q.Set("reverse", "on")
 	}
-	q.Set("q", p.Filters.String())
+	if s := p.Filters.String(); s != "" {
+		q.Set("q", s)
+	}
 	if p.Viewing != nil {
 		q.Set("img", p.Viewing.SHA1)
 	}
