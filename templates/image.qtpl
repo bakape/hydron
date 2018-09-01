@@ -58,11 +58,11 @@ Reender tag adition and direct tag query links
 		{% code filter := common.TagFilter{ TagBase: t.TagBase } %}
 		{% code page.Filters.Tag = append(page.Filters.Tag, filter) %}
 		<span class="spaced tag-{%z= common.BufferWriter(t.Type) %}">
-			<a href="{%s= page.URL() %}" title="Add to search">
+			<a href="{%s= page.URL() %}" class="char-button" title="Add to search">
 				+
 			</a>
 			{% code page.Filters.Tag[len(page.Filters.Tag)-1].Negative = true %}
-			<a href="{%s= page.URL() %}" title="Remove from search">
+			<a href="{%s= page.URL() %}" class="char-button" title="Remove from search">
 				-
 			</a>
 			{% code page.Filters = common.FilterSet{

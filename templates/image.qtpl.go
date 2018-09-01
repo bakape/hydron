@@ -123,7 +123,7 @@ func StreamImageView(qw422016 *qt422016.Writer, page common.Page) {
 		//line image.qtpl:27
 		qw422016.N().S(`<span class="spaced image-name"><a href="/search?q=`)
 		//line image.qtpl:29
-		qw422016.N().S(img.Name)
+		qw422016.E().S(img.Name)
 		//line image.qtpl:29
 		qw422016.N().S(`" title="Search for name">Name:`)
 		//line image.qtpl:30
@@ -235,7 +235,7 @@ func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, page common.
 		//line image.qtpl:61
 		qw422016.N().S(page.URL())
 		//line image.qtpl:61
-		qw422016.N().S(`" title="Add to search">+</a>`)
+		qw422016.N().S(`" class="char-button" title="Add to search">+</a>`)
 		//line image.qtpl:64
 		page.Filters.Tag[len(page.Filters.Tag)-1].Negative = true
 
@@ -244,7 +244,7 @@ func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, page common.
 		//line image.qtpl:65
 		qw422016.N().S(page.URL())
 		//line image.qtpl:65
-		qw422016.N().S(`" title="Remove from search">-</a>`)
+		qw422016.N().S(`" class="char-button" title="Remove from search">-</a>`)
 		//line image.qtpl:68
 		page.Filters = common.FilterSet{
 			Tag: []common.TagFilter{filter},
