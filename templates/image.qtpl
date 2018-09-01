@@ -1,57 +1,55 @@
-Various AJAX-rendered HTML
-
 {% import "github.com/bakape/hydron/common" %}
 {% import "github.com/bakape/hydron/files" %}
-{% import "strconv" %}
 
-{% func Thumbnail(img common.CompactImage, highlight bool) %}{% stripspace %}
-	<figure data-type="{%d int(img.Type) %}"{% space %}
-		data-sha1="{%s= img.SHA1 %}"
-		{% if highlight %}
-			{% space %}class="highlight"
-		{% endif %}
-	>
+{% func Thumbnail(img common.CompactImage, page common.Page, highlight bool) %}{% stripspace %}
+	<figure{% if highlight %}{% space %}class="highlight"{% endif %}>
 		<input type="checkbox" name="img:{%s= img.SHA1 %}">
 		<div class="background"></div>
-		<img width="{%s= strconv.FormatUint(img.Thumb.Width, 10) %}"{% space %}
-			height="{%s= strconv.FormatUint(img.Thumb.Height, 10) %}"{% space %}
-			src="{%s= files.NetThumbPath(img.SHA1, img.Thumb.IsPNG) %}"
-		>
+		<a href="/image/{%s= img.SHA1 %}?{%s= page.Query() %}">
+			<img width="{%d int(img.Thumb.Width) %}" height="{%d int(img.Thumb.Height) %}" src="{%s= files.NetThumbPath(img.SHA1, img.Thumb.IsPNG) %}">
+		</a>
 	</figure>
 {% endstripspace %}{% endfunc %}
 
-{% func ImageView(page common.Page) %}{% stripspace %}
-	{% code img := page.Viewing %}
-	{% code org := organizeTags(img.Tags) %}
-	<section id="tags">
-		{% if img.Name != "" %}
-			<span class="spaced image-name">
-				<a href="/search?q={%s img.Name %}" title="Search for name">
-					Name:{% space %}{%s img.Name %}
-				</a>
-			</span>
-		{% endif %}
-		{%= renderTags(org[common.Character], page) %}
-		{%= renderTags(org[common.Series], page) %}
-		{%= renderTags(org[common.Author], page) %}
-		{%= renderTags(org[common.Rating], page) %}
-		{%= renderTags(org[common.Undefined], page) %}
-	</section>
-	{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
-	{% switch common.GetMediaType(img.Type) %}
-	{% case common.MediaImage %}
-		<img src="{%s= src %}">
-	{% case common.MediaVideo %}
-		<video src="{%s= src %}" autoplay loop controls>
-	{% default %}
-		<b>Preview not supported for this format</b>
-	{% endswitch %}
+{% func ImagePage(img common.Image, page common.Page) %}{% stripspace %}
+	{% code title := img.Name %}
+	{% if title == "" %}
+		{% code title = "hydron" %}
+	{% endif %}
+	{%= head(title) %}
+	<body>
+		<div id="image-view">
+			<section id="tags">
+				{% if img.Name != "" %}
+					<span class="image-name">
+						<a href="/search?q={%s img.Name %}" title="Search for name">
+							Name:{% space %}{%s img.Name %}
+						</a>
+					</span>
+				{% endif %}
+				{% code org := organizeTags(img.Tags) %}
+				{%= renderTags(org[common.Character], page) %}
+				{%= renderTags(org[common.Series], page) %}
+				{%= renderTags(org[common.Author], page) %}
+				{%= renderTags(org[common.Rating], page) %}
+				{%= renderTags(org[common.Undefined], page) %}
+			</section>
+			{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
+			{% switch common.GetMediaType(img.Type) %}
+			{% case common.MediaImage %}
+				<img src="{%s= src %}">
+			{% case common.MediaVideo %}
+				<video src="{%s= src %}" autoplay loop controls>
+			{% default %}
+				<b>Display not supported for this file format</b>
+			{% endswitch %}
+		</div>
+	</body>
 {% endstripspace %}{% endfunc %}
 
 Reender tag adition and direct tag query links
 {% func renderTags(tags []common.Tag, page common.Page) %}{% stripspace %}
 	{% code page.Page = 0 %}
-	{% code page.Viewing = nil %}
 	{% code init := page.Filters %}
 	{% for _, t  := range tags %}
 		{% code page.Filters = init %}

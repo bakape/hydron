@@ -11,9 +11,6 @@ import (
 	"github.com/bakape/hydron/files"
 )
 
-// Size of page for search query pagination
-const PageSize = 100
-
 type IDAndMD5 struct {
 	ID  int64
 	MD5 string
@@ -169,9 +166,10 @@ func SearchImages(page *common.Page, ignoreLimit bool,
 	}
 
 	if !ignoreLimit {
-		if page.Limit == 0 || page.Limit > PageSize {
-			page.Limit = PageSize
-			q = q.Limit(uint64(page.Limit)).Offset(uint64(page.Page * PageSize))
+		if page.Limit == 0 || page.Limit > common.PageSize {
+			page.Limit = common.PageSize
+			q = q.Limit(uint64(page.Limit)).
+				Offset(uint64(page.Page * common.PageSize))
 		} else {
 			q = q.Limit(uint64(page.Limit))
 		}
@@ -206,8 +204,8 @@ func SearchImages(page *common.Page, ignoreLimit bool,
 	if err != nil {
 		return
 	}
-	page.PageTotal = total / PageSize
-	if total%PageSize != 0 {
+	page.PageTotal = total / common.PageSize
+	if total%common.PageSize != 0 {
 		page.PageTotal++
 	}
 

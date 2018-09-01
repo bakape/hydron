@@ -5,12 +5,14 @@ import (
 	"strconv"
 )
 
-// Describes the contents a browser page is displaying
+// Size of page for search query pagination
+const PageSize = 100
+
+// Describes the contents a page is displaying
 type Page struct {
 	Page, PageTotal, Limit uint
 	Order                  Order
 	Filters                FilterSet
-	Viewing                *Image // Image currently being viewed, if any
 }
 
 // Return the relative URL this page points to
@@ -29,8 +31,12 @@ func (p Page) Query() string {
 		q.Set(key, strconv.FormatUint(uint64(i), 10))
 	}
 
-	setUint("page", p.Page)
-	if p.Limit != 0 {
+	if p.Page != 0 {
+		setUint("page", p.Page)
+	}
+	switch p.Limit {
+	case 0, PageSize:
+	default:
 		setUint("limit", p.Limit)
 	}
 	if p.Order.Type != None {
@@ -39,12 +45,7 @@ func (p Page) Query() string {
 	if p.Order.Reverse {
 		q.Set("reverse", "on")
 	}
-	if s := p.Filters.String(); s != "" {
-		q.Set("q", s)
-	}
-	if p.Viewing != nil {
-		q.Set("img", p.Viewing.SHA1)
-	}
+	q.Set("q", p.Filters.String())
 
 	return q.Encode()
 }

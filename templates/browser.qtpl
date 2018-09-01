@@ -33,18 +33,9 @@
 				<div id="progress-bar"></div>
 			</div>
 		</nav>
-		<div id="image-view" tabindex="-1"
-			{% if page.Viewing != nil %}
-				{% space %}data-id="{%s= page.Viewing.SHA1 %}" autofocus
-			{% endif %}
-		>
-			{% if page.Viewing != nil %}
-				{%= ImageView(page) %}
-			{% endif %}
-		</div>
 		<section id="browser" tabindex="1">
 			{% for i, img := range imgs %}
-				{%= Thumbnail(img, i == 0) %}
+				{%= Thumbnail(img, page, i == 0) %}
 			{% endfor %}
 		</section>
 		<script src="/assets/main.js" async></script>

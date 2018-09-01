@@ -65,6 +65,7 @@ func startServer(addr string) error {
 
 	// HTML paths
 	r.GET("/search", serveSearchHTML)
+	r.GET("/image/:id", serveImagePage)
 
 	// Image API
 	api := r.NewGroup("/api")
@@ -85,7 +86,6 @@ func startServer(addr string) error {
 
 	ajax := r.NewGroup("/ajax")
 	ajax.GET("/thumbnail/:id", serveThumbnail)
-	ajax.GET("/image-view/:id", serveImageView)
 
 	return http.ListenAndServe(addr, selectiveCompression(r))
 }
@@ -169,17 +169,6 @@ func getRequestPage(r *http.Request) (page common.Page, err error) {
 	}
 	page.Order.Reverse = q.Get("reverse") == "on"
 	err = tags.ParseFilters(strings.Join(q["q"], " "), &page)
-	if err != nil {
-		return
-	}
-
-	if sha1 := q.Get("img"); sha1 != "" {
-		err = setViewedImage(sha1, &page)
-		if err != nil {
-			return
-		}
-	}
-
 	return
 }
 
@@ -225,7 +214,7 @@ func serveSearch(w http.ResponseWriter, r *http.Request) {
 
 func serveSearchHTML(w http.ResponseWriter, r *http.Request) {
 	var page common.Page
-	images := make([]common.CompactImage, 0, db.PageSize)
+	images := make([]common.CompactImage, 0, common.PageSize)
 
 	page, err := getRequestPage(r)
 	if err != nil {
@@ -340,4 +329,38 @@ func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		send500(w, r, err)
 	}
+}
+
+// Serve thumbnail HTML
+func serveThumbnail(w http.ResponseWriter, r *http.Request) {
+	img, err := db.GetImage(extractParam(r, "id"))
+	if err != nil {
+		httpError(w, r, err)
+		return
+	}
+	setHeaders(w, htmlHeaders)
+	templates.WriteThumbnail(w, img.CompactImage, common.Page{}, false)
+}
+
+// Serve expanded view of an image
+func serveImagePage(w http.ResponseWriter, r *http.Request) {
+	var (
+		page common.Page
+		img  common.Image
+	)
+	err := func() (err error) {
+		page, err = getRequestPage(r)
+		if err != nil {
+			return
+		}
+		img, err = db.GetImage(extractParam(r, "id"))
+		return
+	}()
+	if err != nil {
+		httpError(w, r, err)
+		return
+	}
+
+	setHeaders(w, htmlHeaders)
+	templates.WriteImagePage(w, img, page)
 }
