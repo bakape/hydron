@@ -109,7 +109,7 @@ func StreamImagePage(qw422016 *qt422016.Writer, img common.Image, page common.Pa
 	//line image.qtpl:23
 	if img.Name != "" {
 		//line image.qtpl:23
-		qw422016.N().S(`<span class="image-name"><a href="/search?q=`)
+		qw422016.N().S(`<span class="truncate image-name"><a href="/search?q=`)
 		//line image.qtpl:25
 		qw422016.E().S(img.Name)
 		//line image.qtpl:25
@@ -195,7 +195,7 @@ func ImagePage(img common.Image, page common.Page) string {
 //line image.qtpl:48
 }
 
-// Reender tag adition and direct tag query links
+// Render tag adition and direct tag query links
 
 //line image.qtpl:51
 func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, page common.Page) {
@@ -217,7 +217,7 @@ func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, page common.
 		page.Filters.Tag = append(page.Filters.Tag, filter)
 
 		//line image.qtpl:57
-		qw422016.N().S(`<span class="spaced tag-`)
+		qw422016.N().S(`<span class="spaced truncate tag-`)
 		//line image.qtpl:58
 		qw422016.N().Z(common.BufferWriter(t.Type))
 		//line image.qtpl:58
