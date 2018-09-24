@@ -39,6 +39,9 @@ generate:
 # 	mxe-x86-64-w64-mingw32.static-libidn
 # 	mxe-x86-64-w64-mingw32.static-ffmpeg
 #   mxe-x86-64-w64-mingw32.static-graphicsmagick
+#
+# To cross-compile for windows-x86 use:
+# make cross_compile_windows WIN_ARCH=386 MXE_TARGET=i686-w64-mingw32.static
 cross_compile_windows:
 	CGO_ENABLED=1 GOOS=windows GOARCH=$(WIN_ARCH) \
 	CC=$(MXE_ROOT)/bin/$(MXE_TARGET)-gcc \
