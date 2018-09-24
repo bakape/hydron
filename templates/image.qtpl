@@ -2,7 +2,7 @@
 {% import "github.com/bakape/hydron/files" %}
 
 {% func Thumbnail(img common.CompactImage, page common.Page, highlight bool) %}{% stripspace %}
-	<figure{% if highlight %}{% space %}class="highlight"{% endif %}>
+	<figure data-href="{%s= files.NetSourcePath(img.SHA1, img.Type) %}"{% if highlight %}{% space %}class="highlight"{% endif %}>
 		<input type="checkbox" name="img:{%s= img.SHA1 %}">
 		<div class="background"></div>
 		<a href="/image/{%s= img.SHA1 %}?{%s= page.Query() %}">

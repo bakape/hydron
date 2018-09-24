@@ -62,6 +62,30 @@ const figureWidth = 200 + 4; // With marging
 		document.addEventListener(e, stopDefault);
 	}
 
+	// Set drag contents to seleceted images
+	browser.addEventListener("dragstart", e => {
+		let el = e.target;
+		if (!el.closest || !(el = el.closest("figure"))) {
+			return;
+		}
+		e.dataTransfer.setData("text/uri-list",
+			location.origin + el.getAttribute("data-href"));
+	});
+
+	browser.addEventListener("mousedown", e => {
+		let el = e.target;
+		if (!el.closest || !(el = el.closest("figure"))) {
+			return;
+		}
+
+		// Select image
+		const sel = window.getSelection();
+		sel.removeAllRanges();
+		const r = document.createRange();
+		r.selectNodeContents(el);
+		sel.addRange(r);
+	});
+
 	document.addEventListener("drop", e => {
 		const { files } = e.dataTransfer;
 		if (!files.length || isFileInput(e.target)) {
