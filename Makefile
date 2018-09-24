@@ -50,7 +50,7 @@ cross_compile_windows:
 	PKG_CONFIG_LIBDIR=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
 	PKG_CONFIG_PATH=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
 	CGO_LDFLAGS_ALLOW='-mconsole' \
-	go build -v -a -o hydron.exe --ldflags '-extldflags "-static"'
+	go build -v -a -o hydron.exe --ldflags '-extldflags "-static" -H=windowsgui'
 
 cross_package_windows: cross_compile_windows
 	zip -r -9 hydron-win_$(WIN_ARCH)-$(version_base).zip hydron.exe
