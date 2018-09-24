@@ -7,6 +7,9 @@
     "url": "git+https://github.com/bakape/hydron.git"
   },
   "author": "bakape <scorpid33@gmail.com> (https://github.com/bakape)",
+  "devDependencies": {
+    "jshint": "^2.9.6"
+  },
   "dependencies": {
     "less": "^3.0.4",
     "less-plugin-clean-css": "^1.5.1"
