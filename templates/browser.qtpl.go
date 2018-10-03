@@ -81,187 +81,203 @@ func StreamBrowser(qw422016 *qt422016.Writer, page common.Page, imgs []common.Co
 		//line browser.qtpl:28
 	}
 	//line browser.qtpl:28
-	qw422016.N().S(`></form>`)
-	//line browser.qtpl:30
-	streampagination(qw422016, page)
-	//line browser.qtpl:30
-	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><section id="browser" tabindex="1">`)
+	qw422016.N().S(`></form><div id="options"><label style="padding-bottom: 1em;">Options</label><div id="opts-bar"><form method="get"><input type="text" id="opts-input" title="Text input for options" autocomplete="off"><br><select id="opts-select">`)
 	//line browser.qtpl:37
-	for i, img := range imgs {
+	for i := common.FetchTags; i <= common.Delete; i++ {
+		//line browser.qtpl:37
+		qw422016.N().S(`<option value="`)
 		//line browser.qtpl:38
-		StreamThumbnail(qw422016, img, page, i == 0)
+		qw422016.N().D(int(i))
+		//line browser.qtpl:38
+		qw422016.N().S(`">`)
 		//line browser.qtpl:39
+		qw422016.N().S(optionLabels[int(i)])
+		//line browser.qtpl:39
+		qw422016.N().S(`</option>`)
+		//line browser.qtpl:41
 	}
-	//line browser.qtpl:39
+	//line browser.qtpl:41
+	qw422016.N().S(`</select><br><input type="button" id="opts-submit" value="submit"></form><br><a>Upload files</a></div></div>`)
+	//line browser.qtpl:50
+	streampagination(qw422016, page)
+	//line browser.qtpl:50
+	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><section id="browser" tabindex="1">`)
+	//line browser.qtpl:57
+	for i, img := range imgs {
+		//line browser.qtpl:58
+		StreamThumbnail(qw422016, img, page, i == 0)
+		//line browser.qtpl:59
+	}
+	//line browser.qtpl:59
 	qw422016.N().S(`</section><script src="/assets/main.js" async></script></body>`)
-//line browser.qtpl:43
+//line browser.qtpl:63
 }
 
-//line browser.qtpl:43
+//line browser.qtpl:63
 func WriteBrowser(qq422016 qtio422016.Writer, page common.Page, imgs []common.CompactImage) {
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	StreamBrowser(qw422016, page, imgs)
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:43
+//line browser.qtpl:63
 }
 
-//line browser.qtpl:43
+//line browser.qtpl:63
 func Browser(page common.Page, imgs []common.CompactImage) string {
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	WriteBrowser(qb422016, page, imgs)
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	qs422016 := string(qb422016.B)
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line browser.qtpl:43
+	//line browser.qtpl:63
 	return qs422016
-//line browser.qtpl:43
+//line browser.qtpl:63
 }
 
 // Links to different pages on a search page
 
-//line browser.qtpl:46
+//line browser.qtpl:66
 func streampagination(qw422016 *qt422016.Writer, page common.Page) {
-	//line browser.qtpl:46
+	//line browser.qtpl:66
 	qw422016.N().S(`<span class="spaced">`)
-	//line browser.qtpl:48
+	//line browser.qtpl:68
 	current := int(page.Page)
 
-	//line browser.qtpl:49
+	//line browser.qtpl:69
 	total := int(page.PageTotal)
 
-	//line browser.qtpl:50
+	//line browser.qtpl:70
 	if current != 0 {
-		//line browser.qtpl:51
+		//line browser.qtpl:71
 		if current-1 != 0 {
-			//line browser.qtpl:52
+			//line browser.qtpl:72
 			streampageLink(qw422016, page, 0, "<<")
-			//line browser.qtpl:53
+			//line browser.qtpl:73
 		}
-		//line browser.qtpl:54
+		//line browser.qtpl:74
 		streampageLink(qw422016, page, current-1, "<")
-		//line browser.qtpl:55
+		//line browser.qtpl:75
 	}
-	//line browser.qtpl:56
+	//line browser.qtpl:76
 	count := 0
 
-	//line browser.qtpl:57
+	//line browser.qtpl:77
 	for i := current - 5; i < total && count < 10; i++ {
-		//line browser.qtpl:58
+		//line browser.qtpl:78
 		if i < 0 {
-			//line browser.qtpl:59
+			//line browser.qtpl:79
 			continue
-			//line browser.qtpl:60
+			//line browser.qtpl:80
 		}
-		//line browser.qtpl:61
+		//line browser.qtpl:81
 		count++
 
-		//line browser.qtpl:62
+		//line browser.qtpl:82
 		if i != current {
-			//line browser.qtpl:63
+			//line browser.qtpl:83
 			streampageLink(qw422016, page, i, strconv.Itoa(i+1))
-			//line browser.qtpl:64
+			//line browser.qtpl:84
 		} else {
-			//line browser.qtpl:64
+			//line browser.qtpl:84
 			qw422016.N().S(`<b>`)
-			//line browser.qtpl:65
+			//line browser.qtpl:85
 			qw422016.N().D(i + 1)
-			//line browser.qtpl:65
+			//line browser.qtpl:85
 			qw422016.N().S(`</b>`)
-			//line browser.qtpl:66
+			//line browser.qtpl:86
 		}
-		//line browser.qtpl:67
+		//line browser.qtpl:87
 	}
-	//line browser.qtpl:68
+	//line browser.qtpl:88
 	if current != total-1 {
-		//line browser.qtpl:69
+		//line browser.qtpl:89
 		streampageLink(qw422016, page, current+1, ">")
-		//line browser.qtpl:70
+		//line browser.qtpl:90
 		if current+1 != total-1 {
-			//line browser.qtpl:71
+			//line browser.qtpl:91
 			streampageLink(qw422016, page, total-1, ">>")
-			//line browser.qtpl:72
+			//line browser.qtpl:92
 		}
-		//line browser.qtpl:73
+		//line browser.qtpl:93
 	}
-	//line browser.qtpl:73
+	//line browser.qtpl:93
 	qw422016.N().S(`</span>`)
-//line browser.qtpl:75
+//line browser.qtpl:95
 }
 
-//line browser.qtpl:75
+//line browser.qtpl:95
 func writepagination(qq422016 qtio422016.Writer, page common.Page) {
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	streampagination(qw422016, page)
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:75
+//line browser.qtpl:95
 }
 
-//line browser.qtpl:75
+//line browser.qtpl:95
 func pagination(page common.Page) string {
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	writepagination(qb422016, page)
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	qs422016 := string(qb422016.B)
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line browser.qtpl:75
+	//line browser.qtpl:95
 	return qs422016
-//line browser.qtpl:75
+//line browser.qtpl:95
 }
 
 // Link to a different paginated search page
 
-//line browser.qtpl:78
+//line browser.qtpl:98
 func streampageLink(qw422016 *qt422016.Writer, page common.Page, i int, text string) {
-	//line browser.qtpl:79
+	//line browser.qtpl:99
 	page.Page = uint(i)
 
-	//line browser.qtpl:79
+	//line browser.qtpl:99
 	qw422016.N().S(`<a href="`)
-	//line browser.qtpl:80
+	//line browser.qtpl:100
 	qw422016.N().S(page.URL())
-	//line browser.qtpl:80
+	//line browser.qtpl:100
 	qw422016.N().S(`" tabindex="2">`)
-	//line browser.qtpl:81
+	//line browser.qtpl:101
 	qw422016.N().S(text)
-	//line browser.qtpl:81
+	//line browser.qtpl:101
 	qw422016.N().S(`</a>`)
-//line browser.qtpl:83
+//line browser.qtpl:103
 }
 
-//line browser.qtpl:83
+//line browser.qtpl:103
 func writepageLink(qq422016 qtio422016.Writer, page common.Page, i int, text string) {
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	streampageLink(qw422016, page, i, text)
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:83
+//line browser.qtpl:103
 }
 
-//line browser.qtpl:83
+//line browser.qtpl:103
 func pageLink(page common.Page, i int, text string) string {
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	writepageLink(qb422016, page, i, text)
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	qs422016 := string(qb422016.B)
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line browser.qtpl:83
+	//line browser.qtpl:103
 	return qs422016
-//line browser.qtpl:83
+//line browser.qtpl:103
 }
