@@ -12,7 +12,7 @@ import (
 var fetchTags = make(chan request)
 
 // Number of parallel fetch workers
-const FetcherCount = 8
+const FetcherCount = 4
 
 type request struct {
 	md5 string
