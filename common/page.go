@@ -68,3 +68,14 @@ const (
 	ByTagCount
 	Random
 )
+
+// Types of option
+type OptionType uint8
+
+const (
+	FetchTags OptionType = iota
+	AddTags
+	RemoveTags
+	SetName
+	Delete
+)
