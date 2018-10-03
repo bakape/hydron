@@ -62,30 +62,6 @@ const figureWidth = 200 + 4; // With marging
 		document.addEventListener(e, stopDefault);
 	}
 
-	// Set drag contents to seleceted images
-	browser.addEventListener("dragstart", e => {
-		let el = e.target;
-		if (!el.closest || !(el = el.closest("figure"))) {
-			return;
-		}
-		e.dataTransfer.setData("text/uri-list",
-			location.origin + el.getAttribute("data-href"));
-	});
-
-	browser.addEventListener("mousedown", e => {
-		let el = e.target;
-		if (!el.closest || !(el = el.closest("figure"))) {
-			return;
-		}
-
-		// Select image
-		const sel = window.getSelection();
-		sel.removeAllRanges();
-		const r = document.createRange();
-		r.selectNodeContents(el);
-		sel.addRange(r);
-	});
-
 	document.addEventListener("drop", e => {
 		const { files } = e.dataTransfer;
 		if (!files.length || isFileInput(e.target)) {
@@ -131,6 +107,45 @@ const figureWidth = 200 + 4; // With marging
 	function isFileInput(el) {
 		return el.tagName === "INPUT" && el.getAttribute("type") === "file";
 	}
+})();
+
+// Options form
+(() => {
+	const optsform = document.querySelector("#opts-bar form");
+	const optssub = document.querySelector("#opts-submit");
+	optssub.addEventListener("click", async e => {
+		//todo: validate form data
+		let checked = [];
+		for (let el of [...browser.children]) {
+			el = el.querySelector("input[type=checkbox]");
+			if (el.checked) {
+				let i = el.name.lastIndexOf(":");
+				checked.push(el.name.slice(i+1));	//Extract+store image ID
+			}
+		}
+		let opt = optsform.querySelector("#opts-select").value;
+		let input = optsform.querySelector("#opts-input").value;
+		if (opt === "0"){
+			//fetch tags
+			//TODO: make api call to fetchAllTags()
+			//		or, fetch tags only for selected files?
+			return;
+		}
+		let n = checked.length;
+		let i = 0;
+		while (i < n){
+			let params = createParams(opt, input, checked[i]);
+			if (params.length === 0){
+				return;
+			}
+			try {
+				const r = await fetch( params[0], { method: params[1], body: params[2] });
+			} catch (err) {
+				alert(err);
+			}
+			renderProgress(++i/n);
+		}
+	}, { passive: true });
 })();
 
 browser.addEventListener("keydown", e => {
@@ -281,4 +296,37 @@ function setHighlight(target) {
 		behavior: "smooth",
 		block: "center",
 	});
+}
+
+function createParams(option, input, imgid){
+	let body = new FormData();
+	switch (option) {
+		case "1":
+			// Add tags
+			path = "/api/images/" + imgid + "/tags/";
+			method = "PATCH";
+			body.append("tags", input);
+			break;
+		case "2":
+			// Remove tags
+			path = "/api/images/" + imgid + "/tags/";
+			method = "DELETE";
+			body.append("tags", input)
+			break;
+		case "3":
+			// Set name
+			path = "/api/images/" + imgid + "/name/";
+			method = "POST";
+			body.append("name", input);
+			break;
+		case "4":
+			//Delete file
+			path = "/api/images/" + imgid + "/";
+			method = "DELETE";
+			break;
+		default:
+			console.log("Invalid selection");
+			return [];
+	}
+	return [path, method, body];
 }
