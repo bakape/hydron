@@ -310,7 +310,7 @@ function createParams(option, input, imgid){
 		case "2":
 			// Remove tags
 			path = "/api/images/" + imgid + "/tags/";
-			method = "DELETE";
+			method = "POST";
 			body="tags=" + input;
 			break;
 		case "3":

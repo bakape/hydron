@@ -222,6 +222,8 @@ func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, page common.
 		//line image.qtpl:58
 		page.Filters.Tag = append(page.Filters.Tag, filter)
 
+		//line image.qtpl:57
+		qw422016.N().S(`<span class="spaced truncate tag-`)
 		//line image.qtpl:58
 		qw422016.N().S(`<span class="spaced truncate tag-`)
 		//line image.qtpl:59

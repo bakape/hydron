@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -82,7 +81,7 @@ func startServer(addr string) error {
 
 	tags := images.NewGroup("/:id/tags")
 	tags.PATCH("/", addTagsHTTP)
-	tags.DELETE("/", removeTagsHTTP)
+	tags.POST("/", removeTagsHTTP)
 
 	ajax := r.NewGroup("/ajax")
 	ajax.GET("/thumbnail/:id", serveThumbnail)
@@ -298,15 +297,17 @@ func removeTagsHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Set the target file's name
 func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
-	bytes, err := ioutil.ReadAll(r.Body)
-
+	err := r.ParseForm()
 	if err != nil {
 		sendError(w, 400, err)
-	} else if len(bytes) > 200 {
-		bytes = bytes[0:200]
 	}
 
-	err = setImageName(extractParam(r, "id"), string(bytes))
+	name := r.Form.Get("name")
+	if len(name) > 200 {
+		name = name[0:200]
+	}
+
+	err = setImageName(extractParam(r, "id"), name)
 
 	switch err {
 	case nil:

@@ -139,7 +139,8 @@ const figureWidth = 200 + 4; // With marging
 				return;
 			}
 			try {
-				const r = await fetch( params[0], { method: params[1], body: params[2] });
+				const r = await fetch( params[0], { method: params[1], body: params[2],
+					 headers: {"Content-Type": "application/x-www-form-urlencoded"} });
 			} catch (err) {
 				alert(err);
 			}
@@ -299,25 +300,24 @@ function setHighlight(target) {
 }
 
 function createParams(option, input, imgid){
-	let body = new FormData();
 	switch (option) {
 		case "1":
 			// Add tags
 			path = "/api/images/" + imgid + "/tags/";
 			method = "PATCH";
-			body.append("tags", input);
+			body="tags=" + input;
 			break;
 		case "2":
 			// Remove tags
 			path = "/api/images/" + imgid + "/tags/";
-			method = "DELETE";
-			body.append("tags", input)
+			method = "POST";
+			body="tags=" + input;
 			break;
 		case "3":
 			// Set name
-			path = "/api/images/" + imgid + "/name/";
+			path = "/api/images/" + imgid + "/name";
 			method = "POST";
-			body.append("name", input);
+			body="name=" + input;
 			break;
 		case "4":
 			//Delete file
