@@ -109,6 +109,46 @@ const figureWidth = 200 + 4; // With marging
 	}
 })();
 
+// Options form
+(() => {
+	const optsform = document.querySelector("#opts-bar form");
+	const optssub = document.querySelector("#opts-submit");
+	optssub.addEventListener("click", async e => {
+		//todo: validate form data
+		let checked = [];
+		for (let el of [...browser.children]) {
+			el = el.querySelector("input[type=checkbox]");
+			if (el.checked) {
+				let i = el.name.lastIndexOf(":");
+				checked.push(el.name.slice(i+1));	//Extract+store image ID
+			}
+		}
+		let opt = optsform.querySelector("#opts-select").value;
+		let input = optsform.querySelector("#opts-input").value;
+		if (opt === "0"){
+			//fetch tags
+			//TODO: make api call to fetchAllTags()
+			//		or, fetch tags only for selected files?
+			return;
+		}
+		let n = checked.length;
+		let i = 0;
+		while (i < n){
+			let params = createParams(opt, input, checked[i]);
+			if (params.length === 0){
+				return;
+			}
+			try {
+				const r = await fetch( params[0], { method: params[1], body: params[2],
+					 headers: {"Content-Type": "application/x-www-form-urlencoded"} });
+			} catch (err) {
+				alert(err);
+			}
+			renderProgress(++i/n);
+		}
+	}, { passive: true });
+})();
+
 browser.addEventListener("keydown", e => {
 	if (e.getModifierState("Alt")) {
 		return;
@@ -257,4 +297,36 @@ function setHighlight(target) {
 		behavior: "smooth",
 		block: "center",
 	});
+}
+
+function createParams(option, input, imgid){
+	switch (option) {
+		case "1":
+			// Add tags
+			path = "/api/images/" + imgid + "/tags/";
+			method = "PATCH";
+			body="tags=" + input;
+			break;
+		case "2":
+			// Remove tags
+			path = "/api/images/" + imgid + "/tags/";
+			method = "POST";
+			body="tags=" + input;
+			break;
+		case "3":
+			// Set name
+			path = "/api/images/" + imgid + "/name";
+			method = "POST";
+			body="name=" + input;
+			break;
+		case "4":
+			//Delete file
+			path = "/api/images/" + imgid + "/";
+			method = "DELETE";
+			break;
+		default:
+			console.log("Invalid selection");
+			return [];
+	}
+	return [path, method, body];
 }

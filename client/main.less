@@ -46,6 +46,30 @@
 	}
 }
 
+#options:hover > #opts-bar {
+	visibility: visible;
+}
+
+#opts-bar {
+	visibility: hidden;
+	position: fixed;
+	top: 2em;
+	right: 0;
+	background-color: @inner-bg;
+	padding: 0.4em;
+	width: 15em;
+	form {
+		display: block;
+		& > * {
+			margin-top: 0.2em;
+		}
+	}
+}
+
+#opts-input {
+	width: 100%;
+}
+
 #progress-bar {
 	width: 0;
 	height: 100%;
@@ -131,6 +155,7 @@ body {
     padding: 0.2em;
     overflow-y: auto;
 	max-height: 100vh;
+	max-width: 16vw;
 	.hide-selection();
 }
 
@@ -152,6 +177,12 @@ body {
 
 .image-name a {
 	color: orangered;
+}
+
+.truncate {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .spaced > *:before {

@@ -12,6 +12,10 @@ import (
 var orderLabels = [...]string{"None", "Size", "Width", "Height", "Duration",
 	"Tag count", "Random"}
 
+// Human-readable labels for option types
+var optionLabels = [...]string{"Fetch tags", "Add tags", "Remove tags",
+	"Set name", "Delete files"}
+
 type tagSorter []common.Tag
 
 func (t tagSorter) Len() int {
