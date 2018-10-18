@@ -8,7 +8,7 @@ import (
 	"github.com/bakape/hydron/common"
 )
 
-// Human-readable labels fo``r image ordering types
+// Human-readable labels for image ordering types
 var orderLabels = [...]string{"None", "Size", "Width", "Height", "Duration",
 	"Tag count", "Random"}
 

@@ -57,12 +57,9 @@
 	right: 0;
 	background-color: @inner-bg;
 	padding: 0.4em;
-	width: 15em;
-	form {
-		display: block;
-		& > * {
-			margin-top: 0.2em;
-		}
+	width: 20em;
+	& > * {
+		margin-bottom: 0.4em;
 	}
 }
 
@@ -200,4 +197,12 @@ body {
 a {
 	text-decoration: none !important;
 	color: @selected;
+}
+
+#import {
+	background: @inner-bg;
+	display: grid;
+	#submit {
+		width: fit-content;
+	}
 }
