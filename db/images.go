@@ -329,6 +329,15 @@ func GetImageID(sha1 string) (id int64, err error) {
 	return
 }
 
+func GetImageIDAndMD5(sha1 string) (pair IDAndMD5, err error) {
+	err = sq.Select("id", "md5").
+		From("images").
+		Where("sha1 = ?", sha1).
+		QueryRow().
+		Scan(&pair.ID, &pair.MD5)
+	return
+}
+
 // Get IDs and MD5 hashes of all images that can have tags on gelbooru
 func GetGelbooruTaggable() (pairs []IDAndMD5, err error) {
 	r, err := sq.Select("id", "md5").

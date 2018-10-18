@@ -16,7 +16,7 @@ import (
 
 /*
 Import file/directory paths
-paths: list for file and/pr directory paths
+paths: list for file and/or directory paths
 del: delete files after import
 fetchTags: also fetch tags from gelbooru
 tagStr: add string of tags to all imported files

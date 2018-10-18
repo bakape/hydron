@@ -15,6 +15,7 @@ import (
 	"github.com/bakape/hydron/assets"
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
+	"github.com/bakape/hydron/fetch"
 	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/tags"
 	"github.com/bakape/hydron/templates"
@@ -65,11 +66,13 @@ func startServer(addr string) error {
 	// HTML paths
 	r.GET("/search", serveSearchHTML)
 	r.GET("/image/:id", serveImagePage)
+	r.GET("/import", serveImportPage)
 
 	// Image API
 	api := r.NewGroup("/api")
 	api.GET("/complete_tag/:prefix", completeTagHTTP)
 	api.POST("/images/:id/name", setImageNameHTTP)
+	api.POST("/import", importPathsHTTP)
 
 	images := api.NewGroup("/images")
 	images.GET("/", serveSearch) // Dumps everything
@@ -82,6 +85,7 @@ func startServer(addr string) error {
 	tags := images.NewGroup("/:id/tags")
 	tags.PATCH("/", addTagsHTTP)
 	tags.POST("/", removeTagsHTTP)
+	tags.PATCH("/fetch", fetchTagsHTTP)
 
 	ajax := r.NewGroup("/ajax")
 	ajax.GET("/thumbnail/:id", serveThumbnail)
@@ -318,6 +322,29 @@ func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Fetch tags for a single file
+func fetchTagsHTTP(w http.ResponseWriter, r *http.Request) {
+	sha1 := extractParam(r, "id")
+	pair, err := db.GetImageIDAndMD5(sha1)
+	if err != nil {
+		send500(w, r, err)
+	}
+
+	tags, err := fetch.FetchTags(pair.MD5)
+	if err != nil {
+		send500(w, r, err)
+	}
+
+	err = db.UpdateTags(pair.ID, tags, common.Gelbooru)
+	switch err {
+	case nil:
+	case sql.ErrNoRows:
+		sendError(w, 400, err)
+	default:
+		send500(w, r, err)
+	}
+}
+
 // Serve thumbnail HTML
 func serveThumbnail(w http.ResponseWriter, r *http.Request) {
 	img, err := db.GetImage(extractParam(r, "id"))
@@ -350,4 +377,38 @@ func serveImagePage(w http.ResponseWriter, r *http.Request) {
 
 	setHeaders(w, htmlHeaders)
 	templates.WriteImagePage(w, img, page)
+}
+
+func serveImportPage(w http.ResponseWriter, r *http.Request) {
+	setHeaders(w, htmlHeaders)
+	templates.WriteImportPage(w)
+}
+
+// Extract import args and pass to importPaths
+func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		sendError(w, 400, err)
+	}
+
+	paths := strings.Split(r.Form.Get("path"), " ")
+	del, err := strconv.ParseBool(r.Form.Get("del"))
+	fetch, err := strconv.ParseBool(r.Form.Get("fetchTags"))
+	if err != nil {
+		sendError(w, 400, err)
+	}
+	err = importPaths(
+		paths,
+		del,
+		fetch,
+		r.Form.Get("tagStr"),
+	)
+
+	//todo: make this useful
+	switch err {
+	case nil:
+	default:
+		fmt.Printf("%s", err)
+		sendError(w, 400, err)
+	}
 }

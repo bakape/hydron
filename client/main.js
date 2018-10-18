@@ -1,7 +1,7 @@
 const browser = document.getElementById("browser");
 const imageView = document.getElementById("image-view");
 const search = document.getElementById("search");
-const figureWidth = 200 + 4; // With marging
+const figureWidth = 200 + 4; // With margin
 
 // Search bar and suggestions
 (() => {
@@ -111,36 +111,40 @@ const figureWidth = 200 + 4; // With marging
 
 // Options form
 (() => {
-	const optsform = document.querySelector("#opts-bar form");
+	const optsform = document.querySelector("#opts-bar");
 	const optssub = document.querySelector("#opts-submit");
+
 	optssub.addEventListener("click", async e => {
-		//todo: validate form data
+		if (!confirm("Generic confirmation message")){
+			return;
+		}
+
 		let checked = [];
 		for (let el of [...browser.children]) {
 			el = el.querySelector("input[type=checkbox]");
 			if (el.checked) {
 				let i = el.name.lastIndexOf(":");
-				checked.push(el.name.slice(i+1));	//Extract+store image ID
+				checked.push(el.name.slice(i+1));	//Extract+store image IDs
 			}
 		}
+
 		let opt = optsform.querySelector("#opts-select").value;
 		let input = optsform.querySelector("#opts-input").value;
-		if (opt === "0"){
-			//fetch tags
-			//TODO: make api call to fetchAllTags()
-			//		or, fetch tags only for selected files?
+		params = createParams(opt, input);
+		if (params.length === 0){
 			return;
 		}
+
 		let n = checked.length;
 		let i = 0;
 		while (i < n){
-			let params = createParams(opt, input, checked[i]);
-			if (params.length === 0){
-				return;
-			}
 			try {
-				const r = await fetch( params[0], { method: params[1], body: params[2],
-					 headers: {"Content-Type": "application/x-www-form-urlencoded"} });
+				path = "/api/images/" + checked[i] + params[0];
+				const r = await fetch( path, { method: params[1],
+					 body: params[2],
+					 headers: {
+						 "Content-Type": "application/x-www-form-urlencoded"
+						} });
 			} catch (err) {
 				alert(err);
 			}
@@ -299,34 +303,21 @@ function setHighlight(target) {
 	});
 }
 
-function createParams(option, input, imgid){
-	switch (option) {
-		case "1":
-			// Add tags
-			path = "/api/images/" + imgid + "/tags/";
-			method = "PATCH";
-			body="tags=" + input;
-			break;
-		case "2":
-			// Remove tags
-			path = "/api/images/" + imgid + "/tags/";
-			method = "POST";
-			body="tags=" + input;
-			break;
-		case "3":
-			// Set name
-			path = "/api/images/" + imgid + "/name";
-			method = "POST";
-			body="name=" + input;
-			break;
-		case "4":
-			//Delete file
-			path = "/api/images/" + imgid + "/";
-			method = "DELETE";
-			break;
-		default:
-			console.log("Invalid selection");
-			return [];
+function createParams(option, input) {
+	suffix = ["/tags/fetch", "/tags/", "/tags/", "/name", "/"];
+	methods = ["PATCH", "PATCH", "POST", "POST", "DELETE"];
+	bodys = ["", "tags=", "tags=", "name=", ""];
+
+	if (option > suffix.length) {
+		console.log("Invalid selection");
+		return [];
 	}
-	return [path, method, body];
+
+	method = methods[option];
+	body = bodys[option];
+	if (body.length != 0){
+		body += input;
+	}
+	
+	return [ suffix[option], method, body ];
 }

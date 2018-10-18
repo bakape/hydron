@@ -1,0 +1,14 @@
+{% func ImportPage() %}{% stripspace %}
+    {%= head("Import") %}
+    <body>
+        <div id="import">
+            <input type="text" id="path" placeholder="Import path..." autocomplete="off">
+            <label>Add tags to imported files</label>
+            <input type="text" id="input-tags" placeholder="Add tags..." autocomplete="off">
+            <label>Delete imported files: <input type="checkbox" id="delete"></label>
+            <label>Fetch tags for imported files: <input type="checkbox" id="fetch-tags"></label>
+            <input type="button" id="submit" value="submit">
+        </div>
+        <script src="/assets/import.js" async></script>
+    </body>
+{% endstripspace %}{% endfunc %}

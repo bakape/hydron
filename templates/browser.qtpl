@@ -30,21 +30,19 @@
 				<div id="options">
 					<label style="padding-bottom: 1em;">Options</label>
 					<div id="opts-bar">
-						<form method="get">
-							<input type="text" id="opts-input" title="Text input for options" autocomplete="off">
-							<br>
-							<select id="opts-select">
-								{% for i := common.FetchTags; i<= common.Delete; i++ %}
-									<option value="{%d int(i) %}">
-										{%s= optionLabels[int(i)] %}
-									</option>
-								{% endfor %}
-							</select>
-							<br>
-							<input type="button" id="opts-submit" value="submit">
-						</form>
+						<input type="text" id="opts-input" title="Text input for options" autocomplete="off">
 						<br>
-						<a>Upload files</a>
+						<select id="opts-select">
+							{% for i := common.FetchTags; i<= common.Delete; i++ %}
+								<option value="{%d int(i) %}">
+									{%s= optionLabels[int(i)] %}
+								</option>
+							{% endfor %}
+						</select>
+						<br>
+						<input type="button" id="opts-submit" value="submit">
+						<br>
+						<a href="/import">Upload files</a>
 					</div>
 				</div>
 				{%= pagination(page) %}
