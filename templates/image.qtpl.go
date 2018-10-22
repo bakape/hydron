@@ -26,7 +26,11 @@ var (
 //line image.qtpl:4
 func StreamThumbnail(qw422016 *qt422016.Writer, img common.CompactImage, page common.Page, highlight bool) {
 	//line image.qtpl:4
-	qw422016.N().S(`<figure`)
+	qw422016.N().S(`<figure data-href="`)
+	//line image.qtpl:5
+	qw422016.N().S(files.NetSourcePath(img.SHA1, img.Type))
+	//line image.qtpl:5
+	qw422016.N().S(`"`)
 	//line image.qtpl:5
 	if highlight {
 		//line image.qtpl:5

@@ -14,6 +14,7 @@ Platforms: Linux, OSX, Win32, Win64
 2. Navigate to "http://localhost:8010" in a web browser
 
 ### Runtime dependecies
+
 * ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
 * GraphicsMagick
 
@@ -29,6 +30,7 @@ depending on your OS, and configure appropriately.
 `go get github.com/bakape/hydron`
 
 ### Build dependencies
+
 * [Go](https://golang.org/doc/install) >= 1.10
 * C11 compiler
 * pkg-config
@@ -39,3 +41,9 @@ depending on your OS, and configure appropriately.
 
 On Debian-based systems these can be installed with the following or similar:
 `apt-get install -y build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev libavformat-dev libswscale-dev libgraphicsmagick1-dev ghostscript git golang`
+
+## Development 
+
+* Install Node.js
+* Run `npm install`
+* Run `make` to compile the project 

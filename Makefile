@@ -40,6 +40,9 @@ generate:
 # 	mxe-x86-64-w64-mingw32.static-libidn
 # 	mxe-x86-64-w64-mingw32.static-ffmpeg
 #   mxe-x86-64-w64-mingw32.static-graphicsmagick
+#
+# To cross-compile for windows-x86 use:
+# make cross_compile_windows WIN_ARCH=386 MXE_TARGET=i686-w64-mingw32.static
 cross_compile_windows:
 	CGO_ENABLED=1 GOOS=windows GOARCH=$(WIN_ARCH) \
 	CC=$(MXE_ROOT)/bin/$(MXE_TARGET)-gcc \
@@ -48,7 +51,7 @@ cross_compile_windows:
 	PKG_CONFIG_LIBDIR=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
 	PKG_CONFIG_PATH=$(MXE_ROOT)/$(MXE_TARGET)/lib/pkgconfig \
 	CGO_LDFLAGS_ALLOW='-mconsole' \
-	go build -v -a -o hydron.exe --ldflags '-extldflags "-static"'
+	go build -v -a -o hydron.exe --ldflags '-extldflags "-static" -H=windowsgui'
 
 cross_package_windows: cross_compile_windows
 	zip -r -9 hydron-win_$(WIN_ARCH)-$(version_base).zip hydron.exe
