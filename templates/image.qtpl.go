@@ -249,7 +249,13 @@ func streamrenderTags(qw422016 *qt422016.Writer, tags []common.Tag, page common.
 		//line image.qtpl:69
 		qw422016.N().S(page.URL())
 		//line image.qtpl:69
-		qw422016.N().S(`" title="Search for tag">`)
+		qw422016.N().S(`" title="Search for`)
+		//line image.qtpl:69
+		qw422016.N().S(` `)
+		//line image.qtpl:69
+		qw422016.E().S(t.Tag)
+		//line image.qtpl:69
+		qw422016.N().S(`">`)
 		//line image.qtpl:70
 		if t.Type == common.Rating {
 			//line image.qtpl:70
