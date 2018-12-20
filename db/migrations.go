@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 )
 
@@ -106,9 +107,10 @@ func runMigrations(from, to int) (err error) {
 		}
 
 		// Write new version number
-		_, err = withTransaction(tx, sq.Update("main").
+		_, err = sq.Update("main").
 			Set("val", i+1).
-			Where("id = 'version'")).
+			Where("id = 'version'").
+			RunWith(tx).
 			Exec()
 		if err != nil {
 			return rollBack(tx, err)
@@ -124,7 +126,7 @@ func runMigrations(from, to int) (err error) {
 
 func rollBack(tx *sql.Tx, err error) error {
 	if rbErr := tx.Rollback(); rbErr != nil {
-		err = WrapError(err.Error(), rbErr)
+		err = fmt.Errorf("%s: %s", err.Error(), rbErr)
 	}
 	return err
 }

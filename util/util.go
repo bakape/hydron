@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -53,11 +52,6 @@ func ExtractKey(k []byte) (sha1 [20]byte) {
 		sha1[i] = k[i]
 	}
 	return
-}
-
-// Attach a descriptive prefix to an existing error
-func wrapError(err error, format string, args ...interface{}) error {
-	return fmt.Errorf("%s: %s", fmt.Sprintf(format, args...), err)
 }
 
 // Waterfall executes a slice of functions until the first error returned. This
