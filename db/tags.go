@@ -39,7 +39,7 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 	var tagID int64
 	for _, t := range tags {
 		err = withTransaction(tx, selectTagID().
-			Where("tag = ? and type = ?", t.Tag, t.Type)).
+			Where("tag = ? and type = ?", t.Tag, int(t.Type))).
 			QueryRow().
 			Scan(&tagID)
 		switch err {

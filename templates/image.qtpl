@@ -32,6 +32,7 @@
 				{%= renderTags(org[common.Series], page) %}
 				{%= renderTags(org[common.Author], page) %}
 				{%= renderTags(org[common.Rating], page) %}
+				{%= renderTags(org[common.Meta], page) %}
 				{%= renderTags(org[common.Undefined], page) %}
 			</section>
 			{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
