@@ -2,7 +2,7 @@
 {% import "github.com/bakape/hydron/files" %}
 
 {% func Thumbnail(img common.CompactImage, page common.Page, highlight bool) %}{% stripspace %}
-	<figure{% if highlight %}{% space %}class="highlight"{% endif %}>
+	<figure data-href="{%s= files.NetSourcePath(img.SHA1, img.Type) %}"{% if highlight %}{% space %}class="highlight"{% endif %}>
 		<input type="checkbox" name="img:{%s= img.SHA1 %}">
 		<div class="background"></div>
 		<a href="/image/{%s= img.SHA1 %}?{%s= page.Query() %}">
@@ -21,7 +21,7 @@
 		<div id="image-view">
 			<section id="tags">
 				{% if img.Name != "" %}
-					<span class="image-name">
+					<span class="truncate image-name">
 						<a href="/search?q={%s img.Name %}" title="Search for name">
 							Name:{% space %}{%s img.Name %}
 						</a>
@@ -32,6 +32,7 @@
 				{%= renderTags(org[common.Series], page) %}
 				{%= renderTags(org[common.Author], page) %}
 				{%= renderTags(org[common.Rating], page) %}
+				{%= renderTags(org[common.Meta], page) %}
 				{%= renderTags(org[common.Undefined], page) %}
 			</section>
 			{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
@@ -47,7 +48,7 @@
 	</body>
 {% endstripspace %}{% endfunc %}
 
-Reender tag adition and direct tag query links
+Render tag adition and direct tag query links
 {% func renderTags(tags []common.Tag, page common.Page) %}{% stripspace %}
 	{% code page.Page = 0 %}
 	{% code init := page.Filters %}
@@ -55,7 +56,7 @@ Reender tag adition and direct tag query links
 		{% code page.Filters = init %}
 		{% code filter := common.TagFilter{ TagBase: t.TagBase } %}
 		{% code page.Filters.Tag = append(page.Filters.Tag, filter) %}
-		<span class="spaced tag-{%z= common.BufferWriter(t.Type) %}">
+		<span class="spaced truncate tag-{%z= common.BufferWriter(t.Type) %}">
 			<a href="{%s= page.URL() %}" class="char-button" title="Add to search">
 				+
 			</a>
@@ -66,7 +67,7 @@ Reender tag adition and direct tag query links
 			{% code page.Filters = common.FilterSet{
 				Tag: []common.TagFilter{filter},
 			} %}
-			<a href="{%s= page.URL() %}" title="Search for tag">
+			<a href="{%s= page.URL() %}" title="Search for{% space %}{%s t.Tag %}">
 				{% if t.Type == common.Rating %}
 					rating:{% space %}
 				{% endif %}

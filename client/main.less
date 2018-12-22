@@ -131,6 +131,8 @@ body {
     padding: 0.2em;
     overflow-y: auto;
 	max-height: 100vh;
+	max-width: 20vw;
+	min-width: 15em;
 	.hide-selection();
 }
 
@@ -149,9 +151,17 @@ body {
 .tag-rating a {
 	color: @body-text;
 }
+.tag-meta {
+	color: #F80;
+}
 
 .image-name a {
 	color: orangered;
+}
+
+.truncate {
+	white-space: nowrap;
+	text-overflow: ellipsis;
 }
 
 .spaced > *:before {

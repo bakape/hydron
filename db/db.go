@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -39,7 +40,9 @@ func Open() (err error) {
 	}
 	if conf.Driver == "" || conf.Connection == "" {
 		conf.Driver = "sqlite3"
-		conf.Connection = filepath.Join(files.RootPath, "db.db")
+		// Shared cache is required for multithreading
+		conf.Connection = fmt.Sprintf("file:%s?cache=shared&mode=rwc",
+			filepath.Join(files.RootPath, "db.db"))
 	}
 	driver = conf.Driver
 
