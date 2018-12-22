@@ -36,22 +36,20 @@ func SearchImages(page *common.Page, paginate bool,
 		err = InTransaction(func(tx *sql.Tx) (err error) {
 			var id int64
 			for _, t := range page.Filters.Tag {
-				var rs rowScanner
+				var q squirrel.SelectBuilder
 				if t.Type == common.Undefined {
 					// Undefined tag type matches the first tag type
 					// available. User should be specific about tag types,
 					// when matching by artist, character, series, etc.
-					rs = withTransaction(tx, selectTagID().
+					q = selectTagID().
 						Where("tag = ?", t.Tag).
 						OrderBy("type asc").
-						Limit(1)).
-						QueryRow()
+						Limit(1)
 				} else {
-					rs = withTransaction(tx, selectTagID().
-						Where("type = ? and tag = ?", t.Type, t.Tag)).
-						QueryRow()
+					q = selectTagID().
+						Where("type = ? and tag = ?", t.Type, t.Tag)
 				}
-				err = rs.Scan(&id)
+				err = q.RunWith(tx).QueryRow().Scan(&id)
 				switch err {
 				case nil:
 				case sql.ErrNoRows:
@@ -233,21 +231,21 @@ func RemoveImage(id string) (err error) {
 		pngThumb bool
 	)
 	err = InTransaction(func(tx *sql.Tx) (err error) {
-		err = withTransaction(tx, sq.
+		err = sq.
 			Select("type", "thumb_is_png").
 			From("images").
-			Where("sha1 = ?", id),
-		).
+			Where("sha1 = ?", id).
+			RunWith(tx).
 			QueryRow().
 			Scan(&srcType, &pngThumb)
 		if err != nil {
 			return
 		}
 
-		_, err = withTransaction(tx, sq.
+		_, err = sq.
 			Delete("images").
-			Where("sha1 = ?", id),
-		).
+			Where("sha1 = ?", id).
+			RunWith(tx).
 			Exec()
 		return
 	})
@@ -280,27 +278,31 @@ func RemoveImage(id string) (err error) {
 // Retrieve an image and all it's tags by SHA1 hash
 func GetImage(sha1 string) (img common.Image, err error) {
 	err = InTransaction(func(tx *sql.Tx) (err error) {
-		q := sq.Select(
-			"type", "sha1", "thumb_is_png", "thumb_width", "thumb_height",
-			"width", "height", "import_time", "size", "duration", "md5", "id", "name",
-		).
+		err = sq.
+			Select(
+				"type", "sha1", "thumb_is_png", "thumb_width", "thumb_height",
+				"width", "height", "import_time", "size", "duration", "md5",
+				"id", "name").
 			From("images").
-			Where("sha1 = ?", sha1)
-		err = withTransaction(tx, q).QueryRow().Scan(
-			&img.Type, &img.SHA1, &img.Thumb.IsPNG, &img.Thumb.Width,
-			&img.Thumb.Height,
-			&img.Width, &img.Height, &img.ImportTime, &img.Size,
-			&img.Duration, &img.MD5, &img.ID, &img.Name,
-		)
+			Where("sha1 = ?", sha1).
+			RunWith(tx).
+			QueryRow().
+			Scan(
+				&img.Type, &img.SHA1, &img.Thumb.IsPNG, &img.Thumb.Width,
+				&img.Thumb.Height,
+				&img.Width, &img.Height, &img.ImportTime, &img.Size,
+				&img.Duration, &img.MD5, &img.ID, &img.Name,
+			)
 		if err != nil {
 			return
 		}
 
-		q = sq.Select("source", "type", "tag").
+		r, err := sq.Select("source", "type", "tag").
 			From("image_tags").
 			Join("tags on image_tags.tag_id = tags.id").
-			Where("image_id = ?", img.ID)
-		r, err := withTransaction(tx, q).Query()
+			Where("image_id = ?", img.ID).
+			RunWith(tx).
+			Query()
 		if err != nil {
 			return
 		}

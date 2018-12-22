@@ -38,8 +38,9 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 	}
 	var tagID int64
 	for _, t := range tags {
-		err = withTransaction(tx, selectTagID().
-			Where("tag = ? and type = ?", t.Tag, t.Type)).
+		err = selectTagID().
+			Where("tag = ? and type = ?", t.Tag, int(t.Type)).
+			RunWith(tx).
 			QueryRow().
 			Scan(&tagID)
 		switch err {
@@ -57,10 +58,11 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 			return
 		}
 
-		_, err = withTransaction(tx, sq.
+		_, err = sq.
 			Insert("image_tags").
 			Columns("image_id", "tag_id", "source").
-			Values(imageID, tagID, t.Source)).
+			Values(imageID, tagID, t.Source).
+			RunWith(tx).
 			Exec()
 		if err != nil {
 			return
@@ -74,16 +76,17 @@ func AddTagsTx(tx *sql.Tx, imageID int64, tags []common.Tag) (
 func RemoveTags(imageID int64, tags []common.Tag) error {
 	return InTransaction(func(tx *sql.Tx) (err error) {
 		for _, t := range tags {
-			_, err = withTransaction(tx, sq.
+			_, err = sq.
 				Delete("image_tags").
 				Where(
 					`image_id = ?
-					and source = ?
-					and tag_id = (
-						select id from tags
-						where tag = ? and type = ?)`,
+						and source = ?
+						and tag_id = (
+							select id from tags
+							where tag = ? and type = ?)`,
 					imageID, t.Source, t.Tag, t.Type,
-				)).
+				).
+				RunWith(tx).
 				Exec()
 			if err != nil {
 				return
@@ -134,13 +137,13 @@ func UpdateTags(imageID int64, tags []common.Tag, source common.TagSource,
 ) error {
 	return InTransaction(func(tx *sql.Tx) (err error) {
 		// Remove old tags
-		_, err = withTransaction(tx, sq.
+		_, err = sq.
 			Delete("image_tags").
 			Where(squirrel.Eq{
 				"image_id": imageID,
 				"source":   source,
-			}),
-		).
+			}).
+			RunWith(tx).
 			Exec()
 		if err != nil {
 			return

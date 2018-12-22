@@ -32,6 +32,7 @@
 				{%= renderTags(org[common.Series], page) %}
 				{%= renderTags(org[common.Author], page) %}
 				{%= renderTags(org[common.Rating], page) %}
+				{%= renderTags(org[common.Meta], page) %}
 				{%= renderTags(org[common.Undefined], page) %}
 			</section>
 			{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
@@ -66,7 +67,7 @@ Render tag adition and direct tag query links
 			{% code page.Filters = common.FilterSet{
 				Tag: []common.TagFilter{filter},
 			} %}
-			<a href="{%s= page.URL() %}" title="Search for tag">
+			<a href="{%s= page.URL() %}" title="Search for{% space %}{%s t.Tag %}">
 				{% if t.Type == common.Rating %}
 					rating:{% space %}
 				{% endif %}

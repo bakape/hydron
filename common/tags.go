@@ -22,6 +22,7 @@ type TagSource uint8
 const (
 	User TagSource = iota
 	Gelbooru
+	Danbooru
 	Hydrus
 )
 
@@ -34,25 +35,18 @@ const (
 	Series
 	Rating
 	System
+	Meta
+)
+
+var (
+	tagTypeStr = [...]string{"undefined", "author", "character", "series",
+		"rating", "system", "meta"}
+	systemTagStr = [...]string{"size", "width", "heigh", "duration",
+		"tag_count"}
 )
 
 func (t TagType) WriteTo(w *bytes.Buffer) {
-	var s string
-	switch t {
-	case Undefined:
-		s = "undefined"
-	case Author:
-		s = "author"
-	case Character:
-		s = "character"
-	case Series:
-		s = "series"
-	case Rating:
-		s = "rating"
-	case System:
-		s = "system"
-	}
-	w.WriteString(s)
+	w.WriteString(tagTypeStr[int(t)])
 }
 
 // Common fields of Tag and TagFilter
@@ -89,20 +83,7 @@ const (
 )
 
 func (t SystemTagType) WriterTo(w *bytes.Buffer) {
-	var s string
-	switch t {
-	case Size:
-		s = "size"
-	case Width:
-		s = "width"
-	case Height:
-		s = "height"
-	case Duration:
-		s = "duration"
-	case TagCount:
-		s = "tag_count"
-	}
-	w.WriteString(s)
+	w.WriteString(systemTagStr[int(t)])
 }
 
 // Parsed data of system tag
@@ -113,8 +94,7 @@ type SystemTag struct {
 }
 
 func (t SystemTag) WriterTo(w *bytes.Buffer) {
-	w.WriteString("system")
-	w.WriteByte(':')
+	w.WriteString("system:")
 	t.Type.WriterTo(w)
 	w.WriteString(t.Comparator)
 	w.WriteString(strconv.FormatUint(t.Value, 10))

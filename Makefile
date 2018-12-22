@@ -21,7 +21,7 @@ MXE_TARGET=x86_64-w64-mingw32.static
 .PHONY: client all generate
 
 all: generate client
-	go build
+	go build -v
 
 client:
 	cp client/main.js www/main.js

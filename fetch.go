@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bakape/boorufetch"
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/fetch"
@@ -21,7 +22,7 @@ func fetchAllTags() error {
 
 	// Process images in parallel
 	ch := make(chan error)
-	for i := 0; i < fetch.FetcherCount; i++ {
+	for i := 0; i < boorufetch.FetcherCount; i++ {
 		go func() {
 			for img := range passAll {
 				tags, err := fetch.FetchTags(img.MD5)
