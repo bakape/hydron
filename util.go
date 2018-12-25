@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
+	"unicode"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
@@ -41,4 +44,43 @@ func (p *progressLogger) Err(err error) {
 
 func (p *progressLogger) Close() {
 	fmt.Println("")
+}
+
+// Convert import page's input string into string array of file paths
+func parsePaths(input string) ([]string, error) {
+	var store []string
+	inSpace := false
+	quote := 0
+	prev := 0
+
+	for i, c := range input {
+		if (unicode.IsSpace(c)) {
+			// If inside quotes or prev. rune was whitespace, ignore whitespace
+			if (quote%2 == 1 || inSpace) {
+				continue
+			}
+			inSpace = true
+			store = append(store, input[prev:i])
+			prev = i + 1
+		}else {
+			if (c == '"') {
+				quote++
+			}
+			inSpace = false
+		}
+	}
+	if (quote%2 == 1) {
+		return store, errors.New("Invalid formatting: uneven quote marks.")
+	}
+	if !inSpace {
+		store = append(store, input[prev:])
+	}
+	// Have to remove encasing quotes to use file path
+	if (quote != 0) {
+		for i, s := range store {
+			store[i] = strings.Replace(s, `"`, ``, -1)
+		}
+	}
+
+	return store, nil
 }

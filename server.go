@@ -395,11 +395,7 @@ func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	paths := strings.Split(r.Form.Get("path"), " ")
-	if err != nil {
-		send500(w, r, err)
-		return
-	}
+	paths, err := parsePaths(r.Form.Get("path"))
 	if err != nil {
 		send500(w, r, err)
 		return

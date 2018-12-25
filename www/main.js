@@ -62,7 +62,7 @@ const figureWidth = 200 + 4; // With margin
 		document.addEventListener(e, stopDefault);
 	}
 
-	// Set drag contents to seleceted images
+	// Set drag contents to selected images
 	browser.addEventListener("dragstart", e => {
 		let el = e.target;
 		if (!el.closest || !(el = el.closest("figure"))) {
