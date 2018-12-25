@@ -304,6 +304,7 @@ func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		sendError(w, 400, err)
+		return
 	}
 
 	name := r.Form.Get("name")
@@ -328,11 +329,13 @@ func fetchTagsHTTP(w http.ResponseWriter, r *http.Request) {
 	pair, err := db.GetImageIDAndMD5(sha1)
 	if err != nil {
 		send500(w, r, err)
+		return
 	}
 
 	tags, err := fetch.FetchTags(pair.MD5)
 	if err != nil {
 		send500(w, r, err)
+		return
 	}
 
 	err = db.UpdateTags(pair.ID, tags, common.Gelbooru)
@@ -388,15 +391,30 @@ func serveImportPage(w http.ResponseWriter, r *http.Request) {
 func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		sendError(w, 400, err)
+		send500(w, r, err)
+		return
 	}
 
 	paths := strings.Split(r.Form.Get("path"), " ")
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
 	del, err := strconv.ParseBool(r.Form.Get("del"))
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
 	fetch, err := strconv.ParseBool(r.Form.Get("fetchTags"))
 	if err != nil {
-		sendError(w, 400, err)
+		send500(w, r, err)
+		return
 	}
+
 	err = importPaths(
 		paths,
 		del,
