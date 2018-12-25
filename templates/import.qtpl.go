@@ -22,32 +22,32 @@ func StreamImportPage(qw422016 *qt422016.Writer) {
 	//line import.qtpl:2
 	streamhead(qw422016, "Import")
 	//line import.qtpl:2
-	qw422016.N().S(`<body><div id="import"><input type="text" id="path" placeholder="Import path..." autocomplete="off"><label>Add tags to imported files</label><input type="text" id="input-tags" placeholder="Add tags..." autocomplete="off"><label>Delete imported files: <input type="checkbox" id="delete"></label><label>Fetch tags for imported files: <input type="checkbox" id="fetch-tags"></label><input type="button" id="submit" value="submit"></div><script src="/assets/import.js" async></script></body>`)
-//line import.qtpl:14
+	qw422016.N().S(`<body><div id="import"><label>Separate multiple paths with whitespace.</label><label>If path contains whitespace, encase path in "".</label><label>If path contains any " then rethink your life decisions.</label><input type="text" id="path" placeholder="Import path..." autocomplete="off"><label>Add tags to imported files</label><input type="text" id="input-tags" placeholder="Add tags..." autocomplete="off"><label>Delete imported files: <input type="checkbox" id="delete"></label><label>Fetch tags for imported files: <input type="checkbox" id="fetch-tags"></label><input type="button" id="submit" value="submit"><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></div><section id="browser" tabindex="1"></section><script src="/assets/import.js" async></script></body>`)
+//line import.qtpl:22
 }
 
-//line import.qtpl:14
+//line import.qtpl:22
 func WriteImportPage(qq422016 qtio422016.Writer) {
-	//line import.qtpl:14
+	//line import.qtpl:22
 	qw422016 := qt422016.AcquireWriter(qq422016)
-	//line import.qtpl:14
+	//line import.qtpl:22
 	StreamImportPage(qw422016)
-	//line import.qtpl:14
+	//line import.qtpl:22
 	qt422016.ReleaseWriter(qw422016)
-//line import.qtpl:14
+//line import.qtpl:22
 }
 
-//line import.qtpl:14
+//line import.qtpl:22
 func ImportPage() string {
-	//line import.qtpl:14
+	//line import.qtpl:22
 	qb422016 := qt422016.AcquireByteBuffer()
-	//line import.qtpl:14
+	//line import.qtpl:22
 	WriteImportPage(qb422016)
-	//line import.qtpl:14
+	//line import.qtpl:22
 	qs422016 := string(qb422016.B)
-	//line import.qtpl:14
+	//line import.qtpl:22
 	qt422016.ReleaseByteBuffer(qb422016)
-	//line import.qtpl:14
+	//line import.qtpl:22
 	return qs422016
-//line import.qtpl:14
+//line import.qtpl:22
 }
