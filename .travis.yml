@@ -1,9 +1,3 @@
 services: docker
 script:
   - docker build -t hydron_test .
-notifications:
-  email:
-    recipients:
-      - scorpid33@gmail.com
-    on_success: never
-    on_failure: always
