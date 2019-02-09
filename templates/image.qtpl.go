@@ -62,7 +62,7 @@ func StreamThumbnail(qw422016 *qt422016.Writer, img common.CompactImage, page co
 	//line image.qtpl:9
 	qw422016.N().S(`" src="`)
 	//line image.qtpl:9
-	qw422016.N().S(files.NetThumbPath(img.SHA1, img.Thumb.IsPNG))
+	qw422016.N().S(files.NetThumbPath(img.SHA1))
 	//line image.qtpl:9
 	qw422016.N().S(`"></a></figure>`)
 //line image.qtpl:12

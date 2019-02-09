@@ -84,9 +84,7 @@ func SearchImages(page *common.Page, paginate bool,
 
 	// Build queries
 
-	q := sq.Select("sha1", "type", "thumb_is_png", "thumb_width",
-		"thumb_height",
-	).
+	q := sq.Select("sha1", "type", "thumb_width", "thumb_height").
 		From("images as  i")
 	count := sq.Select("count(*)").From("images as  i")
 
@@ -181,8 +179,7 @@ func SearchImages(page *common.Page, paginate bool,
 	defer r.Close()
 	var rec common.CompactImage
 	for r.Next() {
-		err = r.Scan(&rec.SHA1, &rec.Type, &rec.Thumb.IsPNG, &rec.Thumb.Width,
-			&rec.Thumb.Height)
+		err = r.Scan(&rec.SHA1, &rec.Type, &rec.Thumb.Width, &rec.Thumb.Height)
 		if err != nil {
 			return
 		}
@@ -226,18 +223,15 @@ func formatSet(arr []int64) string {
 
 // Remove an image from the database by ID. Non-existant files are ignored.
 func RemoveImage(id string) (err error) {
-	var (
-		srcType  common.FileType
-		pngThumb bool
-	)
+	var srcType common.FileType
 	err = InTransaction(func(tx *sql.Tx) (err error) {
 		err = sq.
-			Select("type", "thumb_is_png").
+			Select("type").
 			From("images").
 			Where("sha1 = ?", id).
 			RunWith(tx).
 			QueryRow().
-			Scan(&srcType, &pngThumb)
+			Scan(&srcType)
 		if err != nil {
 			return
 		}
@@ -260,7 +254,7 @@ func RemoveImage(id string) (err error) {
 	// Remove files
 	for _, p := range [...]string{
 		files.SourcePath(id, srcType),
-		files.ThumbPath(id, pngThumb),
+		files.ThumbPath(id),
 	} {
 		err = os.Remove(p)
 		switch {
@@ -280,7 +274,7 @@ func GetImage(sha1 string) (img common.Image, err error) {
 	err = InTransaction(func(tx *sql.Tx) (err error) {
 		err = sq.
 			Select(
-				"type", "sha1", "thumb_is_png", "thumb_width", "thumb_height",
+				"type", "sha1", "thumb_width", "thumb_height",
 				"width", "height", "import_time", "size", "duration", "md5",
 				"id", "name").
 			From("images").
@@ -288,8 +282,7 @@ func GetImage(sha1 string) (img common.Image, err error) {
 			RunWith(tx).
 			QueryRow().
 			Scan(
-				&img.Type, &img.SHA1, &img.Thumb.IsPNG, &img.Thumb.Width,
-				&img.Thumb.Height,
+				&img.Type, &img.SHA1, &img.Thumb.Width, &img.Thumb.Height,
 				&img.Width, &img.Height, &img.ImportTime, &img.Size,
 				&img.Duration, &img.MD5, &img.ID, &img.Name,
 			)
@@ -376,11 +369,11 @@ func WriteImage(i common.Image) (id int64, err error) {
 		q := sq.Insert("images").
 			Columns(
 				"type", "width", "height", "import_time", "size", "duration",
-				"md5", "sha1", "thumb_width", "thumb_height", "thumb_is_png", "name",
+				"md5", "sha1", "thumb_width", "thumb_height", "name",
 			).
 			Values(
 				i.Type, i.Width, i.Height, i.ImportTime, i.Size, i.Duration,
-				i.MD5, i.SHA1, i.Thumb.Width, i.Thumb.Height, i.Thumb.IsPNG, i.Name,
+				i.MD5, i.SHA1, i.Thumb.Width, i.Thumb.Height, i.Name,
 			)
 		id, err = getLastID(tx, q)
 		if err != nil {

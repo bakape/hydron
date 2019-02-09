@@ -80,6 +80,11 @@ var migrations = []func(*sql.Tx) error{
 			`alter table images add column name text not null default ''`,
 		)
 	},
+	func(tx *sql.Tx) (err error) {
+		return execAll(tx,
+			`alter table images drop column thumb_is_png`,
+		)
+	},
 }
 
 // Run migrations from version `from`to version `to`

@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -21,9 +22,8 @@ func init() {
 	} else {
 		RootPath = filepath.Join(os.Getenv("HOME"), ".hydron")
 	}
-	sep := string(filepath.Separator)
-	ImageRoot = concatStrings(RootPath, sep, "images", sep)
-	ThumbRoot = concatStrings(RootPath, sep, "thumbs", sep)
+	ImageRoot = filepath.Join(RootPath, "images")
+	ThumbRoot = filepath.Join(RootPath, "thumbs")
 }
 
 func Init() error {
@@ -103,47 +103,21 @@ func Traverse(paths []string) (files []string, err error) {
 
 // Returns the path to the source file
 func SourcePath(id string, typ common.FileType) string {
-	name := concatStrings(id, ".", common.Extensions[typ])
-	return filepath.Join(ImageRoot, id[:2], name)
+	return filepath.Join(ImageRoot, id[:2],
+		fmt.Sprintf("%s.%s", id, common.Extensions[typ]))
 }
 
 // Returns the path to the thumbnail
-func ThumbPath(id string, isPNG bool) string {
-	var ext string
-	if isPNG {
-		ext = "png"
-	} else {
-		ext = "jpg"
-	}
-	return filepath.Join(ThumbRoot, id[:2], concatStrings(id, ".", ext))
+func ThumbPath(id string) string {
+	return filepath.Join(ThumbRoot, id[:2], id+".webp")
 }
 
 // Net URL to thumbnail path
-func NetThumbPath(id string, isPNG bool) string {
-	var ext string
-	if isPNG {
-		ext = "png"
-	} else {
-		ext = "jpg"
-	}
-	return concatStrings("/thumbs/", id, ".", ext)
+func NetThumbPath(id string) string {
+	return fmt.Sprintf("/thumbs/%s.webp", id)
 }
 
 // Net URL to source file path
 func NetSourcePath(id string, typ common.FileType) string {
-	return concatStrings("/files/", id, ".", common.Extensions[typ])
-}
-
-func concatStrings(s ...string) string {
-	l := 0
-	for _, s := range s {
-		l += len(s)
-	}
-
-	b := make([]byte, 0, l)
-	for _, s := range s {
-		b = append(b, s...)
-	}
-
-	return string(b)
+	return fmt.Sprintf("/files/%s.%s", id, common.Extensions[typ])
 }

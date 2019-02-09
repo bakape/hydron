@@ -28,17 +28,11 @@ type Dims struct {
 	Height uint64 `json:"height"`
 }
 
-// Thumbnail of image
-type Thumbnail struct {
-	IsPNG bool `json:"is_png"`
-	Dims
-}
-
 // Only provides the most minimal of fields. Optimal for thumbnail views.
 type CompactImage struct {
-	Type  FileType  `json:"type"`
-	SHA1  string    `json:"sha1"`
-	Thumb Thumbnail `json:"thumb"`
+	Type  FileType `json:"type"`
+	SHA1  string   `json:"sha1"`
+	Thumb Dims     `json:"thumb"`
 }
 
 // TODO: Use these types instead of hex strings

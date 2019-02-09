@@ -17,102 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson220accf5DecodeGithubComBakapeHydronCommon(in *jlexer.Lexer, out *Thumbnail) {
-	isTopLevel := in.IsStart()
-	if in.IsNull() {
-		if isTopLevel {
-			in.Consumed()
-		}
-		in.Skip()
-		return
-	}
-	in.Delim('{')
-	for !in.IsDelim('}') {
-		key := in.UnsafeString()
-		in.WantColon()
-		if in.IsNull() {
-			in.Skip()
-			in.WantComma()
-			continue
-		}
-		switch key {
-		case "is_png":
-			out.IsPNG = bool(in.Bool())
-		case "width":
-			out.Width = uint64(in.Uint64())
-		case "height":
-			out.Height = uint64(in.Uint64())
-		default:
-			in.SkipRecursive()
-		}
-		in.WantComma()
-	}
-	in.Delim('}')
-	if isTopLevel {
-		in.Consumed()
-	}
-}
-func easyjson220accf5EncodeGithubComBakapeHydronCommon(out *jwriter.Writer, in Thumbnail) {
-	out.RawByte('{')
-	first := true
-	_ = first
-	{
-		const prefix string = ",\"is_png\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Bool(bool(in.IsPNG))
-	}
-	{
-		const prefix string = ",\"width\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Uint64(uint64(in.Width))
-	}
-	{
-		const prefix string = ",\"height\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
-		out.Uint64(uint64(in.Height))
-	}
-	out.RawByte('}')
-}
-
-// MarshalJSON supports json.Marshaler interface
-func (v Thumbnail) MarshalJSON() ([]byte, error) {
-	w := jwriter.Writer{}
-	easyjson220accf5EncodeGithubComBakapeHydronCommon(&w, v)
-	return w.Buffer.BuildBytes(), w.Error
-}
-
-// MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Thumbnail) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson220accf5EncodeGithubComBakapeHydronCommon(w, v)
-}
-
-// UnmarshalJSON supports json.Unmarshaler interface
-func (v *Thumbnail) UnmarshalJSON(data []byte) error {
-	r := jlexer.Lexer{Data: data}
-	easyjson220accf5DecodeGithubComBakapeHydronCommon(&r, v)
-	return r.Error()
-}
-
-// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Thumbnail) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson220accf5DecodeGithubComBakapeHydronCommon(l, v)
-}
-func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *Image) {
+func easyjson220accf5DecodeGithubComBakapeHydronCommon(in *jlexer.Lexer, out *Image) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -158,7 +63,7 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *I
 				}
 				for !in.IsDelim(']') {
 					var v1 Tag
-					easyjson220accf5DecodeGithubComBakapeHydronCommon2(in, &v1)
+					easyjson220accf5DecodeGithubComBakapeHydronCommon1(in, &v1)
 					out.Tags = append(out.Tags, v1)
 					in.WantComma()
 				}
@@ -184,7 +89,7 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *I
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in Image) {
+func easyjson220accf5EncodeGithubComBakapeHydronCommon(out *jwriter.Writer, in Image) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -252,7 +157,7 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in 
 				if v2 > 0 {
 					out.RawByte(',')
 				}
-				easyjson220accf5EncodeGithubComBakapeHydronCommon2(out, v3)
+				easyjson220accf5EncodeGithubComBakapeHydronCommon1(out, v3)
 			}
 			out.RawByte(']')
 		}
@@ -313,27 +218,27 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in 
 // MarshalJSON supports json.Marshaler interface
 func (v Image) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson220accf5EncodeGithubComBakapeHydronCommon1(&w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Image) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson220accf5EncodeGithubComBakapeHydronCommon1(w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Image) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson220accf5DecodeGithubComBakapeHydronCommon1(&r, v)
+	easyjson220accf5DecodeGithubComBakapeHydronCommon(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Image) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson220accf5DecodeGithubComBakapeHydronCommon1(l, v)
+	easyjson220accf5DecodeGithubComBakapeHydronCommon(l, v)
 }
-func easyjson220accf5DecodeGithubComBakapeHydronCommon2(in *jlexer.Lexer, out *Tag) {
+func easyjson220accf5DecodeGithubComBakapeHydronCommon1(in *jlexer.Lexer, out *Tag) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -368,7 +273,7 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon2(in *jlexer.Lexer, out *T
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComBakapeHydronCommon2(out *jwriter.Writer, in Tag) {
+func easyjson220accf5EncodeGithubComBakapeHydronCommon1(out *jwriter.Writer, in Tag) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -404,7 +309,7 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon2(out *jwriter.Writer, in 
 	}
 	out.RawByte('}')
 }
-func easyjson220accf5DecodeGithubComBakapeHydronCommon3(in *jlexer.Lexer, out *Dims) {
+func easyjson220accf5DecodeGithubComBakapeHydronCommon2(in *jlexer.Lexer, out *Dims) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -437,7 +342,7 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon3(in *jlexer.Lexer, out *D
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComBakapeHydronCommon3(out *jwriter.Writer, in Dims) {
+func easyjson220accf5EncodeGithubComBakapeHydronCommon2(out *jwriter.Writer, in Dims) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -467,27 +372,27 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon3(out *jwriter.Writer, in 
 // MarshalJSON supports json.Marshaler interface
 func (v Dims) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson220accf5EncodeGithubComBakapeHydronCommon3(&w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Dims) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson220accf5EncodeGithubComBakapeHydronCommon3(w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Dims) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson220accf5DecodeGithubComBakapeHydronCommon3(&r, v)
+	easyjson220accf5DecodeGithubComBakapeHydronCommon2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Dims) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson220accf5DecodeGithubComBakapeHydronCommon3(l, v)
+	easyjson220accf5DecodeGithubComBakapeHydronCommon2(l, v)
 }
-func easyjson220accf5DecodeGithubComBakapeHydronCommon4(in *jlexer.Lexer, out *CompactImage) {
+func easyjson220accf5DecodeGithubComBakapeHydronCommon3(in *jlexer.Lexer, out *CompactImage) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -522,7 +427,7 @@ func easyjson220accf5DecodeGithubComBakapeHydronCommon4(in *jlexer.Lexer, out *C
 		in.Consumed()
 	}
 }
-func easyjson220accf5EncodeGithubComBakapeHydronCommon4(out *jwriter.Writer, in CompactImage) {
+func easyjson220accf5EncodeGithubComBakapeHydronCommon3(out *jwriter.Writer, in CompactImage) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -562,23 +467,23 @@ func easyjson220accf5EncodeGithubComBakapeHydronCommon4(out *jwriter.Writer, in 
 // MarshalJSON supports json.Marshaler interface
 func (v CompactImage) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson220accf5EncodeGithubComBakapeHydronCommon4(&w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon3(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v CompactImage) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson220accf5EncodeGithubComBakapeHydronCommon4(w, v)
+	easyjson220accf5EncodeGithubComBakapeHydronCommon3(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *CompactImage) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson220accf5DecodeGithubComBakapeHydronCommon4(&r, v)
+	easyjson220accf5DecodeGithubComBakapeHydronCommon3(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *CompactImage) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson220accf5DecodeGithubComBakapeHydronCommon4(l, v)
+	easyjson220accf5DecodeGithubComBakapeHydronCommon3(l, v)
 }

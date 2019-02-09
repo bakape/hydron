@@ -6,7 +6,7 @@
 		<input type="checkbox" name="img:{%s= img.SHA1 %}">
 		<div class="background"></div>
 		<a href="/image/{%s= img.SHA1 %}?{%s= page.Query() %}">
-			<img width="{%d int(img.Thumb.Width) %}" height="{%d int(img.Thumb.Height) %}" src="{%s= files.NetThumbPath(img.SHA1, img.Thumb.IsPNG) %}">
+			<img width="{%d int(img.Thumb.Width) %}" height="{%d int(img.Thumb.Height) %}" src="{%s= files.NetThumbPath(img.SHA1) %}">
 		</a>
 	</figure>
 {% endstripspace %}{% endfunc %}

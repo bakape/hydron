@@ -5,10 +5,12 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"hash"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/bakape/hydron/common"
@@ -17,6 +19,7 @@ import (
 	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/tags"
 	"github.com/bakape/thumbnailer"
+	"github.com/chai2010/webp"
 )
 
 // Common errors
@@ -24,16 +27,25 @@ var (
 	ErrUnsupportedFile = errors.New("unsupported file type")
 	ErrImported        = errors.New("already imported")
 	importFile         = make(chan request)
-)
 
-var thumbnailerOpts = thumbnailer.Options{
-	JPEGQuality: 90,
-	ThumbDims: thumbnailer.Dims{
-		Width:  200,
-		Height: 200,
-	},
-	AcceptedMimeTypes: common.AllowedMimes,
-}
+	// Pool of temp buffers used for hashing
+	buf512Pool = sync.Pool{
+		New: func() interface{} {
+			return make([]byte, 512)
+		},
+	}
+
+	thumbnailerOpts = thumbnailer.Options{
+		ThumbDims: thumbnailer.Dims{
+			Width:  200,
+			Height: 200,
+		},
+		AcceptedMimeTypes: common.AllowedMimes,
+	}
+	webpOpts = webp.Options{
+		Quality: 90,
+	}
+)
 
 type request struct {
 	f       io.ReadSeeker
@@ -64,43 +76,50 @@ func init() {
 	}
 }
 
-// Worker function for file importing
-func doImport(f io.ReadSeeker, size int, addTags string,
-) (r common.Image, err error) {
-	// Generate SHA1 hash while streaming file to reduce memory allocations in
-	// case of file already existing in the DB. Introduces a small overhead, if
-	// the file is not already imported, but that is mostly mitigated by the
-	// drive cache.
-	var (
-		digest = sha1.New()
-		buf    [512]byte
-		n      int
-	)
+// Hash file to hx string
+func hashFile(rs io.ReadSeeker, h hash.Hash) (
+	hash string, read int, err error,
+) {
+	_, err = rs.Seek(0, 0)
+	if err != nil {
+		return
+	}
+	buf := buf512Pool.Get().([]byte)
+	defer buf512Pool.Put(buf)
+
 	for {
-		n, err = f.Read(buf[:])
+		buf = buf[:512] // Reset slicing
+
+		var n int
+		n, err = rs.Read(buf)
+		buf = buf[:n]
+		read += n
 		switch err {
 		case nil:
-			if n > 0 {
-				digest.Write(buf[0:n])
-			}
+			h.Write(buf)
 		case io.EOF:
-			r.SHA1 = hex.EncodeToString(digest.Sum(nil))
-			goto process
+			err = nil
+			hash = hex.EncodeToString(h.Sum(buf))
+			return
 		default:
 			return
 		}
 	}
+}
 
-process:
-	_, err = f.Seek(0, 0)
+// Worker function for file importing
+func doImport(f io.ReadSeeker, size int, addTags string,
+) (
+	r common.Image, err error,
+) {
+	// Generate SHA1 hash while streaming file to reduce memory allocations in
+	// case of file already existing in the DB. Introduces a small overhead, if
+	// the file is not already imported, but that is mostly mitigated by the
+	// drive cache.
+	r.SHA1, r.Size, err = hashFile(f, sha1.New())
 	if err != nil {
 		return
 	}
-	srcBuf, err := thumbnailer.ReadInto(thumbnailer.GetBufferCap(size), f)
-	if err != nil {
-		return
-	}
-	defer thumbnailer.ReturnBuffer(srcBuf)
 
 	// Check, if not already in the database
 	isImported, err := db.IsImported(r.SHA1)
@@ -112,49 +131,69 @@ process:
 		return
 	}
 
-	src, thumb, err := thumbnailer.ProcessBuffer(srcBuf, thumbnailerOpts)
+	src, thumb, err := thumbnailer.Process(f, thumbnailerOpts)
 	switch err {
 	case nil:
-	case thumbnailer.ErrNoStreams:
+	case thumbnailer.ErrCantThumbnail:
 		err = ErrUnsupportedFile
 		return
 	default:
-		if _, ok := err.(thumbnailer.UnsupportedMIMEError); ok {
+		if _, ok := err.(thumbnailer.ErrUnsupportedMIME); ok {
 			err = ErrUnsupportedFile
 		}
 		return
 	}
-	defer thumbnailer.ReturnBuffer(thumb.Data)
 
-	mHash := md5.Sum(srcBuf)
-	r = common.Image{
-		CompactImage: common.CompactImage{
-			Type: common.MimeTypes[src.Mime],
-			SHA1: r.SHA1,
-			Thumb: common.Thumbnail{
-				IsPNG: thumb.IsPNG,
-				Dims: common.Dims{
-					Width:  uint64(thumb.Width),
-					Height: uint64(thumb.Height),
-				},
-			},
-		},
-		Dims: common.Dims{
-			Width:  uint64(src.Width),
-			Height: uint64(src.Height),
-		},
-		ImportTime: time.Now().Unix(),
-		Size:       len(src.Data),
-		Duration:   uint64(src.Length / time.Second),
-		MD5:        hex.EncodeToString(mHash[:]),
-		Tags:       tags.FromString(addTags, common.User),
-	}
-
-	err = writeFile(files.ThumbPath(r.SHA1, thumb.IsPNG), thumb.Data)
+	r.MD5, _, err = hashFile(f, md5.New())
 	if err != nil {
 		return
 	}
-	err = writeFile(files.SourcePath(r.SHA1, r.Type), srcBuf)
+	bounds := thumb.Bounds()
+	r.CompactImage = common.CompactImage{
+		Type: common.MimeTypes[src.Mime],
+		SHA1: r.SHA1,
+		Thumb: common.Dims{
+			Width:  uint64(bounds.Dx()),
+			Height: uint64(bounds.Dy()),
+		},
+	}
+	r.Dims = common.Dims{
+		Width:  uint64(src.Width),
+		Height: uint64(src.Height),
+	}
+	r.ImportTime = time.Now().Unix()
+	r.Duration = uint64(src.Length / time.Second)
+	r.Tags = tags.FromString(addTags, common.User)
+
+	// Encode thumbnail and dump source file concurrently
+	ch := make(chan error)
+	go func() {
+		ch <- func() (err error) {
+			f, err := createFile(files.ThumbPath(r.SHA1))
+			if err != nil {
+				return
+			}
+			defer f.Close()
+
+			return webp.Encode(f, thumb, &webpOpts)
+		}()
+	}()
+
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		return
+	}
+	srcDest, err := createFile(files.SourcePath(r.SHA1, r.Type))
+	if err != nil {
+		return
+	}
+	defer srcDest.Close()
+	_, err = io.Copy(srcDest, f)
+	if err != nil {
+		return
+	}
+
+	err = <-ch
 	if err != nil {
 		return
 	}
@@ -163,22 +202,17 @@ process:
 	return
 }
 
-// Write a file to disk. If a file already exists, because of an interrupted
-// write or something, overwrite it.
-func writeFile(path string, buf []byte) (err error) {
-	const flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+// Create a file for wrting an image
+func createFile(path string) (f *os.File, err error) {
 openFile:
-	f, err := os.OpenFile(path, flags, 0660)
+	f, err = os.Create(path)
 	if err != nil {
-		if err = os.MkdirAll(filepath.Dir(path), 0760); err != nil {
+		err = os.MkdirAll(filepath.Dir(path), 0760)
+		if err != nil {
 			return
 		}
-
 		goto openFile
 	}
-	defer f.Close()
-
-	_, err = f.Write(buf)
 	return
 }
 
@@ -205,7 +239,7 @@ func ImportFile(f io.ReadSeeker, size int, name string, addTags string, fetchTag
 	}
 
 	err = db.SetName(r.ID, name)
-	
+
 	if err != nil {
 		return
 	}
