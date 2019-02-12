@@ -81,9 +81,11 @@ var migrations = []func(*sql.Tx) error{
 		)
 	},
 	func(tx *sql.Tx) (err error) {
-		return execAll(tx,
-			`alter table images drop column thumb_is_png`,
-		)
+		// No drop column support lol
+		if driver != "sqlite3" {
+			_, err = tx.Exec(`alter table images drop column thumb_is_png`)
+		}
+		return
 	},
 }
 
