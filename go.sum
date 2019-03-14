@@ -8,6 +8,8 @@ github.com/bakape/boorufetch v0.0.0-20181220205724-8ffa0df4bacc h1:dQQ7jAGLJIunM
 github.com/bakape/boorufetch v0.0.0-20181220205724-8ffa0df4bacc/go.mod h1:5w+CugEba6no6uHTyaDMjZeYq5Xir8C6A9xtZr/wsbs=
 github.com/bakape/boorufetch v1.0.0 h1:Cv4LAxZUYYUNmmgMFDrgyoeOHKROTUsE83vLaMnciSg=
 github.com/bakape/boorufetch v1.0.0/go.mod h1:5w+CugEba6no6uHTyaDMjZeYq5Xir8C6A9xtZr/wsbs=
+github.com/bakape/boorufetch v1.0.1 h1:lTgxhYNQazFB/0SElkkcH3xX6URlHxvTiPgtbt4hIQ0=
+github.com/bakape/boorufetch v1.0.1/go.mod h1:5w+CugEba6no6uHTyaDMjZeYq5Xir8C6A9xtZr/wsbs=
 github.com/bakape/thumbnailer v0.0.0-20181109212531-f191a43e9c3c h1:Q8X+ZsA71wSFFRd0isvIUEmpI2wIBSPXS75DSjyXfBo=
 github.com/bakape/thumbnailer v0.0.0-20181109212531-f191a43e9c3c/go.mod h1:PVB2nXXJHD4KAUWn9HaNKtWeDeAb9BFQ7oDOAdZCKUM=
 github.com/bakape/thumbnailer v0.0.0-20190207221116-53c8bb316f36 h1:kb3olTzzz2DcCrGKC6OYRbj2ffI56gO6lgUrTFl+/zE=
