@@ -38,8 +38,7 @@ var migrations = []func(*sql.Tx) error{
 				md5 text not null,
 				sha1 text not null,
 				thumb_width int not null,
-				thumb_height int not null,
-				thumb_is_png boolean not null
+				thumb_height int not null
 			)`,
 			`create unique index i_image_sha1 on images(sha1)`,
 			`create unique index i_image_md5 on images(md5)`,
@@ -83,7 +82,8 @@ var migrations = []func(*sql.Tx) error{
 	func(tx *sql.Tx) (err error) {
 		// No drop column support lol
 		if driver != "sqlite3" {
-			_, err = tx.Exec(`alter table images drop column thumb_is_png`)
+			_, err = tx.Exec(
+				`alter table images drop column if exists thumb_is_png`)
 		}
 		return
 	},
