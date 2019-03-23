@@ -305,6 +305,7 @@ func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sendError(w, 400, err)
 		return
+		return
 	}
 
 	name := r.Form.Get("name")
