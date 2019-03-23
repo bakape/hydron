@@ -3,26 +3,68 @@
     const form = document.getElementById("import");
     const sub = document.getElementById("submit");
 
-    sub.addEventListener("click", async e => {
-        if (!confirm("Generic confirmation message")){
+    sub.addEventListener("click", () => {
+        if (!confirm("Generic confirmation message.")) {
             return;
 		}
 		input = form.querySelector("#path").value;
-		if (input.length === 0){
+		if (input.length === 0) {
+			alert("Must enter an import path.");
 			return;
 		}
 
         const body = "path=" + input +
             "&del=" + form.querySelector("#delete").checked +
             "&fetchTags=" + form.querySelector("#fetch-tags").checked +
-            "&tagStr=" + form.querySelector("#input-tags").value;
-        try {
-            const r = await fetch("/api/import", { body, method: "POST", 
-            headers: { "Content-Type": "application/x-www-form-urlencoded" }
-            });
-        } catch(err) {
-            alert(err);
-        }
+			"&tagStr=" + form.querySelector("#input-tags").value;
+
+		fetch("/api/import", { body, method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" } } )
+		.then(response => {
+			return new Response(
+				new ReadableStream({
+					start(controller) {
+						const reader = response.body.getReader();
+						const decoder = new TextDecoder("utf-8");
+
+						// Recursively read from stream and process chunks,
+						// until "done" message
+						read();
+						function read() {
+							reader.read().then(({done, value}) => {
+								if(done) {
+									controller.close();
+									return;
+								}
+								// Sometimes server sends multiple chunks before client
+								// finishes processing, so have to split them
+								s = decoder.decode(value).split("-");
+								for(i = 0; i < s.length - 1; i++) {
+									var obj = JSON.parse(s[i]);
+
+									fetch(`/ajax/thumbnail/${obj.SHA1}`)
+									.then( r => {
+										if (r.status !== 200) {
+											r.text().then( r => {
+												throw r;
+											})
+										}
+										r.text().then( r => {
+											const cont = document.createElement("div");
+											cont.innerHTML = r;
+											browser.appendChild(cont.firstChild);
+
+											renderProgress(obj.Current / obj.Total)
+										})
+									})
+								}
+								read();
+							})
+						}
+					}
+				})
+			);
+		})
     }, { passive: true });
 })();
 

@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"unicode"
+
+	"github.com/bakape/hydron/common"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
@@ -46,6 +48,12 @@ func (p *progressLogger) Close() {
 	fmt.Println("")
 }
 
+// Helper type for multi-value channel
+type Result struct {
+	img common.Image
+	err error
+}
+
 // Convert import page's input string into string array of file paths
 func parsePaths(input string) ([]string, error) {
 	var store []string
@@ -62,7 +70,7 @@ func parsePaths(input string) ([]string, error) {
 			inSpace = true
 			store = append(store, input[prev:i])
 			prev = i + 1
-		}else {
+		} else {
 			if (c == '"') {
 				quote++
 			}

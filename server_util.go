@@ -30,6 +30,13 @@ type StatusError interface {
 	Status() int
 }
 
+// Chunk of data returned to client to track upload progress
+type Chunk struct {
+	SHA1 string
+	Current int
+	Total int
+}
+
 // Handle error and devulge code from error type or value
 func httpError(w http.ResponseWriter, r *http.Request, err error) {
 	code := 500

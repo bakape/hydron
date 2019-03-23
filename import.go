@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -9,6 +11,7 @@ import (
 	"strings"
 	"path/filepath"
 
+	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
 	"github.com/bakape/hydron/files"
 	imp "github.com/bakape/hydron/import"
@@ -34,12 +37,14 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 	}
 
 	// Process files in parallel
-	ch := make(chan error)
+	ch := make(chan Result)
 	n := runtime.NumCPU() + 1
 	for i := 0; i < n; i++ {
 		go func() {
 			for p := range passPaths {
-				ch <- importPath(p, del, fetchTags, tagStr)
+				res := new(Result)
+				_, res.err = importPath(p, del, fetchTags, tagStr)
+				ch <- *res
 			}
 		}()
 	}
@@ -53,7 +58,9 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 		p.header += ", fetching tags"
 	}
 	for i := 0; i < len(paths); i++ {
-		err = <-ch
+		store := new(Result)
+		*store = <- ch
+		err = store.err
 		if err != nil {
 			p.Err(err)
 		} else {
@@ -66,7 +73,7 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 	return nil
 }
 
-func importPath(p string, del, fetchTags bool, tagStr string) (err error) {
+func importPath(p string, del, fetchTags bool, tagStr string) (img common.Image, err error) {
 	f, err := os.Open(p)
 	if err != nil {
 		return
@@ -78,7 +85,7 @@ func importPath(p string, del, fetchTags bool, tagStr string) (err error) {
 	}
 
 	name := info.Name()
-	_, err = imp.ImportFile(
+	img, err = imp.ImportFile(
 		f,
 		int(info.Size()),
 		strings.TrimSuffix(name, filepath.Ext(name)),
@@ -151,4 +158,68 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serveJSON(w, r, img)
+}
+
+// Copy of importPaths that sends progress to client
+// Temporary name, think of a better one
+func clientImportPaths(w http.ResponseWriter, r *http.Request, paths []string, del, fetchTags bool, tagStr string) error {
+	paths, err := files.Traverse(paths)
+	if err != nil {
+		return err
+	}
+
+	// Buffer all paths into a channel
+	passPaths := make(chan string, len(paths))
+	for _, p := range paths {
+		passPaths <- p
+	}
+
+	// Process files in parallel
+	ch := make(chan Result)
+	n := runtime.NumCPU() + 1
+	for i := 0; i < n; i++ {
+		go func() {
+			for p := range passPaths {
+				res := new(Result)
+				res.img, res.err = importPath(p, del, fetchTags, tagStr)
+				ch <- *res
+			}
+		}()
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		log.Fatal("Failed to make HTTP Flusher.")
+	}
+	total := len(paths)
+
+	for i := 0; i < total; i++ {
+		store := new(Result)
+		*store = <- ch
+		err = store.err
+
+		switch err {
+		case nil:
+		case imp.ErrImported:
+		case imp.ErrUnsupportedFile:
+			sendError(w, 415, err)
+			return err
+		default:
+			send500(w, r, err)
+			return err
+		}
+
+		jsonChunk, err := json.Marshal(Chunk{store.img.SHA1, i+1, total})
+		if err != nil {
+			send500(w, r, err)
+			return err
+		}
+		// Need to separate chunks, hyphen never appears in chunk content
+		// so is safe to use
+		fmt.Fprintf(w, "%s-", jsonChunk)
+		flusher.Flush()
+	}
+	close(passPaths) // Stop worker goroutines
+
+	return nil
 }

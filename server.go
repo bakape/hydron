@@ -394,7 +394,6 @@ func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
 		send500(w, r, err)
 		return
 	}
-
 	paths, err := parsePaths(r.Form.Get("path"))
 	if err != nil {
 		send500(w, r, err)
@@ -411,18 +410,16 @@ func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = importPaths(
+	err = clientImportPaths(
+		w,
+		r,
 		paths,
 		del,
 		fetch,
 		r.Form.Get("tagStr"),
 	)
-
-	//todo: make this useful
-	switch err {
-	case nil:
-	default:
-		fmt.Printf("%s", err)
-		sendError(w, 400, err)
+	if err != nil {
+		send500(w, r, err)
+		return
 	}
 }
