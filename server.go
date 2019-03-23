@@ -330,6 +330,7 @@ func fetchTagsHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		send500(w, r, err)
 		return
+		return
 	}
 
 	tags, err := fetch.FetchTags(pair.MD5)
