@@ -336,6 +336,7 @@ func fetchTagsHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		send500(w, r, err)
 		return
+		return
 	}
 
 	err = db.UpdateTags(pair.ID, tags, common.Gelbooru)
