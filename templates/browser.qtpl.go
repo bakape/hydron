@@ -41,7 +41,7 @@ func StreamBrowser(qw422016 *qt422016.Writer, page common.Page, imgs []common.Co
 	//line browser.qtpl:10
 	streamhead(qw422016, title)
 	//line browser.qtpl:10
-	qw422016.N().S(`<body><nav id="top-banner"><div style="display: flex;"><form method="get"><input type="search" id="search" placeholder="Search" value="`)
+	qw422016.N().S(`<body><nav id="top-banner"><div style="display: flex; margin-right: 0.5em;"><form method="get" class="margin-left"><input type="search" id="search" placeholder="Search" value="`)
 	//line browser.qtpl:15
 	qw422016.E().S(filters)
 	//line browser.qtpl:15
@@ -81,27 +81,27 @@ func StreamBrowser(qw422016 *qt422016.Writer, page common.Page, imgs []common.Co
 		//line browser.qtpl:28
 	}
 	//line browser.qtpl:28
-	qw422016.N().S(`></form><div id="options"><label style="padding-bottom: 1em;">Options</label><div id="opts-bar"><input type="text" id="opts-input" title="Text input for options" autocomplete="off"><br><select id="opts-select">`)
-	//line browser.qtpl:36
-	for i := common.FetchTags; i <= common.Delete; i++ {
-		//line browser.qtpl:36
-		qw422016.N().S(`<option value="`)
-		//line browser.qtpl:37
-		qw422016.N().D(int(i))
-		//line browser.qtpl:37
-		qw422016.N().S(`">`)
-		//line browser.qtpl:38
-		qw422016.N().S(optionLabels[int(i)])
-		//line browser.qtpl:38
-		qw422016.N().S(`</option>`)
-		//line browser.qtpl:40
-	}
-	//line browser.qtpl:40
-	qw422016.N().S(`</select><br><input type="button" id="opts-submit" value="submit"><br><a href="/import">Upload files</a></div></div>`)
-	//line browser.qtpl:48
+	qw422016.N().S(`></form>`)
+	//line browser.qtpl:30
 	streampagination(qw422016, page)
-	//line browser.qtpl:48
-	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><section id="browser" tabindex="1">`)
+	//line browser.qtpl:30
+	qw422016.N().S(`<span id="options" class="margin-left"><label style="padding-bottom: 1em;">Options</label><div id="opts-bar"><input type="text" id="opts-input" title="Text input for options" autocomplete="off"><br><select id="opts-select">`)
+	//line browser.qtpl:37
+	for i := common.FetchTags; i <= common.Delete; i++ {
+		//line browser.qtpl:37
+		qw422016.N().S(`<option value="`)
+		//line browser.qtpl:38
+		qw422016.N().D(int(i))
+		//line browser.qtpl:38
+		qw422016.N().S(`">`)
+		//line browser.qtpl:39
+		qw422016.N().S(optionLabels[int(i)])
+		//line browser.qtpl:39
+		qw422016.N().S(`</option>`)
+		//line browser.qtpl:41
+	}
+	//line browser.qtpl:41
+	qw422016.N().S(`</select><br><input type="button" id="opts-submit" value="submit"><br><a href="/import">Upload files</a></div></span></div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><section id="browser" tabindex="1">`)
 	//line browser.qtpl:55
 	for i, img := range imgs {
 		//line browser.qtpl:56
@@ -144,7 +144,7 @@ func Browser(page common.Page, imgs []common.CompactImage) string {
 //line browser.qtpl:64
 func streampagination(qw422016 *qt422016.Writer, page common.Page) {
 	//line browser.qtpl:64
-	qw422016.N().S(`<span class="spaced">`)
+	qw422016.N().S(`<span class="spaced margin-left">`)
 	//line browser.qtpl:66
 	current := int(page.Page)
 
