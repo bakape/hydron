@@ -1,3 +1,5 @@
+export GO111MODULE=on
+
 version_base=$(shell git describe --tags)
 version=$(version_base)
 binary=hydron

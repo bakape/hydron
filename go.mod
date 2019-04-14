@@ -12,6 +12,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329
 	github.com/mattn/go-sqlite3 v1.10.0
+	github.com/pyros2097/go-embed v0.0.0-20160412061840-4274f3450521 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/valyala/fasthttp v1.1.0 // indirect
