@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	"github.com/bakape/hydron/assets"
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
+	"github.com/bakape/hydron/fetch"
 	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/tags"
 	"github.com/bakape/hydron/templates"
@@ -66,11 +66,13 @@ func startServer(addr string) error {
 	// HTML paths
 	r.GET("/search", serveSearchHTML)
 	r.GET("/image/:id", serveImagePage)
+	r.GET("/import", serveImportPage)
 
 	// Image API
 	api := r.NewGroup("/api")
 	api.GET("/complete_tag/:prefix", completeTagHTTP)
 	api.POST("/images/:id/name", setImageNameHTTP)
+	api.POST("/import", importPathsHTTP)
 
 	images := api.NewGroup("/images")
 	images.GET("/", serveSearch) // Dumps everything
@@ -82,7 +84,8 @@ func startServer(addr string) error {
 
 	tags := images.NewGroup("/:id/tags")
 	tags.PATCH("/", addTagsHTTP)
-	tags.DELETE("/", removeTagsHTTP)
+	tags.POST("/", removeTagsHTTP)
+	tags.PATCH("/fetch", fetchTagsHTTP)
 
 	ajax := r.NewGroup("/ajax")
 	ajax.GET("/thumbnail/:id", serveThumbnail)
@@ -298,16 +301,47 @@ func removeTagsHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Set the target file's name
 func setImageNameHTTP(w http.ResponseWriter, r *http.Request) {
-	bytes, err := ioutil.ReadAll(r.Body)
-
+	err := r.ParseForm()
 	if err != nil {
 		sendError(w, 400, err)
-	} else if len(bytes) > 200 {
-		bytes = bytes[0:200]
+		return
+		return
 	}
 
-	err = setImageName(extractParam(r, "id"), string(bytes))
+	name := r.Form.Get("name")
+	if len(name) > 200 {
+		name = name[0:200]
+	}
 
+	err = setImageName(extractParam(r, "id"), name)
+
+	switch err {
+	case nil:
+	case sql.ErrNoRows:
+		sendError(w, 400, err)
+	default:
+		send500(w, r, err)
+	}
+}
+
+// Fetch tags for a single file
+func fetchTagsHTTP(w http.ResponseWriter, r *http.Request) {
+	sha1 := extractParam(r, "id")
+	pair, err := db.GetImageIDAndMD5(sha1)
+	if err != nil {
+		send500(w, r, err)
+		return
+		return
+	}
+
+	tags, err := fetch.FetchTags(pair.MD5)
+	if err != nil {
+		send500(w, r, err)
+		return
+		return
+	}
+
+	err = db.UpdateTags(pair.ID, tags, common.Gelbooru)
 	switch err {
 	case nil:
 	case sql.ErrNoRows:
@@ -349,4 +383,46 @@ func serveImagePage(w http.ResponseWriter, r *http.Request) {
 
 	setHeaders(w, htmlHeaders)
 	templates.WriteImagePage(w, img, page)
+}
+
+func serveImportPage(w http.ResponseWriter, r *http.Request) {
+	setHeaders(w, htmlHeaders)
+	templates.WriteImportPage(w)
+}
+
+// Extract import args and pass to importPaths
+func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	paths, err := parsePaths(r.Form.Get("path"))
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	del, err := strconv.ParseBool(r.Form.Get("del"))
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+	fetch, err := strconv.ParseBool(r.Form.Get("fetchTags"))
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
+
+	err = clientImportPaths(
+		w,
+		r,
+		paths,
+		del,
+		fetch,
+		r.Form.Get("tagStr"),
+	)
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
 }

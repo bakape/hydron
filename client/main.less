@@ -46,6 +46,27 @@
 	}
 }
 
+#options:hover > #opts-bar {
+	visibility: visible;
+}
+
+#opts-bar {
+	visibility: hidden;
+	position: fixed;
+	top: 2em;
+	right: 0;
+	background-color: @inner-bg;
+	padding: 0.4em;
+	width: 20em;
+	& > * {
+		margin-bottom: 0.4em;
+	}
+}
+
+#opts-input {
+	width: 100%;
+}
+
 #progress-bar {
 	width: 0;
 	height: 100%;
@@ -176,4 +197,12 @@ body {
 a {
 	text-decoration: none !important;
 	color: @selected;
+}
+
+#import {
+	background: @inner-bg;
+	display: grid;
+	#submit {
+		width: fit-content;
+	}
 }

@@ -1,7 +1,7 @@
 const browser = document.getElementById("browser");
 const imageView = document.getElementById("image-view");
 const search = document.getElementById("search");
-const figureWidth = 200 + 4; // With marging
+const figureWidth = 200 + 4; // With margin
 
 // Search bar and suggestions
 (() => {
@@ -62,7 +62,7 @@ const figureWidth = 200 + 4; // With marging
 		document.addEventListener(e, stopDefault);
 	}
 
-	// Set drag contents to seleceted images
+	// Set drag contents to selected images
 	browser.addEventListener("dragstart", e => {
 		let el = e.target;
 		if (!el.closest || !(el = el.closest("figure"))) {
@@ -131,6 +131,50 @@ const figureWidth = 200 + 4; // With marging
 	function isFileInput(el) {
 		return el.tagName === "INPUT" && el.getAttribute("type") === "file";
 	}
+})();
+
+// Options form
+(() => {
+	const optsform = document.querySelector("#opts-bar");
+	const optssub = document.querySelector("#opts-submit");
+
+	optssub.addEventListener("click", async e => {
+		if (!confirm("Generic confirmation message")){
+			return;
+		}
+
+		let checked = [];
+		for (let el of [...browser.children]) {
+			el = el.querySelector("input[type=checkbox]");
+			if (el.checked) {
+				let i = el.name.lastIndexOf(":");
+				checked.push(el.name.slice(i+1));	//Extract+store image IDs
+			}
+		}
+
+		let opt = optsform.querySelector("#opts-select").value;
+		let input = optsform.querySelector("#opts-input").value;
+		params = createParams(opt, input);
+		if (params.length === 0){
+			return;
+		}
+
+		let n = checked.length;
+		let i = 0;
+		while (i < n){
+			try {
+				path = "/api/images/" + checked[i] + params[0];
+				const r = await fetch( path, { method: params[1],
+					 body: params[2],
+					 headers: {
+						 "Content-Type": "application/x-www-form-urlencoded"
+						} });
+			} catch (err) {
+				alert(err);
+			}
+			renderProgress(++i/n);
+		}
+	}, { passive: true });
 })();
 
 browser.addEventListener("keydown", e => {
@@ -281,4 +325,23 @@ function setHighlight(target) {
 		behavior: "smooth",
 		block: "center",
 	});
+}
+
+function createParams(option, input) {
+	suffix = ["/tags/fetch", "/tags/", "/tags/", "/name", "/"];
+	methods = ["PATCH", "PATCH", "POST", "POST", "DELETE"];
+	bodys = ["", "tags=", "tags=", "name=", ""];
+
+	if (option > suffix.length) {
+		console.log("Invalid selection");
+		return [];
+	}
+
+	method = methods[option];
+	body = bodys[option];
+	if (body.length != 0){
+		body += input;
+	}
+	
+	return [ suffix[option], method, body ];
 }
