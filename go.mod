@@ -3,7 +3,7 @@ module github.com/bakape/hydron
 require (
 	github.com/Masterminds/squirrel v1.1.0
 	github.com/bakape/boorufetch v1.0.1
-	github.com/bakape/thumbnailer v0.0.0-20190207231858-3dbb66a7acb5
+	github.com/bakape/thumbnailer v0.0.0-20190419231732-9bd6fcd43d22
 	github.com/chai2010/webp v1.0.0
 	github.com/dimfeld/httptreemux v5.0.1+incompatible
 	github.com/gorilla/handlers v1.4.0

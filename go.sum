@@ -16,6 +16,8 @@ github.com/bakape/thumbnailer v0.0.0-20190207221116-53c8bb316f36 h1:kb3olTzzz2Dc
 github.com/bakape/thumbnailer v0.0.0-20190207221116-53c8bb316f36/go.mod h1:PVB2nXXJHD4KAUWn9HaNKtWeDeAb9BFQ7oDOAdZCKUM=
 github.com/bakape/thumbnailer v0.0.0-20190207231858-3dbb66a7acb5 h1:B6v+6SeDZr9z9cvcW6FOwOKRGs+IkMShPnoTDcG/0xE=
 github.com/bakape/thumbnailer v0.0.0-20190207231858-3dbb66a7acb5/go.mod h1:PVB2nXXJHD4KAUWn9HaNKtWeDeAb9BFQ7oDOAdZCKUM=
+github.com/bakape/thumbnailer v0.0.0-20190419231732-9bd6fcd43d22 h1:42HP+b3orjoOFq7rsg2iJNRXYmy40x/Zg5E/FX3pLHU=
+github.com/bakape/thumbnailer v0.0.0-20190419231732-9bd6fcd43d22/go.mod h1:s7Sm20txJX+qAc11XFnLPqDPXnYShoscD3++dZKTxIc=
 github.com/bakape/thumbnailer v1.0.0 h1:fmaLCJ6sJ5wCAUmB3hhzgFAZ5G3cpueo3olI9N0ox3E=
 github.com/bakape/thumbnailer v1.0.0/go.mod h1:PVB2nXXJHD4KAUWn9HaNKtWeDeAb9BFQ7oDOAdZCKUM=
 github.com/chai2010/webp v1.0.0 h1:64IosJhW2aYYWvqZiexusoDQFTSfzcJA7DU6na7RKHM=
@@ -40,6 +42,8 @@ github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329 h1:2gxZ0XQIU/5z3Z3
 github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mattn/go-sqlite3 v1.10.0 h1:jbhqpg7tQe4SupckyijYiy0mJJ/pRyHvXf7JdWK860o=
 github.com/mattn/go-sqlite3 v1.10.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
+github.com/nwaples/rardecode v1.0.0 h1:r7vGuS5akxOnR4JQSkko62RJ1ReCMXxQRPtxsiFMBOs=
+github.com/nwaples/rardecode v1.0.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
