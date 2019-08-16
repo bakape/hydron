@@ -18,7 +18,7 @@ import (
 	"github.com/bakape/hydron/fetch"
 	"github.com/bakape/hydron/files"
 	"github.com/bakape/hydron/tags"
-	"github.com/bakape/thumbnailer"
+	"github.com/bakape/thumbnailer/v2"
 	"github.com/chai2010/webp"
 )
 
