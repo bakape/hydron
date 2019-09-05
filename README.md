@@ -15,8 +15,10 @@ Platforms: Linux, OSX, Win32, Win64
 
 ### Runtime dependecies
 
-* ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
-* GraphicsMagick
+* ffmpeg >= 3.2 libraries (libswscale, libavcodec, libavutil, libavformat)
+
+NB: Ubuntu patches to ffmpeg on some Ubuntu versions break image processing.
+If running on Ubuntu, please compile from unmodified ffmpeg sources using:
 
 ### DBMS settings
 
@@ -35,15 +37,14 @@ depending on your OS, and configure appropriately.
 * C11 compiler
 * pkg-config
 * pthread
-* ffmpeg >= 3.0 libraries (libswscale, libavcodec, libavutil, libavformat)
-* GraphicsMagick
+* ffmpeg >= 3.2 libraries (libswscale, libavcodec, libavutil, libavformat)
 * Git
 
 On Debian-based systems these can be installed with the following or similar:
 `apt-get install -y build-essential pkg-config libpth-dev libavcodec-dev libavutil-dev libavformat-dev libswscale-dev libgraphicsmagick1-dev ghostscript git golang`
 
-## Development 
+## Development
 
 * Install Node.js
 * Run `npm install`
-* Run `make` to compile the project 
+* Run `make` to compile the project
