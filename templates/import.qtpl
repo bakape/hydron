@@ -2,15 +2,13 @@
     {%= head("Import") %}
     <body>
         <div id="import">
-            <label>Separate multiple paths with whitespace.</label>
-            <label>If path contains whitespace, encase path in "".</label>
-            <label>If path contains any " then rethink your life decisions.</label>
-            <input type="text" id="path" placeholder="Import path..." autocomplete="off">
-            <label>Add tags to imported files</label>
+            <label>Import from filepaths. Only one path per line.</label>
+            <textarea id="path" placeholder="Import paths..." autocomplete="off"></textarea>
+            <label>Add tags to imported files.</label>
             <input type="text" id="input-tags" placeholder="Add tags..." autocomplete="off">
             <label>Delete imported files: <input type="checkbox" id="delete"></label>
             <label>Fetch tags for imported files: <input type="checkbox" id="fetch-tags"></label>
-            <input type="button" id="submit" value="submit">
+            <input type="button" id="submit" value="Submit">
             <div style="width: 100%; height: 0.3em;">
 				<div id="progress-bar"></div>
 			</div>

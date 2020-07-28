@@ -1,9 +1,10 @@
+const browser = document.getElementById("browser");
+
 // Path import
 (() => {
-    const form = document.getElementById("import");
-    const sub = document.getElementById("submit");
-
-    sub.addEventListener("click", () => {
+	const form = document.getElementById("import");
+	
+	document.getElementById("submit").addEventListener("click", async () => {
         if (!confirm("Generic confirmation message.")) {
             return;
 		}
@@ -18,65 +19,69 @@
             "&fetchTags=" + form.querySelector("#fetch-tags").checked +
 			"&tagStr=" + form.querySelector("#input-tags").value;
 
-		fetch("/api/import", { body, method: "POST",
-			headers: { "Content-Type": "application/x-www-form-urlencoded" } } )
-		.then(response => {
-			return new Response(
-				new ReadableStream({
-					start(controller) {
-						const reader = response.body.getReader();
-						const decoder = new TextDecoder("utf-8");
+		let r = await fetch("/api/import", { body, method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" } } );
+		const reader = r.body.getReader();
+		const decoder = new TextDecoder("utf-8");
 
-						// Recursively read from stream and process chunks,
-						// until "done" message
-						read();
-						function read() {
-							reader.read().then(({done, value}) => {
-								if(done) {
-									controller.close();
-									return;
-								}
-								// Sometimes server sends multiple chunks before client
-								// finishes processing, so have to split them
-								s = decoder.decode(value).split("-");
-								for(i = 0; i < s.length - 1; i++) {
-									var obj = JSON.parse(s[i]);
-
-									fetch(`/ajax/thumbnail/${obj.SHA1}`)
-									.then( r => {
-										if (r.status !== 200) {
-											r.text().then( r => {
-												throw r;
-											})
-										}
-										r.text().then( r => {
-											const cont = document.createElement("div");
-											cont.innerHTML = r;
-											browser.appendChild(cont.firstChild);
-
-											renderProgress(obj.Current / obj.Total)
-										})
-									})
-								}
-								read();
-							})
-						}
-					}
-				})
-			);
-		})
+		// Recursively read from stream and process chunks,
+		// until "done" message
+		await read();
+		async function read() {
+			let chunk = await reader.read();
+			if (chunk.done) {
+				return;
+			}
+			// Sometimes server sends multiple chunks before client
+			// finishes processing, so have to split them
+			s = decoder.decode(chunk.value).split("-");
+			for (let i = 0; i < s.length - 1; i++) {
+				let obj = JSON.parse(s[i]);
+				await addThumb(obj.SHA1);
+				renderProgress(obj.Current / obj.Total);
+			}
+			await read();
+		}
     }, { passive: true });
 })();
 
 // Drag and drop import
 (() => {
-    const browser = document.getElementById("browser");
     // Prevent defaults
 	for (const e of ["dragenter", "dragexit", "dragover"]) {
 		document.addEventListener(e, stopDefault);
-    }
+	}
+	
+	async function process(f) {
+		const body = new FormData();
+		body.append("file", f);
+		body.append("fetch_tags", "true");
+		let r = await fetch("/api/images/", { body, method: "POST" });
+		if (r.status !== 200) {
+			throw await r.text();
+		}
+		
+		await addThumb((await r.json()).sha1);
+	}
+	
+	// Properly reload page when going back through history, after drag&drop
+	// redirect from main page
+	window.onpopstate = function() {
+		window.location.assign(window.location.href);
+	}
+	
+	// Check if there is any drag&drop data saved in history to import
+	window.onload = async function() {
+		if (history.state !== null) {
+			let done = 0;
+			for (const f of history.state) {
+				await process(f).catch(alert);
+				renderProgress(++done / history.state.length);
+			}
+		}
+	}
     
-	document.addEventListener("drop", e => {
+	document.addEventListener("drop", async e => {
 		const { files } = e.dataTransfer;
 		if (!files.length || isFileInput(e.target)) {
 			return;
@@ -84,28 +89,15 @@
 		preventDefault(e);
 		let done = 0;
 		for (const f of files) {
-			process(f).catch(alert);
-		}
-
-		async function process(f) {
-			const body = new FormData();
-			body.append("file", f);
-			body.append("fetch_tags", "true");
-			let r = await fetch("/api/images/", { body, method: "POST" });
-			if (r.status !== 200) {
-				throw await r.text();
-			}
-
-			r = await fetch(`/ajax/thumbnail/${(await r.json()).sha1}`)
-			if (r.status !== 200) {
-				throw await r.text();
-			}
-			const cont = document.createElement("div");
-			cont.innerHTML = await r.text();
-			browser.appendChild(cont.firstChild);
+			await process(f).catch(alert);
 			renderProgress(++done / files.length);
 		}
     });
+	
+	function preventDefault(e) {
+		e.stopPropagation();
+		e.preventDefault();
+	}
 
     function stopDefault(e) {
 		if (!isFileInput(e.target)) {
@@ -118,14 +110,19 @@
 	}
 })();
 
-function preventDefault(e) {
-    e.stopPropagation();
-    e.preventDefault();
-}
-
 function renderProgress(val) {
 	if (val === 1) {
 		val = 0;
 	}
 	document.getElementById("progress-bar").style.width = val * 100 + "%";
+}
+
+async function addThumb(hash) {
+	let r = await fetch("/ajax/thumbnail/" + hash);
+	if (r.status !== 200) {
+		throw await r.text();
+	}
+	const cont = document.createElement("div");
+	cont.innerHTML = await r.text();
+	browser.appendChild(cont.firstChild);
 }

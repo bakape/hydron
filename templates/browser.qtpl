@@ -40,7 +40,7 @@
 							{% endfor %}
 						</select>
 						<br>
-						<input type="button" id="opts-submit" value="submit">
+						<input type="button" id="opts-submit" value="Submit">
 						<br>
 						<a href="/import">Upload files</a>
 					</div>

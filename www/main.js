@@ -86,6 +86,13 @@ const figureWidth = 200 + 4; // With margin
 		sel.addRange(r);
 	});
 
+	// Clear state to avoid reimporting, and properly reload page when
+	// going forward through history, after drag&drop redirect
+	window.onpopstate = function() {
+		history.replaceState(null, "");
+		window.location.assign(window.location.href);
+	}
+
 	document.addEventListener("drop", e => {
 		const { files } = e.dataTransfer;
 		if (!files.length || isFileInput(e.target)) {
@@ -93,33 +100,8 @@ const figureWidth = 200 + 4; // With margin
 		}
 		preventDefault(e);
 
-		let done = 0;
-		browser.innerHTML = search.value = "";
-		for (const f of files) {
-			process(f).catch(alert);
-		}
-
-		async function process(f) {
-			const body = new FormData();
-			body.append("file", f);
-			body.append("fetch_tags", "true");
-			let r = await fetch("/api/images/", { body, method: "POST" });
-			if (r.status !== 200) {
-				throw await r.text();
-			}
-
-			r = await fetch(`/ajax/thumbnail/${(await r.json()).sha1}`)
-			if (r.status !== 200) {
-				throw await r.text();
-			}
-			const cont = document.createElement("div");
-			cont.innerHTML = await r.text();
-			browser.appendChild(cont.firstChild);
-			renderProgress(++done / files.length);
-			if (done === 1) {
-				setHighlight(browser.querySelector("figure"));
-			}
-		}
+		history.pushState(files, "", "/import");
+		window.location.assign("/import");
 	});
 
 	function stopDefault(e) {
@@ -138,7 +120,7 @@ const figureWidth = 200 + 4; // With margin
 	const optsform = document.querySelector("#opts-bar");
 	const optssub = document.querySelector("#opts-submit");
 
-	optssub.addEventListener("click", async e => {
+	optssub.addEventListener("click", async () => {
 		if (!confirm("Generic confirmation message")){
 			return;
 		}
@@ -148,7 +130,7 @@ const figureWidth = 200 + 4; // With margin
 			el = el.querySelector("input[type=checkbox]");
 			if (el.checked) {
 				let i = el.name.lastIndexOf(":");
-				checked.push(el.name.slice(i+1));	//Extract+store image IDs
+				checked.push(el.name.slice(i+1));	// Extract+store image IDs
 			}
 		}
 
@@ -161,10 +143,10 @@ const figureWidth = 200 + 4; // With margin
 
 		let n = checked.length;
 		let i = 0;
-		while (i < n){
+		while (i < n) {
 			try {
-				path = "/api/images/" + checked[i] + params[0];
-				const r = await fetch( path, { method: params[1],
+				let path = "/api/images/" + checked[i] + params[0];
+				await fetch( path, { method: params[1],
 					 body: params[2],
 					 headers: {
 						 "Content-Type": "application/x-www-form-urlencoded"
