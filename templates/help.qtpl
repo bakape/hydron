@@ -1,0 +1,81 @@
+{% import "github.com/bakape/hydron/common" %}
+
+{% func HelpPage() %}{% stripspace %}
+    {%= head("Help") %}
+    <body>
+        <div>
+            <b>Drag&Drop</b>
+            <article>
+                Files can be imported by dragging and dropping them into either the search page or the imports page.
+                {% space %}
+                Files imported this way will fetch tags from Gelbooru.
+            </article>
+        </div>
+        <hr>
+        <div>
+            <b>Search</b>
+            <article>
+                Tags can be prefixed with - to match a subset that does not include that tag.
+            </article>
+            <article>
+                Tags can include prefixed system tags for searching by file metadata:
+                <br>
+                size, width, height, duration, tag_count,
+                <br>
+                followed by one of these comparison operators:
+                <br>
+                >, <, =, >=, <=
+                <br>
+                and a positive integer.
+                <br>
+                e.g. system:width>1920 or system:tag_count=0
+            </article>
+            <article>
+                Files can be filtered by the following ratings:
+                <br>
+                safe, questionable, explicit.
+                <br>
+                e.g. rating:safe
+            </article>
+            <article>
+                The number of results per page can be controlled with the limit tag. The default amount is {% space %}{%d common.PageSize %}.
+                <br>
+                It takes an integer between 1 and {% space %}{%d common.PageSize %}.
+                <br>
+                e.g. limit:50
+            </article>
+            <article>
+                Tags can be prefixed to match a specific tag category like artist (artist:$tag or author:$tag), series (series:$tag or copyright:$tag),
+                {% space %}
+                character (character:$tag), and meta (meta:$tag), where $tag is the suffixing tag.
+                <br>
+                Example meta tags are meta:highres and meta:animated.
+            </article>
+        </div>
+        <hr>
+        <div>
+            <b>Keyboard Shortcuts</b>
+            <article>
+                The search page can be navigated via keyboard Shortcuts.
+            </article>
+            <article>
+                Ctrl+l brings focus to the search bar.
+            </article>
+            <article>
+                Ctrl+a toggles the value of all checkboxes.
+                <br>
+                Space toggles the highlighted result's checkbox.
+            </article>
+            <article>
+                The arrow keys can be used to move the highlight selection.
+                <br>
+                PgUp and PgDn move the highlight selection greatly up or down respectively.
+                <br>
+                Home moves the highlight selection to the first result in the page, and End moves it to the last result in the page.
+            </article>
+            <article>
+                Enter navigates to the highlighted result's image page.
+            </article>
+        </div>
+    </body>
+{% endstripspace %}{% endfunc %}

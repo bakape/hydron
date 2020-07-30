@@ -67,6 +67,7 @@ func startServer(addr string) error {
 	r.GET("/search", serveSearchHTML)
 	r.GET("/image/:id", serveImagePage)
 	r.GET("/import", serveImportPage)
+	r.GET("/help", serveHelpPage)
 
 	// Image API
 	api := r.NewGroup("/api")
@@ -422,4 +423,9 @@ func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
 		send500(w, r, err)
 		return
 	}
+}
+
+func serveHelpPage(w http.ResponseWriter, r *http.Request) {
+	setHeaders(w, htmlHeaders)
+	templates.WriteHelpPage(w)
 }

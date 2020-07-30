@@ -12,6 +12,6 @@ require (
 	github.com/lib/pq v1.8.0
 	github.com/mailru/easyjson v0.7.2
 	github.com/mattn/go-sqlite3 v1.14.0
-	github.com/valyala/quicktemplate v1.5.2
+	github.com/valyala/quicktemplate v1.6.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 )
