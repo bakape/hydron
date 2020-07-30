@@ -1,8 +1,8 @@
-@inner-bg: #282a2e;
-@border: 1px solid #282a2e;
-@selected: #81a2be;
+@inner-bg : #282a2e;
+@border   : 1px solid #282a2e;
+@selected : #81a2be;
 @body-text: #c5c8c6;
-@body-bg: #1d1f21;
+@body-bg  : #1d1f21;
 
 
 .round-corners() {
@@ -16,31 +16,35 @@
 }
 
 #top-banner {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 100;
-    background-color: @inner-bg;
-	border: @border;
-	padding: 0.3em 0.3em 0 0.3em;
-	width: calc(100vw - 0.6em - 2px);
-	display: flex;
-	flex-wrap: nowrap;
-	user-select: none;
-	flex-direction: column;
+	position        : fixed;
+	top             : 0;
+	left            : 0;
+	right           : 0;
+	z-index         : 100;
+	background-color: @inner-bg;
+	border          : @border;
+	padding         : 0.3em 0.3em 0 0.3em;
+	width           : calc(100vw - 0.6em - 2px);
+	display         : flex;
+	flex-wrap       : nowrap;
+	user-select     : none;
+	flex-direction  : column;
+
 	form {
-		flex-grow: 2;
+		flex-grow : 2;
 		flex-basis: 20em;
-		width: 100%;
-		display: flex;
-		& > * {
+		width     : 100%;
+		display   : flex;
+
+		&>* {
 			.round-corners();
 		}
 	}
+
 	input[type=search] {
 		flex-grow: 2;
 	}
+
 	span {
 		margin: 0 0.5em;
 	}
@@ -50,131 +54,147 @@
 	z-index: 101;
 }
 
-#options:hover > #opts-bar {
+#options:hover>#opts-bar {
 	visibility: visible;
 }
 
 #opts-bar {
-	visibility: hidden;
-	position: fixed;
-	top: 2em;
-	right: 0;
+	visibility      : hidden;
+	position        : fixed;
+	top             : 2em;
+	right           : 0;
 	background-color: @inner-bg;
-	padding: 0.4em;
-	width: 20em;
-	& > * {
+	padding         : 0.4em;
+	width           : 20em;
+
+	&>* {
 		margin-bottom: 0.4em;
 	}
 }
 
 #opts-input {
-	width: 100%;
+	width: calc(100% - 0.5em);
 }
 
 #progress-bar {
-	width: 0;
-	height: 100%;
+	width     : 0;
+	height    : 100%;
 	background: @selected;
 }
 
 body {
 	background: @body-bg;
-	color: @body-text;
+	color     : @body-text;
 }
 
 #browser {
-	display: flex;
-	flex-wrap: wrap;
+	display    : flex;
+	flex-wrap  : wrap;
 	padding-top: 1.7em;
-	&, * {
+
+	&,
+	* {
 		.hide-selection();
 	}
+
 	figure {
-		padding: 0;
-		display: flex;
-		margin: 2px;
+		padding : 0;
+		display : flex;
+		margin  : 2px;
 		position: relative;
-		width: 200px;
-		height: 200px;
+		width   : 200px;
+		height  : 200px;
+
 		a {
 			z-index: 5;
 			display: flex;
-			width: 100%;
-			height: 100%;
+			width  : 100%;
+			height : 100%;
 		}
+
 		input[type=checkbox] {
-			position: absolute;
-			left: 0;
-			top: 0;
-			z-index: 10;
-			margin: 0.5em;
+			position : absolute;
+			left     : 0;
+			top      : 0;
+			z-index  : 10;
+			margin   : 0.5em;
 			transform: scale(1.5);
 		}
 	}
+
 	img {
 		border-radius: 0.1em;
-		margin: auto;
+		margin       : auto;
 		.round-corners();
 	}
 }
 
 .background {
 	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
+	top     : 0;
+	left    : 0;
+	width   : 100%;
+	height  : 100%;
 	.round-corners();
 	opacity: 0.4;
+
 	figure.highlight & {
 		background-color: rgba(red(@selected), green(@selected), blue(@selected), 0.7);
 	}
 }
 
 #image-view {
-	position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-	z-index: 100;
-	display: flex;
+	position  : fixed;
+	width     : 100%;
+	height    : 100%;
+	top       : 0;
+	left      : 0;
+	z-index   : 100;
+	display   : flex;
 	background: @body-bg;
 	.hide-selection();
-	& > img, & > video, & > b {
+
+	&>img,
+	&>video,
+	&>b {
 		max-height: 100%;
-		max-width: 100%;
-		margin: auto auto;
+		max-width : 100%;
+		margin    : auto auto;
 		object-fit: contain;
 	}
 }
 
 #tags {
-	display: flex;
+	display       : flex;
 	flex-direction: column;
-    flex-shrink: 0;
-    padding: 0.2em;
-    overflow-y: auto;
-	max-height: 100vh;
-	max-width: 16vw;
+	flex-shrink   : 0;
+	padding       : 0.2em;
+	overflow-y    : auto;
+	max-height    : 100vh;
+	max-width     : 16vw;
 	.hide-selection();
 }
 
 .tag-undefined a {
 	color: @selected;
 }
+
 .tag-character a {
 	color: #0A0;
 }
+
 .tag-author a {
 	color: #A00;
 }
+
 .tag-series a {
 	color: #A0A;
 }
+
 .tag-rating a {
 	color: @body-text;
 }
+
 .tag-meta {
 	color: #F80;
 }
@@ -184,12 +204,12 @@ body {
 }
 
 .truncate {
-	white-space: nowrap;
-	overflow: hidden;
+	white-space  : nowrap;
+	overflow     : hidden;
 	text-overflow: ellipsis;
 }
 
-.spaced > *:before {
+.spaced>*:before {
 	content: ' ';
 }
 
@@ -200,12 +220,13 @@ body {
 
 a {
 	text-decoration: none !important;
-	color: @selected;
+	color          : @selected;
 }
 
 #import {
 	background: @inner-bg;
-	display: grid;
+	display   : grid;
+
 	#submit {
 		width: fit-content;
 	}

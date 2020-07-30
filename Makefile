@@ -24,6 +24,7 @@ all: generate client
 	go build -v
 
 client:
+	npm i
 	cp client/main.js www/main.js
 	cp client/import.js www/import.js
 	node_modules/.bin/lessc --clean-css client/main.less www/main.css
