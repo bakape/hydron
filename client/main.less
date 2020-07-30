@@ -46,6 +46,31 @@
 	}
 }
 
+#options {
+	z-index: 101;
+}
+
+#options:hover > #opts-bar {
+	visibility: visible;
+}
+
+#opts-bar {
+	visibility: hidden;
+	position: fixed;
+	top: 2em;
+	right: 0;
+	background-color: @inner-bg;
+	padding: 0.4em;
+	width: 20em;
+	& > * {
+		margin-bottom: 0.4em;
+	}
+}
+
+#opts-input {
+	width: 100%;
+}
+
 #progress-bar {
 	width: 0;
 	height: 100%;
@@ -131,8 +156,7 @@ body {
     padding: 0.2em;
     overflow-y: auto;
 	max-height: 100vh;
-	max-width: 20vw;
-	min-width: 15em;
+	max-width: 16vw;
 	.hide-selection();
 }
 
@@ -161,6 +185,7 @@ body {
 
 .truncate {
 	white-space: nowrap;
+	overflow: hidden;
 	text-overflow: ellipsis;
 }
 
@@ -176,4 +201,12 @@ body {
 a {
 	text-decoration: none !important;
 	color: @selected;
+}
+
+#import {
+	background: @inner-bg;
+	display: grid;
+	#submit {
+		width: fit-content;
+	}
 }

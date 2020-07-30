@@ -1,7 +1,7 @@
 const browser = document.getElementById("browser");
 const imageView = document.getElementById("image-view");
 const search = document.getElementById("search");
-const figureWidth = 200 + 4; // With marging
+const figureWidth = 200 + 4; // With margin
 
 // Search bar and suggestions
 (() => {
@@ -62,7 +62,7 @@ const figureWidth = 200 + 4; // With marging
 		document.addEventListener(e, stopDefault);
 	}
 
-	// Set drag contents to seleceted images
+	// Set drag contents to selected images
 	browser.addEventListener("dragstart", e => {
 		let el = e.target;
 		if (!el.closest || !(el = el.closest("figure"))) {
@@ -86,6 +86,13 @@ const figureWidth = 200 + 4; // With marging
 		sel.addRange(r);
 	});
 
+	// Clear state to avoid reimporting, and properly reload page when
+	// going forward through history, after drag&drop redirect
+	window.onpopstate = function() {
+		history.replaceState(null, "");
+		window.location.assign(window.location.href);
+	}
+
 	document.addEventListener("drop", e => {
 		const { files } = e.dataTransfer;
 		if (!files.length || isFileInput(e.target)) {
@@ -93,33 +100,8 @@ const figureWidth = 200 + 4; // With marging
 		}
 		preventDefault(e);
 
-		let done = 0;
-		browser.innerHTML = search.value = "";
-		for (const f of files) {
-			process(f).catch(alert);
-		}
-
-		async function process(f) {
-			const body = new FormData();
-			body.append("file", f);
-			body.append("fetch_tags", "true");
-			let r = await fetch("/api/images/", { body, method: "POST" });
-			if (r.status !== 200) {
-				throw await r.text();
-			}
-
-			r = await fetch(`/ajax/thumbnail/${(await r.json()).sha1}`)
-			if (r.status !== 200) {
-				throw await r.text();
-			}
-			const cont = document.createElement("div");
-			cont.innerHTML = await r.text();
-			browser.appendChild(cont.firstChild);
-			renderProgress(++done / files.length);
-			if (done === 1) {
-				setHighlight(browser.querySelector("figure"));
-			}
-		}
+		history.pushState(files, "", "/import");
+		window.location.assign("/import");
 	});
 
 	function stopDefault(e) {
@@ -131,6 +113,50 @@ const figureWidth = 200 + 4; // With marging
 	function isFileInput(el) {
 		return el.tagName === "INPUT" && el.getAttribute("type") === "file";
 	}
+})();
+
+// Options form
+(() => {
+	const optsform = document.querySelector("#opts-bar");
+	const optssub = document.querySelector("#opts-submit");
+
+	optssub.addEventListener("click", async () => {
+		if (!confirm("Generic confirmation message")){
+			return;
+		}
+
+		let checked = [];
+		for (let el of [...browser.children]) {
+			el = el.querySelector("input[type=checkbox]");
+			if (el.checked) {
+				let i = el.name.lastIndexOf(":");
+				checked.push(el.name.slice(i+1));	// Extract+store image IDs
+			}
+		}
+
+		let opt = optsform.querySelector("#opts-select").value;
+		let input = optsform.querySelector("#opts-input").value;
+		params = createParams(opt, input);
+		if (params.length === 0){
+			return;
+		}
+
+		let n = checked.length;
+		let i = 0;
+		while (i < n) {
+			try {
+				let path = "/api/images/" + checked[i] + params[0];
+				await fetch( path, { method: params[1],
+					 body: params[2],
+					 headers: {
+						 "Content-Type": "application/x-www-form-urlencoded"
+						} });
+			} catch (err) {
+				alert(err);
+			}
+			renderProgress(++i/n);
+		}
+	}, { passive: true });
 })();
 
 browser.addEventListener("keydown", e => {
@@ -281,4 +307,23 @@ function setHighlight(target) {
 		behavior: "smooth",
 		block: "center",
 	});
+}
+
+function createParams(option, input) {
+	suffix = ["/tags/fetch", "/tags/", "/tags/", "/name", "/"];
+	methods = ["PATCH", "PATCH", "POST", "POST", "DELETE"];
+	bodys = ["", "tags=", "tags=", "name=", ""];
+
+	if (option > suffix.length) {
+		console.log("Invalid selection");
+		return [];
+	}
+
+	method = methods[option];
+	body = bodys[option];
+	if (body.length != 0){
+		body += input;
+	}
+	
+	return [ suffix[option], method, body ];
 }

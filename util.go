@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
+
+	"github.com/bakape/hydron/common"
 )
 
 var stderr = log.New(os.Stderr, "", 0)
@@ -41,4 +44,23 @@ func (p *progressLogger) Err(err error) {
 
 func (p *progressLogger) Close() {
 	fmt.Println("")
+}
+
+// Helper type for multi-value channel
+type Result struct {
+	img common.Image
+	err error
+}
+
+// Convert import page's input string into string array of file paths
+func parsePaths(input string) []string {
+	var store []string
+	tmp := strings.Split(input, "\n")
+	for _, s := range tmp {
+		if s != "" {
+			store = append(store, s)
+		}
+	}
+
+	return store
 }

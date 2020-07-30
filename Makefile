@@ -25,6 +25,7 @@ all: generate client
 
 client:
 	cp client/main.js www/main.js
+	cp client/import.js www/import.js
 	node_modules/.bin/lessc --clean-css client/main.less www/main.css
 	go get github.com/pyros2097/go-embed
 	go-embed --input www --output assets/assets.go
