@@ -154,13 +154,16 @@ body {
 	background: @body-bg;
 	.hide-selection();
 
-	&>img,
-	&>video,
-	&>b {
-		max-height: 100%;
-		max-width : 100%;
-		margin    : auto auto;
-		object-fit: contain;
+	#media-container {
+		height: fit-content;
+		margin: auto;
+		&>img,
+		&>video,
+		&>b {
+			max-height: 100%;
+			max-width: 100%;
+			object-fit: contain;
+		}
 	}
 }
 
