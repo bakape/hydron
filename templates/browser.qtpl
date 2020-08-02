@@ -33,7 +33,7 @@
 						<input type="text" id="opts-input" title="Text input for options" autocomplete="off">
 						<br>
 						<select id="opts-select">
-							{% for i := common.FetchTags; i<= common.Delete; i++ %}
+							{% for i := common.FetchTags; i <= common.Delete; i++ %}
 								<option value="{%d int(i) %}">
 									{%s= optionLabels[int(i)] %}
 								</option>
@@ -42,7 +42,10 @@
 						<br>
 						<input type="button" id="opts-submit" value="Submit">
 						<br>
+						<hr>
 						<a href="/import">Upload files</a>
+						<br>
+						<a href="help">Help</a>
 					</div>
 				</div>
 				{%= pagination(page) %}

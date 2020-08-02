@@ -97,187 +97,187 @@ func StreamBrowser(qw422016 *qt422016.Writer, page common.Page, imgs []common.Co
 //line browser.qtpl:40
 	}
 //line browser.qtpl:40
-	qw422016.N().S(`</select><br><input type="button" id="opts-submit" value="Submit"><br><a href="/import">Upload files</a></div></div>`)
-//line browser.qtpl:48
+	qw422016.N().S(`</select><br><input type="button" id="opts-submit" value="Submit"><br><hr><a href="/import">Upload files</a><br><a href="help">Help</a></div></div>`)
+//line browser.qtpl:51
 	streampagination(qw422016, page)
-//line browser.qtpl:48
+//line browser.qtpl:51
 	qw422016.N().S(`</div><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></nav><section id="browser" tabindex="1">`)
-//line browser.qtpl:55
+//line browser.qtpl:58
 	for i, img := range imgs {
-//line browser.qtpl:56
+//line browser.qtpl:59
 		StreamThumbnail(qw422016, img, page, i == 0)
-//line browser.qtpl:57
+//line browser.qtpl:60
 	}
-//line browser.qtpl:57
+//line browser.qtpl:60
 	qw422016.N().S(`</section><script src="/assets/main.js" async></script></body>`)
-//line browser.qtpl:61
+//line browser.qtpl:64
 }
 
-//line browser.qtpl:61
+//line browser.qtpl:64
 func WriteBrowser(qq422016 qtio422016.Writer, page common.Page, imgs []common.CompactImage) {
-//line browser.qtpl:61
+//line browser.qtpl:64
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line browser.qtpl:61
+//line browser.qtpl:64
 	StreamBrowser(qw422016, page, imgs)
-//line browser.qtpl:61
+//line browser.qtpl:64
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:61
+//line browser.qtpl:64
 }
 
-//line browser.qtpl:61
+//line browser.qtpl:64
 func Browser(page common.Page, imgs []common.CompactImage) string {
-//line browser.qtpl:61
+//line browser.qtpl:64
 	qb422016 := qt422016.AcquireByteBuffer()
-//line browser.qtpl:61
+//line browser.qtpl:64
 	WriteBrowser(qb422016, page, imgs)
-//line browser.qtpl:61
+//line browser.qtpl:64
 	qs422016 := string(qb422016.B)
-//line browser.qtpl:61
+//line browser.qtpl:64
 	qt422016.ReleaseByteBuffer(qb422016)
-//line browser.qtpl:61
+//line browser.qtpl:64
 	return qs422016
-//line browser.qtpl:61
+//line browser.qtpl:64
 }
 
 // Links to different pages on a search page
 
-//line browser.qtpl:64
+//line browser.qtpl:67
 func streampagination(qw422016 *qt422016.Writer, page common.Page) {
-//line browser.qtpl:64
+//line browser.qtpl:67
 	qw422016.N().S(`<span class="spaced">`)
-//line browser.qtpl:66
+//line browser.qtpl:69
 	current := int(page.Page)
 
-//line browser.qtpl:67
+//line browser.qtpl:70
 	total := int(page.PageTotal)
 
-//line browser.qtpl:68
-	if current != 0 {
-//line browser.qtpl:69
-		if current-1 != 0 {
-//line browser.qtpl:70
-			streampageLink(qw422016, page, 0, "<<")
 //line browser.qtpl:71
-		}
+	if current != 0 {
 //line browser.qtpl:72
-		streampageLink(qw422016, page, current-1, "<")
+		if current-1 != 0 {
 //line browser.qtpl:73
-	}
+			streampageLink(qw422016, page, 0, "<<")
 //line browser.qtpl:74
+		}
+//line browser.qtpl:75
+		streampageLink(qw422016, page, current-1, "<")
+//line browser.qtpl:76
+	}
+//line browser.qtpl:77
 	count := 0
 
-//line browser.qtpl:75
-	for i := current - 5; i < total && count < 10; i++ {
-//line browser.qtpl:76
-		if i < 0 {
-//line browser.qtpl:77
-			continue
 //line browser.qtpl:78
-		}
+	for i := current - 5; i < total && count < 10; i++ {
 //line browser.qtpl:79
+		if i < 0 {
+//line browser.qtpl:80
+			continue
+//line browser.qtpl:81
+		}
+//line browser.qtpl:82
 		count++
 
-//line browser.qtpl:80
+//line browser.qtpl:83
 		if i != current {
-//line browser.qtpl:81
-			streampageLink(qw422016, page, i, strconv.Itoa(i+1))
-//line browser.qtpl:82
-		} else {
-//line browser.qtpl:82
-			qw422016.N().S(`<b>`)
-//line browser.qtpl:83
-			qw422016.N().D(i + 1)
-//line browser.qtpl:83
-			qw422016.N().S(`</b>`)
 //line browser.qtpl:84
-		}
+			streampageLink(qw422016, page, i, strconv.Itoa(i+1))
 //line browser.qtpl:85
-	}
+		} else {
+//line browser.qtpl:85
+			qw422016.N().S(`<b>`)
 //line browser.qtpl:86
-	if current != total-1 {
+			qw422016.N().D(i + 1)
+//line browser.qtpl:86
+			qw422016.N().S(`</b>`)
 //line browser.qtpl:87
-		streampageLink(qw422016, page, current+1, ">")
-//line browser.qtpl:88
-		if current+1 != total-1 {
-//line browser.qtpl:89
-			streampageLink(qw422016, page, total-1, ">>")
-//line browser.qtpl:90
 		}
-//line browser.qtpl:91
+//line browser.qtpl:88
 	}
+//line browser.qtpl:89
+	if current != total-1 {
+//line browser.qtpl:90
+		streampageLink(qw422016, page, current+1, ">")
 //line browser.qtpl:91
+		if current+1 != total-1 {
+//line browser.qtpl:92
+			streampageLink(qw422016, page, total-1, ">>")
+//line browser.qtpl:93
+		}
+//line browser.qtpl:94
+	}
+//line browser.qtpl:94
 	qw422016.N().S(`</span>`)
-//line browser.qtpl:93
+//line browser.qtpl:96
 }
 
-//line browser.qtpl:93
+//line browser.qtpl:96
 func writepagination(qq422016 qtio422016.Writer, page common.Page) {
-//line browser.qtpl:93
+//line browser.qtpl:96
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line browser.qtpl:93
+//line browser.qtpl:96
 	streampagination(qw422016, page)
-//line browser.qtpl:93
+//line browser.qtpl:96
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:93
+//line browser.qtpl:96
 }
 
-//line browser.qtpl:93
+//line browser.qtpl:96
 func pagination(page common.Page) string {
-//line browser.qtpl:93
+//line browser.qtpl:96
 	qb422016 := qt422016.AcquireByteBuffer()
-//line browser.qtpl:93
+//line browser.qtpl:96
 	writepagination(qb422016, page)
-//line browser.qtpl:93
+//line browser.qtpl:96
 	qs422016 := string(qb422016.B)
-//line browser.qtpl:93
+//line browser.qtpl:96
 	qt422016.ReleaseByteBuffer(qb422016)
-//line browser.qtpl:93
+//line browser.qtpl:96
 	return qs422016
-//line browser.qtpl:93
+//line browser.qtpl:96
 }
 
 // Link to a different paginated search page
 
-//line browser.qtpl:96
+//line browser.qtpl:99
 func streampageLink(qw422016 *qt422016.Writer, page common.Page, i int, text string) {
-//line browser.qtpl:97
+//line browser.qtpl:100
 	page.Page = uint(i)
 
-//line browser.qtpl:97
+//line browser.qtpl:100
 	qw422016.N().S(`<a href="`)
-//line browser.qtpl:98
+//line browser.qtpl:101
 	qw422016.N().S(page.URL())
-//line browser.qtpl:98
+//line browser.qtpl:101
 	qw422016.N().S(`" tabindex="2">`)
-//line browser.qtpl:99
+//line browser.qtpl:102
 	qw422016.N().S(text)
-//line browser.qtpl:99
+//line browser.qtpl:102
 	qw422016.N().S(`</a>`)
-//line browser.qtpl:101
+//line browser.qtpl:104
 }
 
-//line browser.qtpl:101
+//line browser.qtpl:104
 func writepageLink(qq422016 qtio422016.Writer, page common.Page, i int, text string) {
-//line browser.qtpl:101
+//line browser.qtpl:104
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line browser.qtpl:101
+//line browser.qtpl:104
 	streampageLink(qw422016, page, i, text)
-//line browser.qtpl:101
+//line browser.qtpl:104
 	qt422016.ReleaseWriter(qw422016)
-//line browser.qtpl:101
+//line browser.qtpl:104
 }
 
-//line browser.qtpl:101
+//line browser.qtpl:104
 func pageLink(page common.Page, i int, text string) string {
-//line browser.qtpl:101
+//line browser.qtpl:104
 	qb422016 := qt422016.AcquireByteBuffer()
-//line browser.qtpl:101
+//line browser.qtpl:104
 	writepageLink(qb422016, page, i, text)
-//line browser.qtpl:101
+//line browser.qtpl:104
 	qs422016 := string(qb422016.B)
-//line browser.qtpl:101
+//line browser.qtpl:104
 	qt422016.ReleaseByteBuffer(qb422016)
-//line browser.qtpl:101
+//line browser.qtpl:104
 	return qs422016
-//line browser.qtpl:101
+//line browser.qtpl:104
 }
