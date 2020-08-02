@@ -4,8 +4,8 @@ github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBK
 github.com/andybalholm/cascadia v1.1.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9PqHO0sqidkEA4Y=
 github.com/bakape/boorufetch v1.1.1 h1:OMXM0pjPLhAmVkA83UFXs+1rdDNcXpU5Xg8EDtED8KM=
 github.com/bakape/boorufetch v1.1.1/go.mod h1:xswMjqJ3hp2UAsE0XOidw/qkKHoA7mwF/4dfykxYUu0=
-github.com/bakape/thumbnailer/v2 v2.6.3 h1:MMVoSOHxzZMndFH2AdrDnANu5PZCA59058+EKAOjicI=
-github.com/bakape/thumbnailer/v2 v2.6.3/go.mod h1:+yOYrfZmQ3VO7uqVHxTr3p5J74WRjP5MeQQXaU6GBjY=
+github.com/bakape/thumbnailer/v2 v2.6.4 h1:zp3y7k3p355xeQTNyGyBuTc28pYLBuO9n0ZuB9Hk5ms=
+github.com/bakape/thumbnailer/v2 v2.6.4/go.mod h1:+yOYrfZmQ3VO7uqVHxTr3p5J74WRjP5MeQQXaU6GBjY=
 github.com/chai2010/webp v1.1.0 h1:4Ei0/BRroMF9FaXDG2e4OxwFcuW2vcXd+A6tyqTJUQQ=
 github.com/chai2010/webp v1.1.0/go.mod h1:LP12PG5IFmLGHUU26tBiCBKnghxx3toZFwDjOYvd3Ow=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -41,8 +41,8 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasthttp v1.12.0/go.mod h1:229t1eWu9UXTPmoUkbpN/fctKPBY4IJoFXQnxHGXy6E=
-github.com/valyala/quicktemplate v1.5.2 h1:DEMJ2olL+6C89OmCcmcChI53k8kHbfSCFfsz1Uc0/n4=
-github.com/valyala/quicktemplate v1.5.2/go.mod h1:v7yYWpBEiutDyNfVaph6oC/yKwejzVyTX/2cwwHxyok=
+github.com/valyala/quicktemplate v1.6.0 h1:9fKw4ebNjg3jzbfLSTu6i0tgqhpS80h2uN6brwbweKg=
+github.com/valyala/quicktemplate v1.6.0/go.mod h1:v7yYWpBEiutDyNfVaph6oC/yKwejzVyTX/2cwwHxyok=
 github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV9WzVtRmSR+PDvWpU/qWl4Wa5LApYYX4ZtKbio=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
