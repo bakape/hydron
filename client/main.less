@@ -155,7 +155,8 @@ body {
 	.hide-selection();
 
 	#media-container {
-		height: fit-content;
+		display: flex;
+		height: 100%;
 		margin: auto;
 		&>img,
 		&>video,
@@ -168,13 +169,12 @@ body {
 }
 
 #tags {
-	display       : flex;
-	flex-direction: column;
-	flex-shrink   : 0;
+	display       : grid;
 	padding       : 0.2em;
 	overflow-y    : auto;
 	max-height    : 100vh;
-	max-width     : 16vw;
+	min-width: 16vw;
+	word-break: break-word;
 	.hide-selection();
 }
 
@@ -204,12 +204,6 @@ body {
 
 .image-name a {
 	color: orangered;
-}
-
-.truncate {
-	white-space  : nowrap;
-	overflow     : hidden;
-	text-overflow: ellipsis;
 }
 
 .spaced>*:before {
