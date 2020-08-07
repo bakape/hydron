@@ -154,24 +154,27 @@ body {
 	background: @body-bg;
 	.hide-selection();
 
-	&>img,
-	&>video,
-	&>b {
-		max-height: 100%;
-		max-width : 100%;
-		margin    : auto auto;
-		object-fit: contain;
+	#media-container {
+		display: flex;
+		height: 100%;
+		margin: auto;
+		&>img,
+		&>video,
+		&>b {
+			max-height: 100%;
+			max-width: 100%;
+			object-fit: contain;
+		}
 	}
 }
 
 #tags {
-	display       : flex;
-	flex-direction: column;
-	flex-shrink   : 0;
+	display       : grid;
 	padding       : 0.2em;
 	overflow-y    : auto;
 	max-height    : 100vh;
-	max-width     : 16vw;
+	min-width: 16vw;
+	word-break: break-word;
 	.hide-selection();
 }
 
@@ -195,18 +198,12 @@ body {
 	color: @body-text;
 }
 
-.tag-meta {
+.tag-meta a {
 	color: #F80;
 }
 
 .image-name a {
 	color: orangered;
-}
-
-.truncate {
-	white-space  : nowrap;
-	overflow     : hidden;
-	text-overflow: ellipsis;
 }
 
 .spaced>*:before {

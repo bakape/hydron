@@ -21,7 +21,7 @@
 		<div id="image-view">
 			<section id="tags">
 				{% if img.Name != "" %}
-					<span class="truncate image-name">
+					<span class="image-name">
 						<a href="/search?q={%s img.Name %}" title="Search for name">
 							Name:{% space %}{%s img.Name %}
 						</a>
@@ -35,15 +35,17 @@
 				{%= renderTags(org[common.Meta], page) %}
 				{%= renderTags(org[common.Undefined], page) %}
 			</section>
-			{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
-			{% switch common.GetMediaType(img.Type) %}
-			{% case common.MediaImage %}
-				<img src="{%s= src %}">
-			{% case common.MediaVideo %}
-				<video src="{%s= src %}" autoplay loop controls>
-			{% default %}
-				<b>Display not supported for this file format</b>
-			{% endswitch %}
+			<div id="media-container">
+				{% code src := files.NetSourcePath(img.SHA1, img.Type) %}
+				{% switch common.GetMediaType(img.Type) %}
+				{% case common.MediaImage %}
+					<img src="{%s= src %}">
+				{% case common.MediaVideo %}
+					<video src="{%s= src %}" autoplay loop controls>
+				{% default %}
+					<b>Display not supported for this file format</b>
+				{% endswitch %}
+			</div>
 		</div>
 	</body>
 {% endstripspace %}{% endfunc %}
@@ -56,7 +58,7 @@ Render tag adition and direct tag query links
 		{% code page.Filters = init %}
 		{% code filter := common.TagFilter{ TagBase: t.TagBase } %}
 		{% code page.Filters.Tag = append(page.Filters.Tag, filter) %}
-		<span class="spaced truncate tag-{%z= common.BufferWriter(t.Type) %}">
+		<span class="spaced tag-{%z= common.BufferWriter(t.Type) %}">
 			<a href="{%s= page.URL() %}" class="char-button" title="Add to search">
 				+
 			</a>

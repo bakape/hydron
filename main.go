@@ -77,11 +77,6 @@ var (
 			"Fetch tags for imported images and webm from gelbooru.com.",
 		},
 		{
-			"print",
-			"",
-			"Print the contents of the database for debuging purposes.",
-		},
-		{
 			"set_name",
 			"ID NAME",
 			"Set name of file specified by hex-encoded SHA1 hash ID.",
