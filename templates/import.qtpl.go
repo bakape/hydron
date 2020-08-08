@@ -22,32 +22,32 @@ func StreamImportPage(qw422016 *qt422016.Writer) {
 //line import.qtpl:2
 	streamhead(qw422016, "Import")
 //line import.qtpl:2
-	qw422016.N().S(`<body><div id="import"><label>Import from filepaths. Only one path per line.</label><textarea id="path" placeholder="Import paths..." autocomplete="off"></textarea><label>Add tags to imported files.</label><input type="text" id="input-tags" placeholder="Add tags..." autocomplete="off"><label>Delete imported files: <input type="checkbox" id="delete"></label><label>Fetch tags for imported files: <input type="checkbox" id="fetch-tags"></label><input type="button" id="submit" value="Submit"><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></div><section id="browser" tabindex="1"></section><script src="/assets/import.js" async></script></body>`)
-//line import.qtpl:20
+	qw422016.N().S(`<body class="fit-page"><div id="import"><label>Import from filepaths. Only one path per line.</label><textarea id="path" placeholder="Import paths..." autocomplete="off"></textarea><label>Add tags to imported files.</label><input type="text" id="input-tags" placeholder="Add tags..." autocomplete="off"><label>Delete imported files: <input type="checkbox" id="delete"></label><label>Fetch tags for imported files: <input type="checkbox" id="fetch-tags"></label><input type="button" id="submit" value="Submit"><div style="width: 100%; height: 0.3em;"><div id="progress-bar"></div></div></div><section id="browser" tabindex="1" style="overflow-y: scroll; padding: 8px;"></section><script src="/assets/import.js" async></script></body>`)
+//line import.qtpl:19
 }
 
-//line import.qtpl:20
+//line import.qtpl:19
 func WriteImportPage(qq422016 qtio422016.Writer) {
-//line import.qtpl:20
+//line import.qtpl:19
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line import.qtpl:20
+//line import.qtpl:19
 	StreamImportPage(qw422016)
-//line import.qtpl:20
+//line import.qtpl:19
 	qt422016.ReleaseWriter(qw422016)
-//line import.qtpl:20
+//line import.qtpl:19
 }
 
-//line import.qtpl:20
+//line import.qtpl:19
 func ImportPage() string {
-//line import.qtpl:20
+//line import.qtpl:19
 	qb422016 := qt422016.AcquireByteBuffer()
-//line import.qtpl:20
+//line import.qtpl:19
 	WriteImportPage(qb422016)
-//line import.qtpl:20
+//line import.qtpl:19
 	qs422016 := string(qb422016.B)
-//line import.qtpl:20
+//line import.qtpl:19
 	qt422016.ReleaseByteBuffer(qb422016)
-//line import.qtpl:20
+//line import.qtpl:19
 	return qs422016
-//line import.qtpl:20
+//line import.qtpl:19
 }

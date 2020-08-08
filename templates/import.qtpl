@@ -1,6 +1,6 @@
 {% func ImportPage() %}{% stripspace %}
     {%= head("Import") %}
-    <body>
+    <body class="fit-page">
         <div id="import">
             <label>Import from filepaths. Only one path per line.</label>
             <textarea id="path" placeholder="Import paths..." autocomplete="off"></textarea>
@@ -13,8 +13,7 @@
 				<div id="progress-bar"></div>
 			</div>
         </div>
-        <section id="browser" tabindex="1">
-		</section>
+        <section id="browser" tabindex="1" style="overflow-y: scroll; padding: 8px;"></section>
         <script src="/assets/import.js" async></script>
     </body>
 {% endstripspace %}{% endfunc %}
