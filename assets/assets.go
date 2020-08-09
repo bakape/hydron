@@ -25,22 +25,17 @@ var _MainJS = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x02\xff\xbc\x59\x4d\x73\x
 // it is not found
 func Asset(base, path string) ([]byte, string, string, error) {
 	switch path {
-	case "/main.js":
-		return _MainJS, "245cfddac02b966ce5fc6aeac39c5313", "application/x-javascript", nil
 	case "/favicon.ico":
 		return _FaviconICO, "f423f5f1b06ee40b4b48a0798e92be71", "image/x-icon", nil
 	case "/import.js":
-		return _ImportJS, "aa90ecb8646e3da6300074a23500daaf", "application/x-javascript", nil
+		return _ImportJS, "aa90ecb8646e3da6300074a23500daaf", "application/javascript", nil
 	case "/main.css":
 		return _MainCSS, "69d940e92a85da854756323c684e5ce8", "text/css; charset=utf-8", nil
+	case "/main.js":
+		return _MainJS, "245cfddac02b966ce5fc6aeac39c5313", "application/javascript", nil
 	default:
 		return nil, "", "", ErrAssetFileNotFound
 	}
-}
-
-// GetMainCSS gets the file /main.css from the stored data and returns the data.
-func GetMainCSS() []byte {
-	return _MainCSS;
 }
 
 // GetMainJS gets the file /main.js from the stored data and returns the data.
@@ -56,4 +51,9 @@ func GetFaviconICO() []byte {
 // GetImportJS gets the file /import.js from the stored data and returns the data.
 func GetImportJS() []byte {
 	return _ImportJS;
+}
+
+// GetMainCSS gets the file /main.css from the stored data and returns the data.
+func GetMainCSS() []byte {
+	return _MainCSS;
 }

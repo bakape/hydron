@@ -15,6 +15,15 @@
         <div>
             <b>Search</b>
             <article>
+                Tags can include an order:$x parameter where $x is one of:
+                <br>
+                size, width, height, duration, tag_count, random.
+                <br>
+                Prefixing - before $x will reverse the order.
+                <br>
+                Using an order: tag will override the order selected in the dropdown box.
+            </article>
+            <article>
                 Tags can be prefixed with - to match a subset that does not include that tag.
             </article>
             <article>
