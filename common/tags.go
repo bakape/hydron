@@ -41,7 +41,7 @@ const (
 var (
 	tagTypeStr = [...]string{"undefined", "author", "character", "series",
 		"rating", "system", "meta"}
-	systemTagStr = [...]string{"size", "width", "heigh", "duration",
+	systemTagStr = [...]string{"size", "width", "height", "duration",
 		"tag_count"}
 )
 
