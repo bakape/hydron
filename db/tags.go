@@ -112,6 +112,7 @@ func matchPost(re *regexp.Regexp, prefix string,
 
 // Attempt to complete a tag by suggesting up to 20 possible tags for a prefix
 func CompleteTag(s string) (tags []string, err error) {
+	var re *regexp.Regexp
 	const maxCap = 20
 	tags = make([]string, 0, maxCap)
 	typeQ := ""
@@ -124,32 +125,30 @@ func CompleteTag(s string) (tags []string, err error) {
 	i := strings.IndexByte(s, ':')
 	if i != -1 {
 		// Complete postfix
-		re := regexp.MustCompile(`^` + regexp.QuoteMeta(s[i+1:]) + `.*`)
-		switch s[:i] {
-		case "undefined":
+		re, err = regexp.Compile(`^` + regexp.QuoteMeta(s[i+1:]) + `.*`)
+		if err != nil {
+			return
+		}
+		completeWithPrefix := func(t common.TagType) {
 			prefix += s[:i+1]
 			s = s[i+1:]
-			typeQ = fmt.Sprintf(" and type = %d", common.Undefined)
+			typeQ = fmt.Sprintf(" and type = %d", t)
+		}
+		switch s[:i] {
+		case "undefined":
+			completeWithPrefix(common.Undefined)
 		case "artist":
 			fallthrough
 		case "author":
-			prefix += s[:i+1]
-			s = s[i+1:]
-			typeQ = fmt.Sprintf(" and type = %d", common.Author)
+			completeWithPrefix(common.Author)
 		case "character":
-			prefix += s[:i+1]
-			s = s[i+1:]
-			typeQ = fmt.Sprintf(" and type = %d", common.Character)
+			completeWithPrefix(common.Character)
 		case "copyright":
 			fallthrough
 		case "series":
-			prefix += s[:i+1]
-			s = s[i+1:]
-			typeQ = fmt.Sprintf(" and type = %d", common.Series)
+			completeWithPrefix(common.Series)
 		case "meta":
-			prefix += s[:i+1]
-			s = s[i+1:]
-			typeQ = fmt.Sprintf(" and type = %d", common.Meta)
+			completeWithPrefix(common.Meta)
 		case "rating":
 			tags = matchPost(re, "rating:",
 				[]string{"safe", "questionable", "explicit"})
@@ -163,7 +162,10 @@ func CompleteTag(s string) (tags []string, err error) {
 			if s[i+1:] != "" {
 				if s[i+1] == '-' {
 					prefix = "order:-"
-					re = regexp.MustCompile(`^` + regexp.QuoteMeta(s[i+2:]) + `.*`)
+					re, err = regexp.Compile(`^` + regexp.QuoteMeta(s[i+2:]) + `.*`)
+					if err != nil {
+						return
+					}
 				}
 			}
 			tags = matchPost(re, prefix,
@@ -176,7 +178,10 @@ func CompleteTag(s string) (tags []string, err error) {
 		}
 	} else {
 		// Complete prefix
-		re := regexp.MustCompile(`^` + regexp.QuoteMeta(s) + `.*`)
+		re, err = regexp.Compile(`^` + regexp.QuoteMeta(s) + `.*`)
+		if err != nil {
+			return
+		}
 		for _, t := range []string{"undefined", "artist", "author", "character",
 			"copyright", "series", "meta", "rating", "system", "order", "limit"} {
 			matched := re.FindString(t)
