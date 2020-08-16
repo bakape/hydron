@@ -38,11 +38,6 @@ func Asset(base, path string) ([]byte, string, string, error) {
 	}
 }
 
-// GetMainJS gets the file /main.js from the stored data and returns the data.
-func GetMainJS() []byte {
-	return _MainJS;
-}
-
 // GetFaviconICO gets the file /favicon.ico from the stored data and returns the data.
 func GetFaviconICO() []byte {
 	return _FaviconICO;
@@ -56,4 +51,9 @@ func GetImportJS() []byte {
 // GetMainCSS gets the file /main.css from the stored data and returns the data.
 func GetMainCSS() []byte {
 	return _MainCSS;
+}
+
+// GetMainJS gets the file /main.js from the stored data and returns the data.
+func GetMainJS() []byte {
+	return _MainJS;
 }
