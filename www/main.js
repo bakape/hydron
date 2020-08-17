@@ -21,7 +21,7 @@ const figureWidth = 200 + 4; // With margin
 	}, { passive: true });
 
 
-	search.addEventListener("input", async e => {
+	search.addEventListener("input", async () => {
 		let text = search.value;
 		if (!text.length || text[text.length - 1] == " ") {
 			sugg.innerHTML = "";
@@ -31,7 +31,8 @@ const figureWidth = 200 + 4; // With margin
 		try {
 			let i = text.lastIndexOf(" ");
 			const r = await fetch("/api/complete_tag/"
-				+ (i === -1 ? text : text.slice(i + 1)));
+				+ (i === -1 ?encodeURIComponent(text) :
+				encodeURIComponent(text.slice(i + 1))));
 			if (r.status !== 200) {
 				throw await r.text();
 			}
