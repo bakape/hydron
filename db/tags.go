@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
@@ -96,17 +98,103 @@ func RemoveTags(imageID int64, tags []common.Tag) error {
 	})
 }
 
-// Attempt to complete a tag by suggesting up to 10 possible tags for a prefix
+// Try to match an incomplete tag against a list of postfixes, return matches
+func matchPost(re *regexp.Regexp, prefix string,
+	postfixes []string) (matches []string) {
+	for _, p := range postfixes {
+		matched := re.FindString(p)
+		if len(matched) != 0 {
+			matches = append(matches, prefix+matched)
+		}
+	}
+	return
+}
+
+// Attempt to complete a tag by suggesting up to 20 possible tags for a prefix
 func CompleteTag(s string) (tags []string, err error) {
+	var re *regexp.Regexp
 	const maxCap = 20
 	tags = make([]string, 0, maxCap)
+	typeQ := ""
+	prefix := ""
+	if s[0] == '-' {
+		prefix = "-"
+		s = s[1:]
+	}
 
-	// TODO: Inject system tags into array
+	i := strings.IndexByte(s, ':')
+	if i != -1 {
+		// Complete postfix
+		re, err = regexp.Compile(`^` + regexp.QuoteMeta(s[i+1:]) + `.*`)
+		if err != nil {
+			return
+		}
+		completeWithPrefix := func(t common.TagType) {
+			prefix += s[:i+1]
+			s = s[i+1:]
+			typeQ = fmt.Sprintf(" and type = %d", t)
+		}
+		switch s[:i] {
+		case "undefined":
+			completeWithPrefix(common.Undefined)
+		case "artist":
+			fallthrough
+		case "author":
+			completeWithPrefix(common.Author)
+		case "character":
+			completeWithPrefix(common.Character)
+		case "copyright":
+			fallthrough
+		case "series":
+			completeWithPrefix(common.Series)
+		case "meta":
+			completeWithPrefix(common.Meta)
+		case "rating":
+			tags = matchPost(re, "rating:",
+				[]string{"safe", "questionable", "explicit"})
+			return
+		case "system":
+			tags = matchPost(re, "system:",
+				[]string{"size", "width", "height", "duration", "tag_count"})
+			return
+		case "order":
+			prefix = s[:i+1]
+			if s[i+1:] != "" {
+				if s[i+1] == '-' {
+					prefix = "order:-"
+					re, err = regexp.Compile(`^` + regexp.QuoteMeta(s[i+2:]) + `.*`)
+					if err != nil {
+						return
+					}
+				}
+			}
+			tags = matchPost(re, prefix,
+				[]string{"size", "width", "height", "duration", "tag_count", "random"})
+			return
+		case "limit":
+			return
+		default:
+			// Continue as regular tag
+		}
+	} else {
+		// Complete prefix
+		re, err = regexp.Compile(`^` + regexp.QuoteMeta(s) + `.*`)
+		if err != nil {
+			return
+		}
+		for _, t := range []string{"undefined", "artist", "author", "character",
+			"copyright", "series", "meta", "rating", "system", "order", "limit"} {
+			matched := re.FindString(t)
+			if matched != "" {
+				tags = append(tags, prefix+matched+":")
+			}
+		}
+	}
 
 	r, err := sq.Select("tag").
 		Distinct().
 		From("tags").
-		Where("tag like ? || '%' escape '$'", // Escape underscores
+		Where("tag like ? || '%' escape '$'"+typeQ, // Escape underscores
 			strings.Replace(s, "_", "$_", -1)).
 		OrderBy("tag").
 		Limit(maxCap).
@@ -122,7 +210,7 @@ func CompleteTag(s string) (tags []string, err error) {
 		if err != nil {
 			return
 		}
-		tags = append(tags, tag)
+		tags = append(tags, prefix+tag)
 		if len(tags) == maxCap {
 			break
 		}
