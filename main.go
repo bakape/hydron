@@ -74,7 +74,7 @@ var (
 		{
 			"fetch_tags",
 			"",
-			"Fetch tags for imported images and webm from gelbooru.com.",
+			"Fetch tags for imported images and webm from danbooru.com.",
 		},
 		{
 			"set_name",
@@ -95,7 +95,7 @@ var (
 	fetchTagsForImports = modeFlags["import"].Bool(
 		"f",
 		false,
-		"Fetch tags from gelbooru.com for imported files.\n"+
+		"Fetch tags from danbooru.com for imported files.\n"+
 			"NB: This will notably slow down importing large amounts of files.\n"+
 			"Consider using import, followed by fetch_tags!",
 	)

@@ -345,7 +345,7 @@ func fetchTagsHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = db.UpdateTags(pair.ID, tags, common.Gelbooru)
+	err = db.UpdateTags(pair.ID, tags, common.Danbooru)
 	switch err {
 	case nil:
 	case sql.ErrNoRows:

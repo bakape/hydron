@@ -221,7 +221,7 @@ Attempt to import any readable stream
 f: stream to read
 size: estimated file size
 addTags: Add a list of tags to all images
-fetchTags: fetch tags from gelbooru
+fetchTags: fetch tags from danbooru
 */
 func ImportFile(f io.ReadSeeker, size int, name string, addTags string, fetchTags bool,
 ) (r common.Image, err error) {

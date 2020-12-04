@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
-	"path/filepath"
 
 	"github.com/bakape/hydron/common"
 	"github.com/bakape/hydron/db"
@@ -21,7 +21,7 @@ import (
 Import file/directory paths
 paths: list for file and/or directory paths
 del: delete files after import
-fetchTags: also fetch tags from gelbooru
+fetchTags: also fetch tags from danbooru
 tagStr: add string of tags to all imported files
 */
 func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
@@ -59,7 +59,7 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 	}
 	for i := 0; i < len(paths); i++ {
 		store := new(Result)
-		*store = <- ch
+		*store = <-ch
 		err = store.err
 		if err != nil {
 			p.Err(err)
@@ -139,7 +139,7 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 		r.Form.Get("tags"),
 		r.Form.Get("fetch_tags") == "true",
 	)
-	
+
 	switch err {
 	case nil:
 	case imp.ErrImported:
@@ -195,7 +195,7 @@ func clientImportPaths(w http.ResponseWriter, r *http.Request, paths []string, d
 
 	for i := 0; i < total; i++ {
 		store := new(Result)
-		*store = <- ch
+		*store = <-ch
 		err = store.err
 
 		switch err {
@@ -209,7 +209,7 @@ func clientImportPaths(w http.ResponseWriter, r *http.Request, paths []string, d
 			return err
 		}
 
-		jsonChunk, err := json.Marshal(Chunk{store.img.SHA1, i+1, total})
+		jsonChunk, err := json.Marshal(Chunk{store.img.SHA1, i + 1, total})
 		if err != nil {
 			send500(w, r, err)
 			return err

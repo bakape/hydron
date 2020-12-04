@@ -6,7 +6,7 @@ import (
 	"github.com/bakape/hydron/tags"
 )
 
-// Fetch tags from gelbooru for a given MD5 hash.
+// Fetch tags from danbooru for a given MD5 hash.
 // Return tags and last change time.
 func FetchTags(md5 string) (out []common.Tag, err error) {
 	hash, err := boorufetch.DecodeMD5(md5)
@@ -29,7 +29,7 @@ func FetchTags(md5 string) (out []common.Tag, err error) {
 	out = make([]common.Tag, len(src)+1)
 	for i, t := range src {
 		// Hydron and boorufetch tag enums don't match up completely
-		out[i] = tags.Normalize(t.Tag, common.Gelbooru)
+		out[i] = tags.Normalize(t.Tag, common.Danbooru)
 		if t.Type >= boorufetch.Undefined && t.Type <= boorufetch.Series {
 			out[i].Type = common.TagType(t.Type)
 		} else if t.Type == boorufetch.Meta {

@@ -333,12 +333,14 @@ func GetImageIDAndMD5(sha1 string) (pair IDAndMD5, err error) {
 	return
 }
 
-// Get IDs and MD5 hashes of all images that can have tags on gelbooru
-func GetGelbooruTaggable() (pairs []IDAndMD5, err error) {
+// Get IDs and MD5 hashes of all images that can have tags on danbooru
+func GetDanbooruTaggable() (pairs []IDAndMD5, err error) {
 	r, err := sq.Select("id", "md5").
 		From("images").
-		Where("type in (?,?,?,?)",
-			common.JPEG, common.PNG, common.GIF, common.WEBM).
+		Where(
+			"type in (?,?,?,?)",
+			common.JPEG, common.PNG, common.GIF, common.WEBM,
+		).
 		Query()
 	if err != nil {
 		return

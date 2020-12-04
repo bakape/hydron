@@ -8,7 +8,7 @@
             <article>
                 Files can be imported by dragging and dropping them into either the search page or the imports page.
                 {% space %}
-                Files imported this way will fetch tags from Gelbooru.
+                Files imported this way will fetch tags from Danbooru.
             </article>
         </div>
         <hr>

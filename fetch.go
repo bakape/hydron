@@ -9,7 +9,7 @@ import (
 
 // Fetch and update tags for all stored images
 func fetchAllTags() error {
-	all, err := db.GetGelbooruTaggable()
+	all, err := db.GetDanbooruTaggable()
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func fetchAllTags() error {
 				if err != nil {
 					goto end
 				}
-				err = db.UpdateTags(img.ID, tags, common.Gelbooru)
+				err = db.UpdateTags(img.ID, tags, common.Danbooru)
 			end:
 				ch <- err
 			}
