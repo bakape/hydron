@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/bakape/boorufetch v1.1.1
-	github.com/bakape/thumbnailer/v2 v2.6.4
+	github.com/bakape/thumbnailer/v2 v2.6.6
 	github.com/chai2010/webp v1.1.0
 	github.com/dimfeld/httptreemux v5.0.1+incompatible
 	github.com/gorilla/handlers v1.4.2
