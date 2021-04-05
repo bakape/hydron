@@ -10,9 +10,10 @@ jobs:
       - name: Checkout commit
         uses: actions/checkout@v2
       - name: Install Go
-        run: >
+        run: |
           VERSION=`wget -O- -q 'https://golang.org/VERSION?m=text'`
-          wget -O- "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" | tar xpz -C /usr/local
+          wget -O- "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" \
+            | tar xpz -C /usr/local
           echo /usr/local/go/bin >> $GITHUB_PATH
       - name: Build
         run: go build
