@@ -1,3 +1,0 @@
-services: docker
-script:
-  - docker build -t hydron_test .
