@@ -64,6 +64,7 @@ func init() {
 	n := runtime.NumCPU() + 1
 	for i := 0; i < n; i++ {
 		go func() {
+			runtime.LockOSThread()
 			for {
 				req := <-importFile
 				img, err := doImport(req.f, req.size, req.addTags)
