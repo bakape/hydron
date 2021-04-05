@@ -10,7 +10,13 @@ jobs:
       - name: Checout commit
         uses: actions/checkout@v2
       - name: Install Go
-        uses: actions/setup-go@v2
+        shell: bash
+        run: |
+          VERSION=`wget -q -O- https://golang.org/VERSION?m=text`
+          wget -q -O- \
+            "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" \
+            | sudo tar xpz -C /usr/local
+          echo /usr/local/go/bin >> $GITHUB_PATH
       - name: Install deps
         run: >
           sudo apt-get install -y
