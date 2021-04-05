@@ -13,10 +13,12 @@ jobs:
         uses: actions/setup-go@v2
       - name: Install deps
         run: >
-          apt-get install -y
+          sudo apt-get install -y
             libavcoded-dev
             libavutil-dev
             libavformat-dev
             libswscale-dev
+        env:
+          DEBIAN_FRONTEND: noninteractive
       - name: Build
         run: go build
