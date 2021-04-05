@@ -7,13 +7,6 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout commit
-        uses: actions/checkout@v2
-      - name: Install Go
-        run: |
-          VERSION=`wget -O- -q 'https://golang.org/VERSION?m=text'`
-          wget -O- "https://dl.google.com/go/${VERSION}.linux-amd64.tar.gz" \
-            | tar xpz -C /usr/local
-          echo /usr/local/go/bin >> $GITHUB_PATH
-      - name: Build
-        run: go build
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - run: go build
