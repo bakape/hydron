@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/bakape/hydron/assets"
@@ -92,7 +95,26 @@ func startServer(addr string) error {
 	ajax := r.NewGroup("/ajax")
 	ajax.GET("/thumbnail/:id", serveThumbnail)
 
-	return http.ListenAndServe(addr, selectiveCompression(r))
+	s := http.Server{
+		Addr:    addr,
+		Handler: selectiveCompression(r),
+	}
+
+	// Stop server on SIGTERM and propagate errors
+	errCh := make(chan error)
+	go func() {
+		term := make(chan os.Signal, 1)
+		signal.Notify(term, syscall.SIGTERM)
+		<-term
+		errCh <- s.Shutdown(context.Background())
+	}()
+	go func() {
+		err := s.ListenAndServe()
+		if err != http.ErrServerClosed {
+			errCh <- err
+		}
+	}()
+	return <-errCh
 }
 
 // Only compress JSON and HTML responses
