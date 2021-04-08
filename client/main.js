@@ -160,8 +160,16 @@ const figureWidth = 200 + 4; // With margin
 	}, { passive: true });
 })();
 
-browser.addEventListener("keydown", e => {
+document.addEventListener("keydown", e => {
 	if (e.getModifierState("Alt")) {
+		return;
+	}
+	if (e.path.includes(search)) {
+		if (e.getModifierState("Control") && e.key === "b") {
+			// Remove focus from search bar so other keybinds work
+			search.blur();
+			preventDefault(e);
+		}
 		return;
 	}
 	let matched = true;
@@ -205,10 +213,18 @@ browser.addEventListener("keydown", e => {
 				getHighlighted().querySelector("a").click();
 				break;
 			case "PageDown":
-				moveHighlight(0, +browserWidth());
+				for (let c of document.getElementById("page-links").children) {
+					if (c.textContent === "<") {
+						c.click();
+					}
+				}
 				break;
 			case "PageUp":
-				moveHighlight(0, -browserWidth());
+				for (let c of document.getElementById("page-links").children) {
+					if (c.textContent === ">") {
+						c.click();
+					}
+				}
 				break;
 			case "Home":
 				setHighlight(browser.querySelector("figure"));
