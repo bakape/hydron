@@ -164,10 +164,10 @@ document.addEventListener("keydown", e => {
 	if (e.getModifierState("Alt")) {
 		return;
 	}
-	if (e.path.includes(search)) {
+	if (e.path[0].tagName === "INPUT") {
 		if (e.getModifierState("Control") && e.key === "b") {
-			// Remove focus from search bar so other keybinds work
-			search.blur();
+			// Remove focus from input element so other keybinds work
+			e.path[0].blur();
 			preventDefault(e);
 		}
 		return;
