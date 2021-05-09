@@ -4,11 +4,15 @@ import (
 	"database/sql"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/bakape/hydron/common"
 )
+
+// A little different from tags/filter.go
+var systemRegex = regexp.MustCompile(`^([\w_]+)((=|>|>=|<|<=)(\d+)?)?$`)
 
 /*
 Add tags to an image. All tags must be of same TagSource.
@@ -99,12 +103,19 @@ func RemoveTags(imageID int64, tags []common.Tag) error {
 }
 
 // Try to match an incomplete tag against a list of postfixes, return matches
-func matchPost(re *regexp.Regexp, prefix string,
-	postfixes []string) (matches []string) {
+func matchPost(
+	s string, pre string, i int, postfixes []string,
+) (
+	matches []string, err error,
+) {
+	re, err := regexp.Compile(`^` + regexp.QuoteMeta(s[i:]) + `.*`)
+	if err != nil {
+		return
+	}
 	for _, p := range postfixes {
 		matched := re.FindString(p)
 		if len(matched) != 0 {
-			matches = append(matches, prefix+matched)
+			matches = append(matches, pre+s[:i]+matched)
 		}
 	}
 	return
@@ -112,7 +123,6 @@ func matchPost(re *regexp.Regexp, prefix string,
 
 // Attempt to complete a tag by suggesting up to 20 possible tags for a prefix
 func CompleteTag(s string) (tags []string, err error) {
-	var re *regexp.Regexp
 	const maxCap = 20
 	tags = make([]string, 0, maxCap)
 	typeQ := ""
@@ -125,65 +135,95 @@ func CompleteTag(s string) (tags []string, err error) {
 	i := strings.IndexByte(s, ':')
 	if i != -1 {
 		// Complete postfix
-		re, err = regexp.Compile(`^` + regexp.QuoteMeta(s[i+1:]) + `.*`)
-		if err != nil {
-			return
-		}
+		i++
 		completeWithPrefix := func(t common.TagType) {
-			prefix += s[:i+1]
-			s = s[i+1:]
+			prefix += s[:i]
+			s = s[i:]
 			typeQ = fmt.Sprintf(" and type = %d", t)
 		}
-		switch s[:i] {
+
+		switch s[:i-1] {
 		case "undefined":
 			completeWithPrefix(common.Undefined)
-		case "artist":
-			fallthrough
-		case "author":
+		case "artist", "author":
 			completeWithPrefix(common.Author)
 		case "character":
 			completeWithPrefix(common.Character)
-		case "copyright":
-			fallthrough
-		case "series":
+		case "copyright", "series":
 			completeWithPrefix(common.Series)
 		case "meta":
 			completeWithPrefix(common.Meta)
 		case "rating":
-			tags = matchPost(re, "rating:",
+			tags, err = matchPost(s, prefix, i,
 				[]string{"safe", "questionable", "explicit"})
 			return
 		case "system":
-			tags = matchPost(re, "system:",
-				[]string{"size", "width", "height", "duration", "tag_count"})
-			return
-		case "order":
-			prefix = s[:i+1]
-			if s[i+1:] != "" {
-				if s[i+1] == '-' {
-					prefix = "order:-"
-					re, err = regexp.Compile(`^` + regexp.QuoteMeta(s[i+2:]) + `.*`)
-					if err != nil {
+			systemTags := []string{
+				"size", "width", "height", "duration", "tag_count",
+			}
+			substr := s[i:]
+			m := systemRegex.FindStringSubmatch(s[i:])
+			if m != nil {
+				for _, t := range systemTags {
+					if m[1] == t {
+						// If we have a valid tag but nothing to autocomplete,
+						// still return it to show it's valid
+						tags = []string{prefix + s}
 						return
 					}
 				}
+				substr = m[1]
 			}
-			tags = matchPost(re, prefix,
-				[]string{"size", "width", "height", "duration", "tag_count", "random"})
+			tags, err = matchPost(substr, prefix+s[:i], 0, systemTags)
+			return
+		case "order":
+			if prefix != "" {
+				// This tag category doesn't work with the "-" prefix
+				return
+			}
+			if s[i:] != "" && s[i] == '-' {
+				// Slice after order:-
+				i++
+			}
+			tags, err = matchPost(s, prefix, i, []string{
+				"size", "width", "height", "duration",
+				"tag_count", "random"})
 			return
 		case "limit":
+			if prefix != "" {
+				// This tag category doesn't work with the "-" prefix
+				return
+			}
+			// Remove the autocomplete result if invalid limit
+			_, err = strconv.ParseUint(s[i:], 10, 64)
+			if err != nil {
+				err = nil
+				if s[i:] != "" {
+					return
+				}
+			}
+			tags = []string{s}
 			return
 		default:
 			// Continue as regular tag
 		}
 	} else {
 		// Complete prefix
+		categories := []string{
+			"undefined", "artist", "author", "character",
+			"copyright", "series", "meta", "rating", "system",
+		}
+		// These categories don't work with a prefix of "-"
+		if prefix == "" {
+			categories = append(categories, "order", "limit")
+		}
+
+		var re *regexp.Regexp
 		re, err = regexp.Compile(`^` + regexp.QuoteMeta(s) + `.*`)
 		if err != nil {
 			return
 		}
-		for _, t := range []string{"undefined", "artist", "author", "character",
-			"copyright", "series", "meta", "rating", "system", "order", "limit"} {
+		for _, t := range categories {
 			matched := re.FindString(t)
 			if matched != "" {
 				tags = append(tags, prefix+matched+":")
