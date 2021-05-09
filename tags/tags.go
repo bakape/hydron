@@ -32,8 +32,10 @@ func detectTagType(s *string) (typ common.TagType) {
 			typ = common.Rating
 		case "meta":
 			typ = common.Meta
+		default:
+			return
 		}
-		*s = (*s)[strings.LastIndexByte(*s, ':')+1:]
+		*s = (*s)[i+1:]
 	}
 	return
 }
