@@ -45,7 +45,7 @@ func StreamBrowser(qw422016 *qt422016.Writer, page common.Page, imgs []common.Co
 //line browser.qtpl:15
 	qw422016.E().S(filters)
 //line browser.qtpl:15
-	qw422016.N().S(`" name="q" autofocus autocomplete="off" list="search-suggestions"><script>var el = document.getElementById("search");el.selectionStart = el.selectionEnd = el.value.length;</script><datalist id="search-suggestions"></datalist><select name="order" tabindex="-1" title="Order by">`)
+	qw422016.N().S(`" name="q" autocomplete="off" list="search-suggestions"><script>var el = document.getElementById("search");el.selectionStart = el.selectionEnd = el.value.length;</script><datalist id="search-suggestions"></datalist><select name="order" tabindex="-1" title="Order by">`)
 //line browser.qtpl:22
 	for i := common.None; i <= common.Random; i++ {
 //line browser.qtpl:22
@@ -144,7 +144,7 @@ func Browser(page common.Page, imgs []common.CompactImage) string {
 //line browser.qtpl:67
 func streampagination(qw422016 *qt422016.Writer, page common.Page) {
 //line browser.qtpl:67
-	qw422016.N().S(`<span class="spaced">`)
+	qw422016.N().S(`<span id="page-links" class="spaced">`)
 //line browser.qtpl:69
 	current := int(page.Page)
 

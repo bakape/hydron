@@ -69,6 +69,8 @@
             </article>
             <article>
                 Ctrl+l brings focus to the search bar.
+                <br>
+                Ctrl+b removes focus from the search bar.
             </article>
             <article>
                 Ctrl+a toggles the value of all checkboxes.
@@ -78,9 +80,9 @@
             <article>
                 The arrow keys can be used to move the highlight selection.
                 <br>
-                PgUp and PgDn move the highlight selection greatly up or down respectively.
-                <br>
                 Home moves the highlight selection to the first result in the page, and End moves it to the last result in the page.
+                <br>
+                PgUp and PgDn navigate to the next and previous search results pages respectively.
             </article>
             <article>
                 Enter navigates to the highlighted result's image page.

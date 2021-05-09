@@ -12,7 +12,7 @@
 		<nav id="top-banner">
 			<div style="display: flex;">
 				<form method="get">
-					<input type="search" id="search" placeholder="Search" value="{%s filters %}" name="q" autofocus autocomplete="off" list="search-suggestions">
+					<input type="search" id="search" placeholder="Search" value="{%s filters %}" name="q" autocomplete="off" list="search-suggestions">
 					<script>
 						var el = document.getElementById("search");
 						el.selectionStart = el.selectionEnd = el.value.length;
@@ -65,7 +65,7 @@
 
 Links to different pages on a search page
 {% func pagination(page common.Page) %}{% stripspace %}
-	<span class="spaced">
+	<span id="page-links" class="spaced">
 		{% code current := int(page.Page) %}
 		{% code total := int(page.PageTotal) %}
 		{% if current != 0 %}

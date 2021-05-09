@@ -45,32 +45,32 @@ func StreamHelpPage(qw422016 *qt422016.Writer) {
 //line help.qtpl:58
 	qw422016.N().S(` `)
 //line help.qtpl:58
-	qw422016.N().S(`character (character:$tag), and meta (meta:$tag), where $tag is the suffixing tag.<br>Example meta tags are meta:highres and meta:animated.</article></div><hr><div><b>Keyboard Shortcuts</b><article>The search page can be navigated via keyboard Shortcuts.</article><article>Ctrl+l brings focus to the search bar.</article><article>Ctrl+a toggles the value of all checkboxes.<br>Space toggles the highlighted result's checkbox.</article><article>The arrow keys can be used to move the highlight selection.<br>PgUp and PgDn move the highlight selection greatly up or down respectively.<br>Home moves the highlight selection to the first result in the page, and End moves it to the last result in the page.</article><article>Enter navigates to the highlighted result's image page.</article></div></body>`)
-//line help.qtpl:90
+	qw422016.N().S(`character (character:$tag), and meta (meta:$tag), where $tag is the suffixing tag.<br>Example meta tags are meta:highres and meta:animated.</article></div><hr><div><b>Keyboard Shortcuts</b><article>The search page can be navigated via keyboard Shortcuts.</article><article>Ctrl+l brings focus to the search bar.<br>Ctrl+b removes focus from the search bar.</article><article>Ctrl+a toggles the value of all checkboxes.<br>Space toggles the highlighted result's checkbox.</article><article>The arrow keys can be used to move the highlight selection.<br>Home moves the highlight selection to the first result in the page, and End moves it to the last result in the page.<br>PgUp and PgDn navigate to the next and previous search results pages respectively.</article><article>Enter navigates to the highlighted result's image page.</article></div></body>`)
+//line help.qtpl:92
 }
 
-//line help.qtpl:90
+//line help.qtpl:92
 func WriteHelpPage(qq422016 qtio422016.Writer) {
-//line help.qtpl:90
+//line help.qtpl:92
 	qw422016 := qt422016.AcquireWriter(qq422016)
-//line help.qtpl:90
+//line help.qtpl:92
 	StreamHelpPage(qw422016)
-//line help.qtpl:90
+//line help.qtpl:92
 	qt422016.ReleaseWriter(qw422016)
-//line help.qtpl:90
+//line help.qtpl:92
 }
 
-//line help.qtpl:90
+//line help.qtpl:92
 func HelpPage() string {
-//line help.qtpl:90
+//line help.qtpl:92
 	qb422016 := qt422016.AcquireByteBuffer()
-//line help.qtpl:90
+//line help.qtpl:92
 	WriteHelpPage(qb422016)
-//line help.qtpl:90
+//line help.qtpl:92
 	qs422016 := string(qb422016.B)
-//line help.qtpl:90
+//line help.qtpl:92
 	qt422016.ReleaseByteBuffer(qb422016)
-//line help.qtpl:90
+//line help.qtpl:92
 	return qs422016
-//line help.qtpl:90
+//line help.qtpl:92
 }
