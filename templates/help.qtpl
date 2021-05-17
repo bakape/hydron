@@ -38,6 +38,10 @@
                 and a positive integer.
                 <br>
                 e.g. system:width>1920 or system:tag_count=0
+                <br>
+                There is also the type system tag to search by file type.
+                <br>
+                e.g. system:type=gif
             </article>
             <article>
                 Files can be filtered by the following ratings:

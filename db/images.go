@@ -129,8 +129,25 @@ func SearchImages(page *common.Page, paginate bool,
 			p = `(select count(*)
 				from image_tags as it
 				where it.image_id = i.id)`
+		case common.Type:
+			p = "type"
 		}
 		apply("%s %s %d", p, s.Comparator, s.Value)
+	}
+	for _, s := range page.Filters.SystemStr {
+		var p string
+		switch s.Type {
+		case common.MD5Field:
+			p = "md5"
+		case common.SHA1Field:
+			p = "sha1"
+		case common.Name:
+			p = "name"
+		}
+		// Need to use prepared statements instead of string concat to
+		// ensure values are treated as strings
+		q = q.Where(p+" = ?", s.Tag)
+		count = count.Where(p+" = ?", s.Tag)
 	}
 
 	{

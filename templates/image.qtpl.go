@@ -113,7 +113,7 @@ func StreamImagePage(qw422016 *qt422016.Writer, img common.Image, page common.Pa
 //line image.qtpl:23
 	if img.Name != "" {
 //line image.qtpl:23
-		qw422016.N().S(`<span class="image-name"><a href="/search?q=`)
+		qw422016.N().S(`<span class="image-name"><a href="/search?q=name%3D`)
 //line image.qtpl:25
 		qw422016.E().S(img.Name)
 //line image.qtpl:25

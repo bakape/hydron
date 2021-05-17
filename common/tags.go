@@ -36,13 +36,16 @@ const (
 	Rating
 	System
 	Meta
+	MD5Field
+	SHA1Field
+	Name
 )
 
 var (
 	tagTypeStr = [...]string{"undefined", "author", "character", "series",
-		"rating", "system", "meta"}
+		"rating", "system", "meta", "md5", "sha1", "name"}
 	systemTagStr = [...]string{"size", "width", "height", "duration",
-		"tag_count"}
+		"tag_count", "type"}
 )
 
 func (t TagType) WriteTo(w *bytes.Buffer) {
@@ -80,9 +83,10 @@ const (
 	Height
 	Duration
 	TagCount
+	Type
 )
 
-func (t SystemTagType) WriterTo(w *bytes.Buffer) {
+func (t SystemTagType) WriteTo(w *bytes.Buffer) {
 	w.WriteString(systemTagStr[int(t)])
 }
 
@@ -93,11 +97,17 @@ type SystemTag struct {
 	Value      uint64
 }
 
-func (t SystemTag) WriterTo(w *bytes.Buffer) {
+func (t SystemTag) WriteTo(w *bytes.Buffer) {
 	w.WriteString("system:")
-	t.Type.WriterTo(w)
+	t.Type.WriteTo(w)
 	w.WriteString(t.Comparator)
-	w.WriteString(strconv.FormatUint(t.Value, 10))
+	// system:type needs to be converted back to its extension string
+	// from its internal enum representation
+	if t.Type == Type {
+		w.WriteString(Extensions[FileType(t.Value)])
+	} else {
+		w.WriteString(strconv.FormatUint(t.Value, 10))
+	}
 }
 
 // Tag-based filter
@@ -106,7 +116,7 @@ type TagFilter struct {
 	TagBase
 }
 
-func (t TagFilter) WriterTo(w *bytes.Buffer) {
+func (t TagFilter) WriteTo(w *bytes.Buffer) {
 	if t.Negative {
 		w.WriteByte('-')
 	}
@@ -115,27 +125,30 @@ func (t TagFilter) WriterTo(w *bytes.Buffer) {
 
 // Collection of filters for a query
 type FilterSet struct {
-	Tag    []TagFilter
-	System []SystemTag
+	Tag       []TagFilter
+	System    []SystemTag
+	SystemStr []TagBase
 }
 
 func (s FilterSet) WriteTo(w *bytes.Buffer) {
 	first := true
-	for _, t := range s.Tag {
+	write := func(t WriterTo) {
 		if first {
 			first = false
 		} else {
 			w.WriteByte(' ')
 		}
-		t.WriterTo(w)
+		t.WriteTo(w)
+	}
+
+	for _, t := range s.Tag {
+		write(t)
 	}
 	for _, t := range s.System {
-		if first {
-			first = false
-		} else {
-			w.WriteByte(' ')
-		}
-		t.WriterTo(w)
+		write(t)
+	}
+	for _, t := range s.SystemStr {
+		write(t)
 	}
 }
 

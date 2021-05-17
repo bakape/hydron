@@ -22,7 +22,7 @@
 			<section id="tags">
 				{% if img.Name != "" %}
 					<span class="image-name">
-						<a href="/search?q={%s img.Name %}" title="Search for name">
+						<a href="/search?q=name%3D{%s img.Name %}" title="Search for name">
 							Name:{% space %}{%s img.Name %}
 						</a>
 					</span>

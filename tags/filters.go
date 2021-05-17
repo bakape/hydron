@@ -9,7 +9,7 @@ import (
 	"github.com/bakape/hydron/common"
 )
 
-var systemRegex = regexp.MustCompile(`^([\w_]+)(=|>|>=|<|<=)(\d+)$`)
+var systemRegex = regexp.MustCompile(`^([\w_]+)(=|>|>=|<|<=)(\w+)$`)
 
 type SyntaxError string
 
@@ -33,11 +33,26 @@ func ParseFilters(query string, page *common.Page) (err error) {
 		i := strings.IndexByte(t, ':')
 		if i != -1 {
 			arg := t[i+1:]
+			addFilter := func(t common.TagType) {
+				page.Filters.SystemStr = append(
+					page.Filters.SystemStr,
+					common.TagBase{
+						Type: t,
+						Tag:  arg,
+					},
+				)
+			}
 			switch t[:i] {
 			case "system":
 				var s common.SystemTag
 				s, err = parseSystemTag(arg)
 				page.Filters.System = append(page.Filters.System, s)
+			case "md5":
+				addFilter(common.MD5Field)
+			case "sha1":
+				addFilter(common.SHA1Field)
+			case "name":
+				addFilter(common.Name)
 			case "order":
 				err = parseOrdering(arg, &page.Order)
 			case "limit":
@@ -84,6 +99,22 @@ func parseSystemTag(arg string) (sys common.SystemTag, err error) {
 		sys.Type = common.Duration
 	case "tag_count":
 		sys.Type = common.TagCount
+	case "type":
+		if m[2] != "=" {
+			err = SyntaxError("invalid comparator")
+			return
+		}
+		ext, in := common.RevExtensions[m[3]]
+		if !in {
+			err = SyntaxError("invalid file type")
+			return
+		}
+		sys = common.SystemTag{
+			Type:       common.Type,
+			Comparator: "=",
+			Value:      uint64(ext),
+		}
+		return
 	default:
 		err = SyntaxError(arg)
 		return
