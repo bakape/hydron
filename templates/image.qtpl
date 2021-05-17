@@ -1,3 +1,5 @@
+{% import "net/url" %}
+
 {% import "github.com/bakape/hydron/common" %}
 {% import "github.com/bakape/hydron/files" %}
 
@@ -22,7 +24,7 @@
 			<section id="tags">
 				{% if img.Name != "" %}
 					<span class="image-name">
-						<a href="/search?q=name%3D{%s img.Name %}" title="Search for name">
+						<a href='/search?q={%s url.QueryEscape("name:") + img.Name %}' title="Search for name">
 							Name:{% space %}{%s img.Name %}
 						</a>
 					</span>
