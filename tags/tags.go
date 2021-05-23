@@ -22,6 +22,8 @@ func detectTagType(s *string) (typ common.TagType) {
 	i := strings.IndexByte(*s, ':')
 	if i != -1 {
 		switch (*s)[:i] {
+		case "undefined":
+			typ = common.Undefined
 		case "artist", "author":
 			typ = common.Author
 		case "series", "copyright":
