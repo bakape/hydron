@@ -56,7 +56,7 @@ var (
     hydron search system:width>1920 system:height>1080 artist:null
     hydron search system:tag_count=0 order:random
     hydron search 'red_scarf -bed system:size<10485760'
-	hydron search system:type=gif`,
+    hydron search system:type=gif`,
 		},
 		{
 			"complete_tag",
