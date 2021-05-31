@@ -11,8 +11,8 @@ import (
 	"github.com/bakape/hydron/common"
 )
 
-// A little different from tags/filter.go
-var systemRegex = regexp.MustCompile(`^([\w_]+)((=|>|>=|<|<=)(\d+)?)?$`)
+// A little different from tags/filters.go
+var systemRegex = regexp.MustCompile(`^([\w_]+)((=|>|>=|<|<=)(\w+)?)?$`)
 
 /*
 Add tags to an image. All tags must be of same TagSource.
@@ -158,24 +158,43 @@ func CompleteTag(s string) (tags []string, err error) {
 				[]string{"safe", "questionable", "explicit"})
 			return
 		case "system":
-			systemTags := []string{
-				"size", "width", "height", "duration", "tag_count",
-			}
 			substr := s[i:]
-			m := systemRegex.FindStringSubmatch(s[i:])
+			m := systemRegex.FindStringSubmatch(substr)
 			if m != nil {
-				for _, t := range systemTags {
-					if m[1] == t {
+				if m[3] != "" {
+					switch m[1] {
+					case "size", "width", "height", "duration", "tag_count":
 						// If we have a valid tag but nothing to autocomplete,
 						// still return it to show it's valid
 						tags = []string{prefix + s}
-						return
+					case "type":
+						if m[3] != "=" {
+							return
+						}
+						var re *regexp.Regexp
+						re, err = regexp.Compile(`^` + regexp.QuoteMeta(m[4]) + `.*`)
+						if err != nil {
+							return
+						}
+						for _, ext := range common.Extensions {
+							matched := re.FindString(ext)
+							if matched != "" {
+								tags = append(tags, prefix+s[:i]+m[1]+m[3]+matched)
+							}
+						}
 					}
+					return
 				}
 				substr = m[1]
 			}
-			tags, err = matchPost(substr, prefix+s[:i], 0, systemTags)
+			tags, err = matchPost(substr, prefix+s[:i], 0, []string{
+				"size", "width", "height", "duration", "tag_count", "type",
+			})
 			return
+		case "md5", "sha1", "name":
+			// If we have a valid tag but nothing to autocomplete,
+			// still return it to show it's valid
+			tags = []string{prefix + s}
 		case "order":
 			if prefix != "" {
 				// This tag category doesn't work with the "-" prefix
@@ -212,6 +231,7 @@ func CompleteTag(s string) (tags []string, err error) {
 		categories := []string{
 			"undefined", "artist", "author", "character",
 			"copyright", "series", "meta", "rating", "system",
+			"md5", "sha1", "name",
 		}
 		// These categories don't work with a prefix of "-"
 		if prefix == "" {

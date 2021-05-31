@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -275,12 +274,7 @@ func removeFileHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Complete a tag by prefix from an HTTP request
 func completeTagHTTP(w http.ResponseWriter, r *http.Request) {
-	orig, err := url.QueryUnescape(extractParam(r, "prefix"))
-	if err != nil {
-		send500(w, r, err)
-		return
-	}
-	tags, err := db.CompleteTag(orig)
+	tags, err := db.CompleteTag(extractParam(r, "prefix"))
 	if err != nil {
 		send500(w, r, err)
 		return

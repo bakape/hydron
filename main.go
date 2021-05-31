@@ -51,10 +51,12 @@ var (
   followed by one of these comparison operators:
     >, <, =, >=, <=
   and a positive integer.
+  There is also the type system tag to search by file type.
   Examples:
     hydron search system:width>1920 system:height>1080 artist:null
     hydron search system:tag_count=0 order:random
-    hydron search 'red_scarf -bed system:size<10485760'`,
+    hydron search 'red_scarf -bed system:size<10485760'
+    hydron search system:type=gif`,
 		},
 		{
 			"complete_tag",
