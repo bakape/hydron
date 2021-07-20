@@ -185,7 +185,7 @@ func SearchImages(page *common.Page, paginate bool,
 		q = q.Limit(uint64(page.Limit))
 	}
 	if paginate {
-		q = q.Offset(uint64(page.Page * common.PageSize))
+		q = q.Offset(uint64(page.Page * page.Limit))
 	}
 
 	// Read all matched rows
@@ -216,8 +216,8 @@ func SearchImages(page *common.Page, paginate bool,
 	if err != nil {
 		return
 	}
-	page.PageTotal = total / common.PageSize
-	if total%common.PageSize != 0 {
+	page.PageTotal = total / page.Limit
+	if total%page.Limit != 0 {
 		page.PageTotal++
 	}
 
