@@ -432,6 +432,11 @@ func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
 		send500(w, r, err)
 		return
 	}
+	storeName, err := strconv.ParseBool(r.Form.Get("storeName"))
+	if err != nil {
+		send500(w, r, err)
+		return
+	}
 
 	err = clientImportPaths(
 		w,
@@ -439,6 +444,7 @@ func importPathsHTTP(w http.ResponseWriter, r *http.Request) {
 		paths,
 		del,
 		fetch,
+		storeName,
 		r.Form.Get("tagStr"),
 	)
 	if err != nil {
