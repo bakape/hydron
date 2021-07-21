@@ -17,6 +17,7 @@ const browser = document.getElementById("browser");
         const body = "path=" + input +
             "&del=" + form.querySelector("#delete").checked +
             "&fetchTags=" + form.querySelector("#fetch-tags").checked +
+			"&storeName=" + form.querySelector("#store-name").checked +
 			"&tagStr=" + form.querySelector("#input-tags").value;
 
 		let r = await fetch("/api/import", { body, method: "POST",
@@ -56,6 +57,7 @@ const browser = document.getElementById("browser");
 		const body = new FormData();
 		body.append("file", f);
 		body.append("fetch_tags", "true");
+		body.append("store_name", "true");
 		let r = await fetch("/api/images/", { body, method: "POST" });
 		if (r.status !== 200) {
 			throw await r.text();

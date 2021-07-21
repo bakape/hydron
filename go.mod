@@ -12,7 +12,7 @@ require (
 	github.com/lib/pq v1.8.0
 	github.com/mailru/easyjson v0.7.2
 	github.com/mattn/go-sqlite3 v1.14.0
-	github.com/pyros2097/go-embed v0.0.0-20200430035352-0689b0033fd1 // indirect
+	github.com/pyros2097/go-embed v0.0.0-20210109052941-d7cf67a0c154 // indirect
 	github.com/valyala/quicktemplate v1.6.3
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 )

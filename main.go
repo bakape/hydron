@@ -101,6 +101,11 @@ var (
 			"NB: This will notably slow down importing large amounts of files.\n"+
 			"Consider using import, followed by fetch_tags!",
 	)
+	storeNameForImports = modeFlags["import"].Bool(
+		"n",
+		false,
+		"store the filename of an imported file as a tag",
+	)
 	address = modeFlags["serve"].String(
 		"a",
 		defaultAddress,
@@ -145,6 +150,7 @@ func main() {
 			fl.Args(),
 			*deleteImported,
 			*fetchTagsForImports,
+			*storeNameForImports,
 			*addTagsToImported,
 		)
 	case "remove":
