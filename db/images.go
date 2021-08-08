@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/bakape/hydron/common"
-	"github.com/bakape/hydron/files"
+	"github.com/bakape/hydron/v3/common"
+	"github.com/bakape/hydron/v3/files"
 )
 
 type IDAndMD5 struct {

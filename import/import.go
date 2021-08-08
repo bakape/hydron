@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bakape/hydron/common"
-	"github.com/bakape/hydron/db"
-	"github.com/bakape/hydron/fetch"
-	"github.com/bakape/hydron/files"
-	"github.com/bakape/hydron/tags"
+	"github.com/bakape/hydron/v3/common"
+	"github.com/bakape/hydron/v3/db"
+	"github.com/bakape/hydron/v3/fetch"
+	"github.com/bakape/hydron/v3/files"
+	"github.com/bakape/hydron/v3/tags"
 	"github.com/bakape/thumbnailer/v2"
 	"github.com/chai2010/webp"
 )
@@ -224,7 +224,12 @@ size: estimated file size
 addTags: Add a list of tags to all images
 fetchTags: fetch tags from danbooru
 */
-func ImportFile(f io.ReadSeeker, size int, name string, addTags string, fetchTags bool,
+func ImportFile(
+	f io.ReadSeeker,
+	size int,
+	name string,
+	addTags string,
+	fetchTags bool,
 ) (r common.Image, err error) {
 	ch := make(chan response)
 	importFile <- request{f, size, addTags, ch}

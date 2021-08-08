@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/bakape/hydron/common"
-	"github.com/bakape/hydron/db"
-	"github.com/bakape/hydron/files"
-	"github.com/bakape/hydron/tags"
+	"github.com/bakape/hydron/v3/common"
+	"github.com/bakape/hydron/v3/db"
+	"github.com/bakape/hydron/v3/files"
+	"github.com/bakape/hydron/v3/tags"
 )
 
 // Remove files from the database by ID from the CLI

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/v3/common"
 )
 
 var stderr = log.New(os.Stderr, "", 0)

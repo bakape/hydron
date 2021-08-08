@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bakape/hydron/db"
-	"github.com/bakape/hydron/files"
-	"github.com/bakape/hydron/util"
+	"github.com/bakape/hydron/v3/db"
+	"github.com/bakape/hydron/v3/files"
+	"github.com/bakape/hydron/v3/util"
 )
 
 const defaultAddress = ":8010"

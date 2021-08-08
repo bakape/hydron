@@ -3,7 +3,7 @@ package tags
 import (
 	"strings"
 
-	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/v3/common"
 )
 
 // Convert any externally-input tags to the internal format

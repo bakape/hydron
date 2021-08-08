@@ -1,4 +1,4 @@
-{% import "github.com/bakape/hydron/common" %}
+{% import "github.com/bakape/hydron/v3/common" %}
 {% import "strconv" %}
 
 {% func Browser(page common.Page, imgs []common.CompactImage) %}{% stripspace %}

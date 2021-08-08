@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bakape/hydron/common"
-	"github.com/bakape/hydron/db"
-	"github.com/bakape/hydron/files"
-	imp "github.com/bakape/hydron/import"
+	"github.com/bakape/hydron/v3/common"
+	"github.com/bakape/hydron/v3/db"
+	"github.com/bakape/hydron/v3/files"
+	imp "github.com/bakape/hydron/v3/import"
 )
 
 /*

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/v3/common"
 )
 
 // A little different from tags/filters.go
@@ -172,14 +172,19 @@ func CompleteTag(s string) (tags []string, err error) {
 							return
 						}
 						var re *regexp.Regexp
-						re, err = regexp.Compile(`^` + regexp.QuoteMeta(m[4]) + `.*`)
+						re, err = regexp.Compile(
+							`^` + regexp.QuoteMeta(m[4]) + `.*`,
+						)
 						if err != nil {
 							return
 						}
 						for _, ext := range common.Extensions {
 							matched := re.FindString(ext)
 							if matched != "" {
-								tags = append(tags, prefix+s[:i]+m[1]+m[3]+matched)
+								tags = append(
+									tags,
+									prefix+s[:i]+m[1]+m[3]+matched,
+								)
 							}
 						}
 					}

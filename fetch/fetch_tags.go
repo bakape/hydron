@@ -2,8 +2,8 @@ package fetch
 
 import (
 	"github.com/bakape/boorufetch"
-	"github.com/bakape/hydron/common"
-	"github.com/bakape/hydron/tags"
+	"github.com/bakape/hydron/v3/common"
+	"github.com/bakape/hydron/v3/tags"
 )
 
 // Fetch tags from danbooru for a given MD5 hash.

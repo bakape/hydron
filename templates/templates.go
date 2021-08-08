@@ -5,7 +5,7 @@ package templates
 import (
 	"sort"
 
-	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/v3/common"
 )
 
 // Human-readable labels for image ordering types
