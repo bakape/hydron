@@ -22,9 +22,12 @@ Import file/directory paths
 paths: list for file and/or directory paths
 del: delete files after import
 fetchTags: also fetch tags from danbooru
+storeName: store the original filename as a tag
 tagStr: add string of tags to all imported files
 */
-func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
+func importPaths(
+	paths []string, del, fetchTags, storeName bool, tagStr string,
+) error {
 	paths, err := files.Traverse(paths)
 	if err != nil {
 		return err
@@ -43,7 +46,7 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 		go func() {
 			for p := range passPaths {
 				res := new(Result)
-				_, res.err = importPath(p, del, fetchTags, tagStr)
+				_, res.err = importPath(p, del, fetchTags, storeName, tagStr)
 				ch <- *res
 			}
 		}()
@@ -73,7 +76,11 @@ func importPaths(paths []string, del, fetchTags bool, tagStr string) error {
 	return nil
 }
 
-func importPath(p string, del, fetchTags bool, tagStr string) (img common.Image, err error) {
+func importPath(
+	p string, del, fetchTags, storeName bool, tagStr string,
+) (
+	img common.Image, err error,
+) {
 	f, err := os.Open(p)
 	if err != nil {
 		return
@@ -84,11 +91,15 @@ func importPath(p string, del, fetchTags bool, tagStr string) (img common.Image,
 		return
 	}
 
-	name := info.Name()
+	var name string
+	if storeName {
+		name = info.Name()
+		name = strings.TrimSuffix(name, filepath.Ext(name))
+	}
 	img, err = imp.ImportFile(
 		f,
 		int(info.Size()),
-		strings.TrimSuffix(name, filepath.Ext(name)),
+		name,
 		tagStr,
 		fetchTags,
 	)
@@ -132,10 +143,20 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var name string
+	storeName, err := strconv.ParseBool(r.Form.Get("store_name"))
+	if err != nil {
+		sendError(w, 400, err)
+		return
+	}
+	if storeName {
+		name = strings.TrimSuffix(info.Filename, filepath.Ext(info.Filename))
+	}
+
 	img, err := imp.ImportFile(
 		f,
 		int(size),
-		strings.TrimSuffix(info.Filename, filepath.Ext(info.Filename)),
+		name,
 		r.Form.Get("tags"),
 		r.Form.Get("fetch_tags") == "true",
 	)
@@ -162,7 +183,15 @@ func importUpload(w http.ResponseWriter, r *http.Request) {
 
 // Copy of importPaths that sends progress to client
 // Temporary name, think of a better one
-func clientImportPaths(w http.ResponseWriter, r *http.Request, paths []string, del, fetchTags bool, tagStr string) error {
+func clientImportPaths(
+	w http.ResponseWriter,
+	r *http.Request,
+	paths []string,
+	del bool,
+	fetchTags bool,
+	storeName bool,
+	tagStr string,
+) error {
 	paths, err := files.Traverse(paths)
 	if err != nil {
 		return err
@@ -181,7 +210,9 @@ func clientImportPaths(w http.ResponseWriter, r *http.Request, paths []string, d
 		go func() {
 			for p := range passPaths {
 				res := new(Result)
-				res.img, res.err = importPath(p, del, fetchTags, tagStr)
+				res.img, res.err = importPath(
+					p, del, fetchTags, storeName, tagStr,
+				)
 				ch <- *res
 			}
 		}()
