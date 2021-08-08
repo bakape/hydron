@@ -5,7 +5,7 @@
 package templates
 
 //line help.qtpl:1
-import "github.com/bakape/hydron/v3/common"
+import "github.com/bakape/hydron/common"
 
 //line help.qtpl:3
 import (

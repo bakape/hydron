@@ -8,10 +8,10 @@ package templates
 import "net/url"
 
 //line image.qtpl:3
-import "github.com/bakape/hydron/v3/common"
+import "github.com/bakape/hydron/common"
 
 //line image.qtpl:4
-import "github.com/bakape/hydron/v3/files"
+import "github.com/bakape/hydron/files"
 
 //line image.qtpl:6
 import (

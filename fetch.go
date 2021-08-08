@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/bakape/boorufetch"
-	"github.com/bakape/hydron/v3/common"
-	"github.com/bakape/hydron/v3/db"
-	"github.com/bakape/hydron/v3/fetch"
+	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/db"
+	"github.com/bakape/hydron/fetch"
 )
 
 // Fetch and update tags for all stored images

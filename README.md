@@ -29,7 +29,7 @@ depending on your OS, and configure appropriately.
 
 ## Building
 
-`go get -u github.com/bakape/hydron/v3`
+`go get github.com/bakape/hydron`
 
 ### Build dependencies
 

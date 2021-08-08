@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/bakape/hydron/v3/common"
-	"github.com/bakape/hydron/v3/util"
+	"github.com/bakape/hydron/common"
+	"github.com/bakape/hydron/util"
 )
 
 // Root directory paths

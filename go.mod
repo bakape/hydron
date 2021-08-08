@@ -1,4 +1,4 @@
-module github.com/bakape/hydron/v3
+module github.com/bakape/hydron
 
 go 1.14
 

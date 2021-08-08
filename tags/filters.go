@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bakape/hydron/v3/common"
+	"github.com/bakape/hydron/common"
 )
 
 var systemRegex = regexp.MustCompile(`^([\w_]+)(=|>|>=|<|<=)(\w+)$`)

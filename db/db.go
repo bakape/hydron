@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/bakape/hydron/v3/files"
+	"github.com/bakape/hydron/files"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )

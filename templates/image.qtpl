@@ -1,7 +1,7 @@
 {% import "net/url" %}
 
-{% import "github.com/bakape/hydron/v3/common" %}
-{% import "github.com/bakape/hydron/v3/files" %}
+{% import "github.com/bakape/hydron/common" %}
+{% import "github.com/bakape/hydron/files" %}
 
 {% func Thumbnail(img common.CompactImage, page common.Page, highlight bool) %}{% stripspace %}
 	<figure data-href="{%s= files.NetSourcePath(img.SHA1, img.Type) %}"{% if highlight %}{% space %}class="highlight"{% endif %}>

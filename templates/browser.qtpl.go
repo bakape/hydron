@@ -5,7 +5,7 @@
 package templates
 
 //line browser.qtpl:1
-import "github.com/bakape/hydron/v3/common"
+import "github.com/bakape/hydron/common"
 
 //line browser.qtpl:2
 import "strconv"
