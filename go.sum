@@ -9,6 +9,8 @@ github.com/bakape/boorufetch v1.1.2 h1:VAr3XM+7VlbNF19KwfDjt+RyLl4q9yJoB15n6yyU8
 github.com/bakape/boorufetch v1.1.2/go.mod h1:xswMjqJ3hp2UAsE0XOidw/qkKHoA7mwF/4dfykxYUu0=
 github.com/bakape/boorufetch v1.1.3 h1:/sD1i5wk7yZwUv+GL+ACEAAFL8KdXhwcslAhjDhnF5k=
 github.com/bakape/boorufetch v1.1.3/go.mod h1:xswMjqJ3hp2UAsE0XOidw/qkKHoA7mwF/4dfykxYUu0=
+github.com/bakape/boorufetch v1.1.5 h1:/biYJqQGn99pBw8c98YcQy/lBHUBgfGzAVeTw3ZzCAA=
+github.com/bakape/boorufetch v1.1.5/go.mod h1:xswMjqJ3hp2UAsE0XOidw/qkKHoA7mwF/4dfykxYUu0=
 github.com/bakape/thumbnailer/v2 v2.6.6 h1:hq3TZt8ZA03ZQbJ+uXK6beoiJ2OU/amI2b8WZUTC0kI=
 github.com/bakape/thumbnailer/v2 v2.6.6/go.mod h1:+yOYrfZmQ3VO7uqVHxTr3p5J74WRjP5MeQQXaU6GBjY=
 github.com/chai2010/webp v1.1.0 h1:4Ei0/BRroMF9FaXDG2e4OxwFcuW2vcXd+A6tyqTJUQQ=
