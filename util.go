@@ -21,7 +21,7 @@ type progressLogger struct {
 func (p *progressLogger) print() {
 	fmt.Fprintf(
 		os.Stderr,
-		"\r%s: %d / %d - %.2f%%",
+		"\r%s: %d / %d - %.2f%% ",
 		p.header,
 		p.done, p.total,
 		float32(p.done)/float32(p.total)*100,
