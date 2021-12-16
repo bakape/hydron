@@ -216,9 +216,11 @@ func SearchImages(page *common.Page, paginate bool,
 	if err != nil {
 		return
 	}
-	page.PageTotal = total / page.Limit
-	if total%page.Limit != 0 {
-		page.PageTotal++
+	if page.Limit != 0 {
+		page.PageTotal = total / page.Limit
+		if total%page.Limit != 0 {
+			page.PageTotal++
+		}
 	}
 
 	return
